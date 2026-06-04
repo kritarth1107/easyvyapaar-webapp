@@ -2,7 +2,15 @@
 
 import Link from "next/link";
 import { useUserMe } from "@/components/providers/user-me-provider";
-import { useTranslation } from "@/lib/localization";
+import { useTranslation, type TranslationKey } from "@/lib/localization";
+
+function formatMessage(template: string, params?: Record<string, string | number>): string {
+  if (!params) return template;
+  return Object.entries(params).reduce(
+    (msg, [key, value]) => msg.replace(`{${key}}`, String(value)),
+    template
+  );
+}
 
 function formatInr(amount: number): string {
   return new Intl.NumberFormat("en-IN", {
@@ -151,7 +159,7 @@ export function DashboardOverview() {
           </div>
           <div className="mt-6 flex h-40 items-end justify-between gap-2">
             {shopStats.weeklySales.map((bar) => (
-              <div key={bar.day} className="flex flex-1 flex-col items-center gap-2">
+              <div key={bar.dayKey} className="flex flex-1 flex-col items-center gap-2">
                 <div className="flex w-full flex-1 items-end justify-center">
                   <div
                     className="w-full max-w-[2.25rem] rounded-t-lg bg-gradient-to-t from-brand-orange-2 to-brand-orange-1 transition-all"
@@ -159,7 +167,9 @@ export function DashboardOverview() {
                     title={formatInr(bar.amount)}
                   />
                 </div>
-                <span className="text-[11px] font-medium text-slate-500">{bar.day}</span>
+                <span className="text-[11px] font-medium text-slate-500">
+                  {t(`dashboard.weekdays.${bar.dayKey}` as TranslationKey)}
+                </span>
               </div>
             ))}
           </div>
@@ -183,7 +193,10 @@ export function DashboardOverview() {
                     alert.type === "warning" ? "bg-amber-500" : "bg-brand-orange-1"
                   }`}
                 />
-                {alert.message}
+                {formatMessage(
+                  t(alert.messageKey),
+                  alert.count != null ? { count: alert.count } : undefined
+                )}
               </li>
             ))}
           </ul>
@@ -225,8 +238,8 @@ export function DashboardOverview() {
             {shopStats.recentActivity.map((item) => (
               <li key={item.id} className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0">
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-brand-primary">{item.label}</p>
-                  <p className="text-xs text-slate-500">{item.time}</p>
+                  <p className="truncate text-sm font-medium text-brand-primary">{t(item.labelKey)}</p>
+                  <p className="text-xs text-slate-500">{t(item.timeKey)}</p>
                 </div>
                 {item.amount && (
                   <span className="shrink-0 text-sm font-semibold text-brand-primary">{item.amount}</span>

@@ -1,4 +1,4 @@
-import type { DashboardNavIconId } from "@/lib/dashboard/navigation";
+import type { DashboardNavIconId } from "@/lib/dashboard/navigation-types";
 
 type NavIconProps = {
   id: DashboardNavIconId;
@@ -173,6 +173,46 @@ export function NavIcon({ id, className = "h-[18px] w-[18px]" }: NavIconProps) {
           <circle cx="10" cy="9" r="2.5" stroke="currentColor" strokeWidth="1.5" />
           <path d="M5 19c0-2.5 2-4.5 5-4.5s5 2 5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
           <path d="M17 10h4M17 14h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+      );
+    case "ai-chat":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" className={cn} aria-hidden>
+          <path
+            d="M8 4h8a2 2 0 012 2v9a2 2 0 01-2 2h-2.5l-3.5 3v-3H8a2 2 0 01-2-2V6a2 2 0 012-2z"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M9 9.5h.01M12 9.5h.01M15 9.5h.01"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+          <path
+            d="M12 3v1M8.5 4.5l.7-.7M15.5 4.5l-.7-.7"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
+        </svg>
+      );
+    case "whatsapp":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" className={cn} aria-hidden>
+          <path
+            d="M12 3a9 9 0 00-7.8 13.5L3 21l4.6-1.2A9 9 0 1012 3z"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M9.5 10.5c.4.9 1.1 1.6 2 2"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
         </svg>
       );
     default:

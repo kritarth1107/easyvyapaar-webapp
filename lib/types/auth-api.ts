@@ -28,12 +28,9 @@ export interface GetOtpSuccessResponse {
   data: GetOtpSuccessData;
 }
 
-export interface OrganisationSummary {
-  orgId: string;
-  name: string;
-  logo?: string;
-  userRole: string;
-}
+import type { OrganisationSummary } from "@/lib/types/user-api";
+
+export type { OrganisationSummary } from "@/lib/types/user-api";
 
 export interface VerifyOtpSuccessData {
   userId: string;

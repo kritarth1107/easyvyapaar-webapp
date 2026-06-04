@@ -19,6 +19,7 @@ import {
   fetchShopDashboardStats,
   type ShopDashboardStats,
 } from "@/lib/dashboard/shop-workspace";
+import { UserMeLoadingOverlay } from "@/components/dashboard/user-me-loading-overlay";
 import type { OrganisationSummary, UserMeData } from "@/lib/types/user-api";
 import { isApiErrorResponse } from "@/lib/types/auth-api";
 
@@ -96,12 +97,25 @@ export function UserMeProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const refresh = useCallback(async () => {
-    setIsLoading(true);
+  const refresh = useCallback(async (
+    organisationId?: string | null,
+    options?: { silent?: boolean }
+  ) => {
+    if (!options?.silent) {
+      setIsLoading(true);
+    }
     setError(null);
 
+    const orgParam =
+      organisationId?.trim() ||
+      getStoredActiveOrganisationId() ||
+      undefined;
+    const meUrl = orgParam
+      ? `/api/user/me?organisationId=${encodeURIComponent(orgParam)}`
+      : "/api/user/me";
+
     try {
-      const res = await fetch("/api/user/me", { cache: "no-store" });
+      const res = await fetch(meUrl, { cache: "no-store" });
       const body: unknown = await res.json();
 
       if (!res.ok) {
@@ -122,7 +136,16 @@ export function UserMeProvider({ children }: { children: React.ReactNode }) {
       }
 
       setUser(success.data);
-      const orgId = applyActiveOrganisation(success.data);
+
+      let orgId: string | null = null;
+      if (success.data.activeOrganisation?.orgId) {
+        orgId = success.data.activeOrganisation.orgId;
+        setStoredActiveOrganisationId(orgId);
+        setActiveOrganisationId(orgId);
+      } else {
+        orgId = applyActiveOrganisation(success.data);
+      }
+
       if (orgId) {
         await loadShopWorkspace(orgId, false);
       }
@@ -132,7 +155,9 @@ export function UserMeProvider({ children }: { children: React.ReactNode }) {
       setActiveOrganisationId(null);
       setShopStats(null);
     } finally {
-      setIsLoading(false);
+      if (!options?.silent) {
+        setIsLoading(false);
+      }
     }
   }, [applyActiveOrganisation, loadShopWorkspace]);
 
@@ -158,14 +183,24 @@ export function UserMeProvider({ children }: { children: React.ReactNode }) {
 
       setStoredActiveOrganisationId(organisationId);
       setActiveOrganisationId(organisationId);
-      await loadShopWorkspace(organisationId, true);
+      await Promise.all([
+        loadShopWorkspace(organisationId, true),
+        refresh(organisationId, { silent: true }),
+      ]);
     },
-    [user, activeOrganisationId, loadShopWorkspace]
+    [user, activeOrganisationId, loadShopWorkspace, refresh]
   );
 
   const activeOrganisation = useMemo(() => {
-    if (!user || !activeOrganisationId) return null;
-    return findOrganisationInList(activeOrganisationId, user.organisations) ?? null;
+    if (!user) return null;
+    const id = activeOrganisationId ?? user.activeOrganisation?.orgId ?? null;
+    if (!id) return user.activeOrganisation ?? null;
+
+    if (user.activeOrganisation?.orgId === id) {
+      return user.activeOrganisation;
+    }
+
+    return findOrganisationInList(id, user.organisations) ?? user.activeOrganisation ?? null;
   }, [user, activeOrganisationId]);
 
   const value = useMemo(
@@ -197,7 +232,12 @@ export function UserMeProvider({ children }: { children: React.ReactNode }) {
     ]
   );
 
-  return <UserMeContext.Provider value={value}>{children}</UserMeContext.Provider>;
+  return (
+    <UserMeContext.Provider value={value}>
+      {children}
+      <UserMeLoadingOverlay open={isLoading} />
+    </UserMeContext.Provider>
+  );
 }
 
 export function useUserMe(): UserMeContextValue {

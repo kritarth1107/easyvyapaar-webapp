@@ -1,5 +1,7 @@
 /** Mock shop dashboard payload — replace with real API when wired */
 
+import type { TranslationKey } from "@/lib/localization";
+
 export type ShopDashboardStats = {
   organisationId: string;
   salesToday: number;
@@ -9,12 +11,24 @@ export type ShopDashboardStats = {
   toPay: number;
   lowStockCount: number;
   pendingOrders: number;
-  weeklySales: { day: string; amount: number }[];
-  recentActivity: { id: string; label: string; time: string; amount?: string }[];
-  alerts: { id: string; type: "warning" | "info"; message: string }[];
+  weeklySales: { dayKey: WeekdayKey; amount: number }[];
+  recentActivity: {
+    id: string;
+    labelKey: TranslationKey;
+    timeKey: TranslationKey;
+    amount?: string;
+  }[];
+  alerts: {
+    id: string;
+    type: "warning" | "info";
+    messageKey: TranslationKey;
+    count?: number;
+  }[];
 };
 
-const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+export type WeekdayKey = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
+
+const WEEKDAY_KEYS: WeekdayKey[] = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 
 function seedFromOrgId(orgId: string): number {
   let h = 0;
@@ -25,11 +39,12 @@ function seedFromOrgId(orgId: string): number {
 export async function fetchShopDashboardStats(
   organisationId: string
 ): Promise<ShopDashboardStats> {
-  // Simulates BFF round-trip for stats, parties snapshot, stock, etc.
   await new Promise((r) => setTimeout(r, 900 + (seedFromOrgId(organisationId) % 400)));
 
   const s = seedFromOrgId(organisationId);
   const base = 12000 + (s % 80) * 850;
+  const lowStockCount = 3 + (s % 4);
+  const overdueCount = 2 + (s % 3);
 
   return {
     organisationId,
@@ -40,32 +55,32 @@ export async function fetchShopDashboardStats(
     toPay: 18000 + (s % 30) * 600,
     lowStockCount: 3 + (s % 8),
     pendingOrders: 2 + (s % 5),
-    weeklySales: DAY_LABELS.map((day, i) => ({
-      day,
+    weeklySales: WEEKDAY_KEYS.map((dayKey, i) => ({
+      dayKey,
       amount: Math.round(base * (0.45 + ((s + i * 13) % 40) / 100)),
     })),
     recentActivity: [
       {
         id: "1",
-        label: "GST Invoice #ME-2401",
-        time: "12 min ago",
+        labelKey: "dashboard.activity.invoice",
+        timeKey: "dashboard.activity.time12min",
         amount: `₹${(4200 + (s % 9) * 310).toLocaleString("en-IN")}`,
       },
       {
         id: "2",
-        label: "Payment received — Rahul Traders",
-        time: "1 hr ago",
+        labelKey: "dashboard.activity.paymentReceived",
+        timeKey: "dashboard.activity.time1hr",
         amount: `₹${(8000 + (s % 5) * 500).toLocaleString("en-IN")}`,
       },
       {
         id: "3",
-        label: "Stock adjusted — Samsung A15",
-        time: "2 hr ago",
+        labelKey: "dashboard.activity.stockAdjusted",
+        timeKey: "dashboard.activity.time2hr",
       },
       {
         id: "4",
-        label: "Purchase bill #PB-882",
-        time: "Today, 9:40 AM",
+        labelKey: "dashboard.activity.purchaseBill",
+        timeKey: "dashboard.activity.timeToday940",
         amount: `₹${(15600 + (s % 4) * 900).toLocaleString("en-IN")}`,
       },
     ],
@@ -73,17 +88,19 @@ export async function fetchShopDashboardStats(
       {
         id: "a1",
         type: "warning",
-        message: `${3 + (s % 4)} items below low-stock threshold`,
+        messageKey: "dashboard.alerts.lowStock",
+        count: lowStockCount,
       },
       {
         id: "a2",
         type: "warning",
-        message: `${2 + (s % 3)} invoices overdue for collection`,
+        messageKey: "dashboard.alerts.overdueInvoices",
+        count: overdueCount,
       },
       {
         id: "a3",
         type: "info",
-        message: "GSTR-1 filing due in 6 days",
+        messageKey: "dashboard.alerts.gstr1Due",
       },
     ],
   };

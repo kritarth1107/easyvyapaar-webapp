@@ -1,5 +1,6 @@
 import { deepMerge } from "../merge";
 import type { LocaleCode, MessageTree } from "../types";
+import { dashboardLocalePatches } from "./dashboard-patches";
 import { enMessages } from "./en";
 
 const hi: Record<string, unknown> = {
@@ -377,11 +378,16 @@ const localePatches: Partial<Record<LocaleCode, Record<string, unknown>>> = {
 
 export function buildMessages(locale: LocaleCode): MessageTree {
   const patch = localePatches[locale];
-  if (!patch) return enMessages;
-  return deepMerge(
-    enMessages as unknown as Record<string, unknown>,
-    patch as unknown as Record<string, unknown>
-  ) as unknown as MessageTree;
+  const dashPatch = dashboardLocalePatches[locale];
+  if (!patch && !dashPatch) return enMessages;
+  let merged = enMessages as unknown as Record<string, unknown>;
+  if (patch) {
+    merged = deepMerge(merged, patch as unknown as Record<string, unknown>);
+  }
+  if (dashPatch) {
+    merged = deepMerge(merged, dashPatch as unknown as Record<string, unknown>);
+  }
+  return merged as unknown as MessageTree;
 }
 
 export const allMessages: Record<LocaleCode, MessageTree> = {

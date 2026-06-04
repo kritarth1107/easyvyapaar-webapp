@@ -1,8 +1,13 @@
+import type { OrganisationType } from "@/lib/constants/organisation-types";
+
 export interface OrganisationSummary {
   orgId: string;
   name: string;
   logo?: string;
   userRole: string;
+  gstNumber?: string | null;
+  pan?: string | null;
+  organisationType?: OrganisationType | string | null;
 }
 
 export interface UserMeData {
@@ -16,6 +21,8 @@ export interface UserMeData {
   defaultOrganisationId?: string;
   defaultOrganisation?: OrganisationSummary;
   organisations: OrganisationSummary[];
+  /** Resolved active shop — default org when no organisationId is requested */
+  activeOrganisation?: OrganisationSummary | null;
 }
 
 export interface UserMeSuccessResponse {
