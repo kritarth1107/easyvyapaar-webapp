@@ -3,6 +3,30 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Brand — aligned with easy-vypaar logo */
+  --brand-primary: #031f49;
+  --brand-primary-dark: #021428;
+  --brand-primary-mid: #042d55;
+  --brand-primary-light: #0a4068;
+  --brand-primary-muted: #5a7a9a;
+
+  --brand-orange-1: #fd531a;
+  --brand-orange-2: #f63e16;
+  --brand-orange-3: #fe7f0d;
+  --brand-orange-4: #ff4c12;
+
+  --brand-surface: #f2f5f9;
+  --brand-surface-warm: #fff9f6;
+
+  /* Legacy aliases used in CSS */
+  --brand-navy: var(--brand-primary);
+  --brand-navy-dark: var(--brand-primary-dark);
+  --brand-navy-mid: var(--brand-primary-mid);
+  --brand-navy-light: var(--brand-primary-light);
+  --brand-navy-bright: var(--brand-primary-light);
+  --brand-accent: var(--brand-orange-3);
+  --brand-accent-soft: var(--brand-orange-1);
 }
 
 @theme inline {
@@ -10,6 +34,18 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  --color-brand-primary: var(--brand-primary);
+  --color-brand-primary-dark: var(--brand-primary-dark);
+  --color-brand-primary-mid: var(--brand-primary-mid);
+  --color-brand-primary-light: var(--brand-primary-light);
+  --color-brand-primary-muted: var(--brand-primary-muted);
+  --color-brand-surface: var(--brand-surface);
+  --color-brand-surface-warm: var(--brand-surface-warm);
+  --color-brand-orange-1: var(--brand-orange-1);
+  --color-brand-orange-2: var(--brand-orange-2);
+  --color-brand-orange-3: var(--brand-orange-3);
+  --color-brand-orange-4: var(--brand-orange-4);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -23,4 +59,339 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+.brand-gradient-orange {
+  background: linear-gradient(
+    135deg,
+    var(--brand-orange-2) 0%,
+    var(--brand-orange-1) 35%,
+    var(--brand-orange-3) 65%,
+    var(--brand-orange-4) 100%
+  );
+}
+
+.brand-gradient-orange-h {
+  background: linear-gradient(
+    90deg,
+    var(--brand-orange-2) 0%,
+    var(--brand-orange-1) 40%,
+    var(--brand-orange-3) 70%,
+    var(--brand-orange-4) 100%
+  );
+}
+
+/* Login decorative panel animations */
+@keyframes login-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes login-pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(253, 83, 26, 0.45);
+  }
+  50% {
+    opacity: 0.85;
+    box-shadow: 0 0 0 6px rgba(253, 83, 26, 0);
+  }
+}
+
+.login-fade-up {
+  animation: login-fade-up 0.7s ease-out both;
+}
+
+.login-pulse-dot {
+  animation: login-pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes login-pulse-dot-green {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.45);
+  }
+  50% {
+    opacity: 0.85;
+    box-shadow: 0 0 0 6px rgba(52, 211, 153, 0);
+  }
+}
+
+.login-pulse-dot-green {
+  animation: login-pulse-dot-green 2s ease-in-out infinite;
+}
+
+@keyframes login-panel-glow {
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes login-bar-fill {
+  0%,
+  100% {
+    width: 40%;
+  }
+  50% {
+    width: 85%;
+  }
+}
+
+@keyframes login-card-shine {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes login-feature-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.login-panel-glow {
+  animation: login-panel-glow 10s ease-in-out infinite;
+}
+
+.login-bar-fill {
+  animation: login-bar-fill 5s ease-in-out infinite;
+}
+
+.login-card-shine {
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.06) 50%,
+    transparent 60%
+  );
+  background-size: 200% 100%;
+  animation: login-card-shine 4s ease-in-out infinite;
+}
+
+.login-feature-card {
+  animation: login-feature-enter 0.6s ease-out both;
+}
+
+@keyframes login-dukaan-curve-draw {
+  0% {
+    stroke-dashoffset: 280;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.login-dukaan-curve-path {
+  stroke-dasharray: 280;
+  stroke-dashoffset: 0;
+  animation: login-dukaan-curve-draw 1.2s ease-out forwards;
+}
+
+.login-hero-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2em;
+  line-height: 1.15;
+  min-height: 1.15em;
+}
+
+.vyapaar-word-slot {
+  display: inline-flex;
+  height: 1.15em;
+  min-width: 3.5em;
+  align-items: center;
+  justify-content: flex-start;
+  vertical-align: middle;
+  line-height: 1;
+}
+
+.dukaan-word {
+  display: inline-flex;
+  align-items: center;
+  min-width: 3.25em;
+  font-size: 1.2em;
+  line-height: 1;
+  color: var(--brand-orange-1);
+}
+
+.dukaan-type-cursor {
+  margin-left: 1px;
+  font-weight: 400;
+  color: var(--brand-orange-3);
+  animation: dukaan-cursor-blink 1s step-end infinite;
+}
+
+@keyframes dukaan-cursor-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+.login-btn-primary {
+  background: linear-gradient(135deg, var(--brand-orange-2) 0%, var(--brand-orange-1) 100%);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(246, 62, 22, 0.28);
+}
+
+.login-btn-primary:hover {
+  background: linear-gradient(135deg, var(--brand-orange-1) 0%, var(--brand-orange-2) 100%);
+  box-shadow: 0 4px 14px rgba(253, 83, 26, 0.35);
+}
+
+.login-btn-primary:active {
+  transform: scale(0.99);
+}
+
+.login-input-focus:focus {
+  border-color: var(--brand-primary-mid);
+  box-shadow: 0 0 0 3px rgba(3, 31, 73, 0.15);
+}
+
+.login-input-focus--error,
+.login-input-focus--error:focus {
+  border-color: rgb(239 68 68);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+}
+
+.login-link {
+  color: var(--brand-primary);
+}
+
+.login-link:hover {
+  color: var(--brand-orange-2);
+}
+
+.register-step-slider {
+  background: linear-gradient(
+    90deg,
+    var(--brand-orange-2),
+    var(--brand-orange-1),
+    var(--brand-orange-3)
+  );
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.register-step-connector-fill {
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes register-step-in-forward {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes register-step-in-back {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.register-step-panel--forward {
+  animation: register-step-in-forward 0.35s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.register-step-panel--back {
+  animation: register-step-in-back 0.35s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes register-field-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-5px);
+  }
+  40% {
+    transform: translateX(5px);
+  }
+  60% {
+    transform: translateX(-3px);
+  }
+  80% {
+    transform: translateX(3px);
+  }
+}
+
+.register-field-shake {
+  animation: register-field-shake 0.45s ease-in-out;
+}
+
+@media (prefers-color-reduced-motion: reduce) {
+  .login-fade-up,
+  .login-pulse-dot,
+  .login-pulse-dot-green,
+  .login-panel-glow,
+  .login-bar-fill,
+  .login-card-shine,
+  .login-feature-card,
+  .login-dukaan-curve-path {
+    animation: none;
+  }
+
+  .login-fade-up,
+  .login-feature-card {
+    opacity: 1;
+    transform: none;
+  }
+
+  .login-dukaan-curve-path {
+    stroke-dashoffset: 0;
+  }
+
+  .dukaan-type-cursor {
+    animation: none;
+  }
+
+  .register-step-slider,
+  .register-step-connector-fill {
+    transition: none;
+  }
+
+  .register-step-panel--forward,
+  .register-step-panel--back {
+    animation: none;
+  }
+
+  .register-field-shake {
+    animation: none;
+  }
 }
