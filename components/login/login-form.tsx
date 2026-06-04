@@ -8,6 +8,11 @@ import { useCallback, useRef, useState } from "react";
 import { OtpInput } from "./otp-input";
 import { useTranslation } from "@/lib/localization";
 import { normalizeIndianMobileInput } from "@/lib/validators/indian-mobile";
+import { OrganisationSelectModal } from "@/components/auth/organisation-select-modal";
+import { completeAuthSessionOrganisation } from "@/lib/auth/complete-auth-session";
+import { setStoredActiveOrganisationId } from "@/lib/auth/active-organisation";
+import { DASHBOARD_PATH } from "@/lib/auth/session";
+import type { OrganisationSummary } from "@/lib/types/auth-api";
 import {
   AUTH_ERROR_USER_NOT_FOUND,
   type ApiErrorResponse,
@@ -43,6 +48,9 @@ export function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [orgModalOpen, setOrgModalOpen] = useState(false);
+  const [pendingOrganisations, setPendingOrganisations] = useState<OrganisationSummary[]>([]);
+  const [pendingDefaultOrgId, setPendingDefaultOrgId] = useState<string | undefined>();
   const lastOtpRequestRef = useRef<string | null>(null);
 
   const isValidMobile = INDIAN_MOBILE_REGEX.test(mobile);
@@ -152,12 +160,23 @@ export function LoginForm() {
       }
 
       const success = data as VerifyOtpSuccessResponse;
-      if (!success.success) {
+      if (!success.success || !success.data) {
         setError(t("login.loginFailed"));
         return;
       }
 
-      router.push("/dashboard?utm=login");
+      const { needsSelection, organisations, defaultOrganisationId } =
+        completeAuthSessionOrganisation(success.data);
+
+      if (needsSelection) {
+        setPendingOrganisations(organisations);
+        setPendingDefaultOrgId(defaultOrganisationId);
+        setOrgModalOpen(true);
+        setLoading(false);
+        return;
+      }
+
+      router.push(`${DASHBOARD_PATH}?utm=login`);
       router.refresh();
     } catch {
       setError(t("common.networkError"));
@@ -179,8 +198,26 @@ export function LoginForm() {
     }
   }
 
+  function handleOrganisationSelect(organisationId: string) {
+    setStoredActiveOrganisationId(organisationId);
+    setOrgModalOpen(false);
+    router.push(`${DASHBOARD_PATH}?utm=login`);
+    router.refresh();
+  }
+
   return (
-    <div className="flex min-h-screen w-full flex-col items-center justify-center border-l border-slate-200/80 bg-white px-6 py-10 sm:px-8 lg:w-[38%] lg:px-10 xl:px-12">
+    <>
+      <OrganisationSelectModal
+        open={orgModalOpen}
+        organisations={pendingOrganisations}
+        defaultOrganisationId={pendingDefaultOrgId}
+        primaryBadge={t("orgSelect.primaryBadge")}
+        title={t("orgSelect.loginTitle")}
+        subtitle={t("orgSelect.loginSubtitle")}
+        continueLabel={t("orgSelect.loginHint")}
+        onSelect={handleOrganisationSelect}
+      />
+    <div className="flex min-h-screen w-full flex-col items-center justify-center border-l border-slate-200/80 bg-white px-8 py-10 sm:px-12 lg:w-[38%] lg:px-14 xl:px-20 2xl:px-24">
       <div className="w-full max-w-sm">
         <div className="mb-8 flex items-center gap-2.5 lg:hidden">
           <Image
@@ -295,5 +332,6 @@ export function LoginForm() {
         </p>
       </div>
     </div>
+    </>
   );
 }

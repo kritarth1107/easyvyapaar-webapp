@@ -34,6 +34,14 @@ export type MessageTree = {
     optional: string;
     fromGst: string;
   };
+  orgSelect: {
+    loginTitle: string;
+    loginSubtitle: string;
+    loginHint: string;
+    switchTitle: string;
+    switchSubtitle: string;
+    primaryBadge: string;
+  };
   login: {
     signIn: string;
     title: string;
@@ -135,6 +143,37 @@ export type MessageTree = {
     feature4: string;
     feature5: string;
     trusted: string;
+  };
+  dashboard: {
+    greeting: string;
+    greetingHint: string;
+    openPos: string;
+    newInvoice: string;
+    salesToday: string;
+    vsYesterday: string;
+    invoices: string;
+    toCollect: string;
+    toCollectHint: string;
+    toPay: string;
+    toPayHint: string;
+    lowStock: string;
+    lowStockHint: string;
+    weeklySales: string;
+    viewReports: string;
+    pendingActions: string;
+    quickActions: string;
+    actionPos: string;
+    actionParty: string;
+    actionItem: string;
+    actionPayment: string;
+    actionPurchase: string;
+    actionExpense: string;
+    recentActivity: string;
+    pendingOrders: string;
+    switchingShop: string;
+    switchingShopHint: string;
+    breadcrumbHome: string;
+    searchPlaceholder: string;
   };
 };
 

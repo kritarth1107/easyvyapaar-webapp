@@ -28,7 +28,7 @@ export function RegisterSidebar() {
   ];
 
   return (
-    <aside className="hidden w-[30%] min-w-[300px] max-w-[400px] flex-col justify-start bg-brand-surface px-8 py-12 lg:flex xl:px-10">
+    <aside className="hidden w-[30%] min-w-[300px] max-w-[440px] flex-col justify-start bg-brand-surface px-12 py-12 lg:flex lg:px-16 xl:px-20 2xl:px-24">
       <div className="w-full">
         <div className="flex items-center gap-2.5">
           <div className="flex h-10 shrink-0 items-center justify-center rounded-xs">

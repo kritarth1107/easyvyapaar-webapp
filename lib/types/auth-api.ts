@@ -28,6 +28,13 @@ export interface GetOtpSuccessResponse {
   data: GetOtpSuccessData;
 }
 
+export interface OrganisationSummary {
+  orgId: string;
+  name: string;
+  logo?: string;
+  userRole: string;
+}
+
 export interface VerifyOtpSuccessData {
   userId: string;
   mobile: string;
@@ -35,12 +42,8 @@ export interface VerifyOtpSuccessData {
   isMobileVerified: boolean;
   sessionToken: string;
   defaultOrganisationId?: string;
-  organisations?: Array<{
-    orgId: string;
-    name: string;
-    logo?: string;
-    userRole: string;
-  }>;
+  defaultOrganisation?: OrganisationSummary;
+  organisations: OrganisationSummary[];
 }
 
 export interface VerifyOtpSuccessResponse {

@@ -14,9 +14,14 @@ import {
   type TranslationKey,
 } from "@/lib/localization";
 import { ORGANISATION_TYPES, type OrganisationType } from "@/lib/constants/organisation-types";
+import { OrganisationSelectModal } from "@/components/auth/organisation-select-modal";
+import { completeAuthSessionOrganisation } from "@/lib/auth/complete-auth-session";
+import { setStoredActiveOrganisationId } from "@/lib/auth/active-organisation";
+import { DASHBOARD_PATH } from "@/lib/auth/session";
 import {
   AUTH_ERROR_MOBILE_ALREADY_REGISTERED,
   type CheckGstSuccessResponse,
+  type OrganisationSummary,
   type RegisterSuccessResponse,
   type VerifyOtpSuccessResponse,
   isApiErrorResponse,
@@ -104,11 +109,11 @@ function StepIndicator({ step, stepLabels }: StepIndicatorProps) {
 
   return (
     <nav
-      className="register-stepper mb-10 mt-8 overflow-visible sm:mt-10"
+      className="register-stepper mb-10 mt-8 overflow-visible px-1 sm:mt-10 sm:px-2"
       aria-label={`Registration progress, step ${displayStep} of ${steps.length}`}
     >
       <div className="w-max min-w-full">
-      <ol className="relative z-10 flex w-max flex-nowrap items-center">
+      <ol className="relative z-10 flex w-max flex-nowrap items-center gap-x-1 sm:gap-x-2">
         {steps.map((item, index) => {
           const active = item.id === displayStep;
           const done = item.id < displayStep;
@@ -116,7 +121,7 @@ function StepIndicator({ step, stepLabels }: StepIndicatorProps) {
 
           return (
             <li key={item.id} className="register-step-item flex shrink-0 items-center">
-              <div className="flex shrink-0 items-center gap-2 sm:gap-2.5">
+              <div className="flex shrink-0 items-center gap-2.5 px-0.5 sm:gap-3 sm:px-1">
                 <div
                   className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-all duration-300 ease-out ${
                     done
@@ -143,7 +148,7 @@ function StepIndicator({ step, stepLabels }: StepIndicatorProps) {
 
               {index < steps.length - 1 && (
                 <div
-                  className="register-step-connector mx-2 h-px w-5 shrink-0 overflow-hidden rounded-full bg-slate-200 sm:mx-2.5 sm:w-8 md:w-10"
+                  className="register-step-connector mx-3 h-px w-6 shrink-0 overflow-hidden rounded-full bg-slate-200 sm:mx-4 sm:w-10 md:mx-5 md:w-12"
                   aria-hidden
                 >
                   <div
@@ -188,6 +193,9 @@ export function RegisterForm({ initialMobile = "" }: RegisterFormProps) {
   const [mobileFieldError, setMobileFieldError] = useState<string | null>(null);
   const [mobileShake, setMobileShake] = useState(false);
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
+  const [orgModalOpen, setOrgModalOpen] = useState(false);
+  const [pendingOrganisations, setPendingOrganisations] = useState<OrganisationSummary[]>([]);
+  const [pendingDefaultOrgId, setPendingDefaultOrgId] = useState<string | undefined>();
 
   const [gstin, setGstin] = useState("");
   const [gstVerified, setGstVerified] = useState(false);
@@ -405,12 +413,23 @@ export function RegisterForm({ initialMobile = "" }: RegisterFormProps) {
       }
 
       const success = data as VerifyOtpSuccessResponse;
-      if (!success.success) {
+      if (!success.success || !success.data) {
         setError(t("register.otp.verifyFailed"));
         return;
       }
 
-      router.push("/dashboard?utm=new_registration");
+      const { needsSelection, organisations, defaultOrganisationId } =
+        completeAuthSessionOrganisation(success.data);
+
+      if (needsSelection) {
+        setPendingOrganisations(organisations);
+        setPendingDefaultOrgId(defaultOrganisationId);
+        setOrgModalOpen(true);
+        setLoading(false);
+        return;
+      }
+
+      router.push(`${DASHBOARD_PATH}?utm=new_registration`);
       router.refresh();
     } catch {
       setError(t("common.networkError"));
@@ -422,8 +441,26 @@ export function RegisterForm({ initialMobile = "" }: RegisterFormProps) {
   const fieldClass =
     "login-input-focus w-full rounded-xs border border-slate-300/90 bg-white px-4 py-3 text-base text-brand-primary placeholder:text-slate-400 outline-none transition-all disabled:cursor-not-allowed disabled:bg-slate-100";
 
+  function handleOrganisationSelect(organisationId: string) {
+    setStoredActiveOrganisationId(organisationId);
+    setOrgModalOpen(false);
+    router.push(`${DASHBOARD_PATH}?utm=new_registration`);
+    router.refresh();
+  }
+
   return (
-    <div className="flex min-h-screen flex-1 flex-col justify-start bg-white px-6 py-10 sm:px-10 lg:px-14 xl:px-20">
+    <>
+      <OrganisationSelectModal
+        open={orgModalOpen}
+        organisations={pendingOrganisations}
+        defaultOrganisationId={pendingDefaultOrgId}
+        primaryBadge={t("orgSelect.primaryBadge")}
+        title={t("orgSelect.loginTitle")}
+        subtitle={t("orgSelect.loginSubtitle")}
+        continueLabel={t("orgSelect.loginHint")}
+        onSelect={handleOrganisationSelect}
+      />
+    <div className="flex min-h-screen flex-1 flex-col justify-start bg-white px-8 py-10 sm:px-12 lg:px-16 xl:px-24 2xl:px-28">
       <div className="w-full max-w-lg overflow-visible">
         <div className="mb-8 flex items-center gap-2.5 lg:hidden">
           <Image
@@ -764,5 +801,6 @@ export function RegisterForm({ initialMobile = "" }: RegisterFormProps) {
         </p>
       </div>
     </div>
+    </>
   );
 }

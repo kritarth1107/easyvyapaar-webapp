@@ -254,6 +254,77 @@ body {
   }
 }
 
+/* Thin brand-blue scrollbars — hidden until hover or scroll */
+.scrollbar-brand {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.scrollbar-brand:hover,
+.scrollbar-brand.scrollbar-brand--active {
+  scrollbar-color: var(--brand-primary-light) transparent;
+}
+
+.scrollbar-brand::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.scrollbar-brand::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-brand::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 999px;
+  transition: background 0.2s ease;
+}
+
+.scrollbar-brand:hover::-webkit-scrollbar-thumb,
+.scrollbar-brand.scrollbar-brand--active::-webkit-scrollbar-thumb {
+  background: var(--brand-primary-light);
+}
+
+.scrollbar-brand:hover::-webkit-scrollbar-thumb:hover,
+.scrollbar-brand.scrollbar-brand--active::-webkit-scrollbar-thumb:hover {
+  background: var(--brand-primary);
+}
+
+.scrollbar-brand::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Scrollable but no visible scrollbar */
+.scrollbar-hidden {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+@keyframes dashboard-switch-progress {
+  0% {
+    width: 8%;
+    margin-left: 0;
+  }
+  50% {
+    width: 55%;
+    margin-left: 22%;
+  }
+  100% {
+    width: 8%;
+    margin-left: 92%;
+  }
+}
+
+.dashboard-switch-progress {
+  animation: dashboard-switch-progress 1.4s ease-in-out infinite;
+}
+
 .login-btn-primary {
   background: linear-gradient(135deg, var(--brand-orange-2) 0%, var(--brand-orange-1) 100%);
   color: #fff;
@@ -393,5 +464,11 @@ body {
 
   .register-field-shake {
     animation: none;
+  }
+
+  .dashboard-switch-progress {
+    animation: none;
+    width: 100%;
+    margin-left: 0;
   }
 }
