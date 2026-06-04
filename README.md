@@ -2,7 +2,7 @@
 
 **Easy Vyapaar** is a retail ERP platform for Indian shops—electronics, kirana, apparel, and general trade. Shop owners manage billing, inventory, GST-ready invoices, and daily operations from one dashboard.
 
-Easy Vyapaar is a product of **ZEROKNOW TECHNOLOGY PRIVATE LIMITED**.
+Easy Vyapaar is a product of **[ZEROKNOW TECHNOLOGY PRIVATE LIMITED](http://zeroknowtechnologies.com/)**.
 
 This repository is the **Next.js web application** (frontend + BFF API routes) for authentication, onboarding, and the authenticated app shell. It talks to the separate **Easy Vyapaar backend** for OTP, registration, and business data.
 
@@ -94,4 +94,4 @@ proxy.ts                       # Auth route middleware
 
 **Proprietary — All Rights Reserved.**
 
-This software is the private property of **ZEROKNOW TECHNOLOGY PRIVATE LIMITED** (Easy Vyapaar product). See [LICENSE](./LICENSE) for terms. Unauthorized copying, distribution, modification, or use is prohibited.
+This software is the private property of **[ZEROKNOW TECHNOLOGY PRIVATE LIMITED](http://zeroknowtechnologies.com/)** (Easy Vyapaar product). See [LICENSE](./LICENSE) for terms. Unauthorized copying, distribution, modification, or use is prohibited.
