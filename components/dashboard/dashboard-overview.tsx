@@ -107,7 +107,7 @@ export function DashboardOverview() {
               {t("dashboard.openPos")}
             </Link>
             <Link
-              href="/dashboard/invoices"
+              href="/dashboard/sales/invoices"
               className="inline-flex items-center rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/15"
             >
               {t("dashboard.newInvoice")}
@@ -144,7 +144,7 @@ export function DashboardOverview() {
           value={String(shopStats.lowStockCount)}
           hint={t("dashboard.lowStockHint")}
           accent="navy"
-          href="/dashboard/low-stock"
+          href="/dashboard/inventory/low-stock"
         />
       </section>
 
@@ -211,7 +211,7 @@ export function DashboardOverview() {
             {[
               { label: t("dashboard.actionPos"), href: "/dashboard/pos" },
               { label: t("dashboard.actionParty"), href: "/dashboard/parties" },
-              { label: t("dashboard.actionItem"), href: "/dashboard/items" },
+              { label: t("dashboard.actionItem"), href: "/dashboard/inventory/items" },
               { label: t("dashboard.actionPayment"), href: "/dashboard/payments" },
               { label: t("dashboard.actionPurchase"), href: "/dashboard/purchases" },
               { label: t("dashboard.actionExpense"), href: "/dashboard/expenses" },

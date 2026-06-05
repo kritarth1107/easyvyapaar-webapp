@@ -82,8 +82,12 @@ export function DashboardTopbar({
   onToggleSidebar,
 }: DashboardTopbarProps) {
   const pathname = usePathname();
-  const { getPageTitle, pos } = useDashboardNav();
+  const { getPageTitle, getInventoryBreadcrumb, getSalesBreadcrumb, salesInvoice, pos } =
+    useDashboardNav();
   const pageTitle = getPageTitle(pathname);
+  const inventoryCrumb = getInventoryBreadcrumb(pathname);
+  const salesCrumb = getSalesBreadcrumb(pathname);
+  const salesInvoiceActive = isNavActive(pathname, salesInvoice.href);
   const posActive = isNavActive(pathname, pos.href);
   const { t } = useTranslation();
   const { user } = useUserMe();
@@ -125,6 +129,28 @@ export function DashboardTopbar({
             </Link>
             {!isHome && (
               <>
+                {inventoryCrumb && (
+                  <>
+                    <span className="text-slate-300">/</span>
+                    <Link
+                      href="/dashboard/inventory/items"
+                      className="truncate transition-colors hover:text-brand-orange-2"
+                    >
+                      {inventoryCrumb}
+                    </Link>
+                  </>
+                )}
+                {salesCrumb && (
+                  <>
+                    <span className="text-slate-300">/</span>
+                    <Link
+                      href="/dashboard/sales/invoices"
+                      className="truncate transition-colors hover:text-brand-orange-2"
+                    >
+                      {salesCrumb}
+                    </Link>
+                  </>
+                )}
                 <span className="text-slate-300">/</span>
                 <span className="truncate text-brand-primary">{pageTitle}</span>
               </>
@@ -155,8 +181,20 @@ export function DashboardTopbar({
         </label>
       </div>
 
-      {/* Right — POS, alerts, user */}
+      {/* Right — Sales Invoice, POS, alerts, user */}
       <div className="ml-auto flex shrink-0 items-center gap-2">
+        <Link
+          href={salesInvoice.href}
+          className={`inline-flex h-10 items-center gap-2 rounded-xl bg-gradient-to-r from-brand-primary to-brand-primary-light px-3 text-sm font-semibold text-white shadow-[0_2px_10px_-4px_rgba(3,31,73,0.45)] transition-all hover:brightness-105 sm:px-4 ${
+            salesInvoiceActive ? "ring-2 ring-brand-primary/30 ring-offset-1" : ""
+          }`}
+        >
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/20">
+            <NavIcon id="document" className="h-4 w-4" />
+          </span>
+          <span className="hidden sm:inline">{salesInvoice.label}</span>
+        </Link>
+
         <Link
           href={pos.href}
           className={`inline-flex h-10 items-center gap-2 rounded-xl bg-gradient-to-r from-brand-orange-2 to-brand-orange-1 px-3 text-sm font-semibold text-white shadow-[0_2px_10px_-4px_rgba(246,62,22,0.45)] transition-all hover:brightness-105 sm:px-4 ${

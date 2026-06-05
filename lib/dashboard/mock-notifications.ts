@@ -18,7 +18,7 @@ export const DASHBOARD_NOTIFICATIONS: DashboardNotification[] = [
     titleKey: "dashboard.notificationFeed.lowStockTitle",
     messageKey: "dashboard.notificationFeed.lowStockMessage",
     timeKey: "dashboard.notificationFeed.lowStockTime",
-    href: "/dashboard/low-stock",
+    href: "/dashboard/inventory/low-stock",
   },
   {
     id: "overdue",

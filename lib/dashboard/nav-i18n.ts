@@ -9,6 +9,7 @@ const NAV_ITEM_KEYS: Record<string, TranslationKey> = {
   "ai-chat": "dashboard.nav.aiChat",
   "whatsapp-integration": "dashboard.nav.whatsappIntegration",
   pos: "dashboard.nav.pos",
+  "sales-invoice": "dashboard.nav.salesInvoice",
   invoices: "dashboard.nav.invoices",
   quotations: "dashboard.nav.quotations",
   "delivery-challan": "dashboard.nav.deliveryChallan",

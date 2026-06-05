@@ -1,6 +1,6 @@
-import type { DashboardNavGroup, DashboardNavLink } from "./navigation-types";
+import type { DashboardNavGroup, DashboardNavLink } from "./navigation-types.ts";
 
-export type { DashboardNavGroup, DashboardNavIconId, DashboardNavLink } from "./navigation-types";
+export type { DashboardNavGroup, DashboardNavIconId, DashboardNavLink } from "./navigation-types.ts";
 
 /** Navigation structure — labels come from i18n via useDashboardNav */
 export const DASHBOARD_NAV_TOP: Omit<DashboardNavLink, "label">[] = [
@@ -12,6 +12,13 @@ export const DASHBOARD_NAV_TOP: Omit<DashboardNavLink, "label">[] = [
     accent: "ai",
   },
 ];
+
+export const DASHBOARD_NAV_SALES_INVOICE: Omit<DashboardNavLink, "label"> = {
+  id: "sales-invoice",
+  href: "/dashboard/sales/invoices/new",
+  icon: "document",
+  highlight: true,
+};
 
 export const DASHBOARD_NAV_POS: Omit<DashboardNavLink, "label"> = {
   id: "pos",
@@ -30,11 +37,11 @@ export const DASHBOARD_NAV_GROUPS: NavGroupConfig[] = [
     icon: "sales",
     defaultOpen: true,
     items: [
-      { id: "invoices", href: "/dashboard/invoices", icon: "document" },
-      { id: "quotations", href: "/dashboard/quotations", icon: "document" },
-      { id: "delivery-challan", href: "/dashboard/delivery-challan", icon: "document" },
-      { id: "credit-notes", href: "/dashboard/credit-notes", icon: "document" },
-      { id: "sales-returns", href: "/dashboard/sales-returns", icon: "sales" },
+      { id: "invoices", href: "/dashboard/sales/invoices", icon: "document" },
+      { id: "quotations", href: "/dashboard/sales/quotations", icon: "document" },
+      { id: "delivery-challan", href: "/dashboard/sales/delivery-challan", icon: "document" },
+      { id: "credit-notes", href: "/dashboard/sales/credit-notes", icon: "document" },
+      { id: "sales-returns", href: "/dashboard/sales/sales-returns", icon: "sales" },
     ],
   },
   {
@@ -42,20 +49,21 @@ export const DASHBOARD_NAV_GROUPS: NavGroupConfig[] = [
     icon: "parties",
     items: [
       { id: "parties", href: "/dashboard/parties", icon: "parties" },
-      { id: "customers", href: "/dashboard/customers", icon: "users" },
-      { id: "suppliers", href: "/dashboard/suppliers", icon: "users" },
-      { id: "outstanding", href: "/dashboard/outstanding", icon: "wallet" },
+      { id: "customers", href: "/dashboard/parties/customers", icon: "users" },
+      { id: "suppliers", href: "/dashboard/parties/suppliers", icon: "users" },
+      { id: "outstanding", href: "/dashboard/parties/outstanding", icon: "wallet" },
     ],
   },
   {
     id: "inventory",
     icon: "inventory",
+    defaultOpen: true,
     items: [
-      { id: "items", href: "/dashboard/items", icon: "inventory" },
-      { id: "stock", href: "/dashboard/stock", icon: "warehouse" },
-      { id: "serial-tracking", href: "/dashboard/serial-tracking", icon: "inventory" },
+      { id: "items", href: "/dashboard/inventory/items", icon: "inventory" },
+      { id: "stock", href: "/dashboard/inventory/stock-summary", icon: "warehouse" },
+      { id: "low-stock", href: "/dashboard/inventory/low-stock", icon: "inventory" },
+      { id: "serial-tracking", href: "/dashboard/inventory/serial-tracking", icon: "inventory" },
       { id: "godowns", href: "/dashboard/godowns", icon: "warehouse" },
-      { id: "low-stock", href: "/dashboard/low-stock", icon: "inventory" },
     ],
   },
   {
@@ -63,44 +71,44 @@ export const DASHBOARD_NAV_GROUPS: NavGroupConfig[] = [
     icon: "purchases",
     items: [
       { id: "purchases", href: "/dashboard/purchases", icon: "purchases" },
-      { id: "purchase-orders", href: "/dashboard/purchase-orders", icon: "document" },
-      { id: "purchase-returns", href: "/dashboard/purchase-returns", icon: "purchases" },
+      { id: "purchase-orders", href: "/dashboard/purchases/purchase-orders", icon: "document" },
+      { id: "purchase-returns", href: "/dashboard/purchases/purchase-returns", icon: "purchases" },
     ],
   },
   {
     id: "finance",
     icon: "payments",
     items: [
-      { id: "payments", href: "/dashboard/payments", icon: "payments" },
-      { id: "cash-bank", href: "/dashboard/cash-bank", icon: "wallet" },
-      { id: "expenses", href: "/dashboard/expenses", icon: "expenses" },
-      { id: "daybook", href: "/dashboard/daybook", icon: "document" },
+      { id: "payments", href: "/dashboard/finance/payments", icon: "payments" },
+      { id: "cash-bank", href: "/dashboard/finance/cash-bank", icon: "wallet" },
+      { id: "expenses", href: "/dashboard/finance/expenses", icon: "expenses" },
+      { id: "daybook", href: "/dashboard/finance/daybook", icon: "document" },
     ],
   },
   {
     id: "reports",
     icon: "reports",
     items: [
-      { id: "gst-reports", href: "/dashboard/gst-reports", icon: "reports" },
-      { id: "financial-reports", href: "/dashboard/financial-reports", icon: "chart" },
-      { id: "inventory-reports", href: "/dashboard/inventory-reports", icon: "warehouse" },
-      { id: "party-reports", href: "/dashboard/party-reports", icon: "parties" },
+      { id: "gst-reports", href: "/dashboard/reports/gst-reports", icon: "reports" },
+      { id: "financial-reports", href: "/dashboard/reports/financial-reports", icon: "chart" },
+      { id: "inventory-reports", href: "/dashboard/reports/inventory-reports", icon: "warehouse" },
+      { id: "party-reports", href: "/dashboard/reports/party-reports", icon: "parties" },
     ],
   },
 ];
 
 export const DASHBOARD_NAV_BOTTOM: Omit<DashboardNavLink, "label">[] = [
   { id: "staff", href: "/dashboard/staff", icon: "staff" },
-  { id: "whatsapp-integration", href: "/dashboard/whatsapp-integration", icon: "whatsapp" },
+  { id: "whatsapp-integration", href: "/dashboard/integrations/whatsapp-integration", icon: "whatsapp" },
 ];
 
 export const DASHBOARD_SETTINGS_GROUP: NavGroupConfig = {
   id: "settings",
   icon: "settings",
   items: [
-    { id: "business-profile", href: "/dashboard/business-profile", icon: "settings" },
-    { id: "invoice-themes", href: "/dashboard/invoice-themes", icon: "document" },
-    { id: "print-settings", href: "/dashboard/print-settings", icon: "settings" },
-    { id: "settings", href: "/dashboard/settings", icon: "settings" },
+    { id: "business-profile", href: "/dashboard/settings/business-profile", icon: "settings" },
+    { id: "invoice-themes", href: "/dashboard/sales/invoices/settings", icon: "document" },
+    { id: "print-settings", href: "/dashboard/settings/print-settings", icon: "settings" },
+    { id: "settings", href: "/dashboard/settings/settings", icon: "settings" },
   ],
 };

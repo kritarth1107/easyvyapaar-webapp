@@ -1,5 +1,7 @@
 export { DashboardShell } from "./dashboard-shell";
 export { DashboardOverview } from "./dashboard-overview";
+export { InventoryPage } from "./inventory/inventory-page";
+export { CreateItemModal } from "./inventory/create-item-modal";
 export { ShopSwitchOverlay } from "./shop-switch-overlay";
 export { useUserMe } from "@/components/providers/user-me-provider";
 export { DashboardSidebar } from "./dashboard-sidebar";

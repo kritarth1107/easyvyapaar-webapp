@@ -241,7 +241,7 @@ export function NotificationsPopover() {
 
           <div className="border-t border-slate-100 bg-brand-surface/40 px-4 py-2.5">
             <Link
-              href="/dashboard/low-stock"
+              href="/dashboard/inventory/low-stock"
               onClick={close}
               className="block text-center text-xs font-semibold text-brand-orange-2 transition-colors hover:text-brand-orange-1 hover:underline"
             >

@@ -2,6 +2,7 @@ import {
   DASHBOARD_NAV_BOTTOM,
   DASHBOARD_NAV_GROUPS,
   DASHBOARD_NAV_POS,
+  DASHBOARD_NAV_SALES_INVOICE,
   DASHBOARD_NAV_TOP,
   DASHBOARD_SETTINGS_GROUP,
 } from "./nav-config";
@@ -37,6 +38,10 @@ function withEnglishLabel<T extends { id: string }>(
 /** English labels for server/static use (e.g. section validation) */
 export function flattenDashboardNavLinks(): DashboardNavLink[] {
   const top = DASHBOARD_NAV_TOP.map((item) => withEnglishLabel(item, "item"));
+  const salesInvoice = {
+    ...withEnglishLabel(DASHBOARD_NAV_SALES_INVOICE, "item"),
+    highlight: true,
+  };
   const pos = { ...withEnglishLabel(DASHBOARD_NAV_POS, "item"), highlight: true };
   const groups = DASHBOARD_NAV_GROUPS.map((group) => ({
     ...withEnglishLabel(group, "group"),
@@ -53,6 +58,7 @@ export function flattenDashboardNavLinks(): DashboardNavLink[] {
 
   return [
     ...top,
+    salesInvoice,
     pos,
     ...groups.flatMap((g) => g.items),
     ...bottom,
@@ -67,7 +73,9 @@ export function getAllDashboardSectionSlugs(): string[] {
 }
 
 export function getDashboardPageTitle(pathname: string): string {
-  const link = flattenDashboardNavLinks().find((item) => isNavActive(pathname, item.href));
+  const link = flattenDashboardNavLinks()
+    .filter((item) => isNavActive(pathname, item.href))
+    .sort((a, b) => b.href.length - a.href.length)[0];
   if (link) return link.label;
   return labelFromKey("home", "item");
 }

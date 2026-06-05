@@ -7,6 +7,7 @@ import {
   DASHBOARD_NAV_BOTTOM,
   DASHBOARD_NAV_GROUPS,
   DASHBOARD_NAV_POS,
+  DASHBOARD_NAV_SALES_INVOICE,
   DASHBOARD_NAV_TOP,
   DASHBOARD_SETTINGS_GROUP,
 } from "./nav-config";
@@ -35,6 +36,11 @@ export function useDashboardNav() {
       withLabel(item, "item", t)
     );
 
+    const salesInvoice: DashboardNavLink = {
+      ...withLabel(DASHBOARD_NAV_SALES_INVOICE, "item", t),
+      highlight: true,
+    };
+
     const pos: DashboardNavLink = {
       ...withLabel(DASHBOARD_NAV_POS, "item", t),
       highlight: true,
@@ -57,12 +63,13 @@ export function useDashboardNav() {
       items: DASHBOARD_SETTINGS_GROUP.items.map((item) => withLabel(item, "item", t)),
     };
 
-    return { top, pos, groups, bottom, settingsGroup };
+    return { top, salesInvoice, pos, groups, bottom, settingsGroup };
   }, [t]);
 
   const flattenLinks = useMemo(
     () => [
       ...nav.top,
+      nav.salesInvoice,
       nav.pos,
       ...nav.groups.flatMap((g) => g.items),
       ...nav.bottom,
@@ -72,12 +79,24 @@ export function useDashboardNav() {
   );
 
   const getPageTitle = (pathname: string) => {
-    const link = flattenLinks.find((item) => isNavActive(pathname, item.href));
+    const link = flattenLinks
+      .filter((item) => isNavActive(pathname, item.href))
+      .sort((a, b) => b.href.length - a.href.length)[0];
     if (link) return link.label;
     return t("dashboard.nav.home");
   };
 
-  return { ...nav, flattenLinks, getPageTitle };
+  const getInventoryBreadcrumb = (pathname: string) => {
+    if (!pathname.startsWith("/dashboard/inventory/")) return null;
+    return t("dashboard.nav.group.inventory");
+  };
+
+  const getSalesBreadcrumb = (pathname: string) => {
+    if (!pathname.startsWith("/dashboard/sales/")) return null;
+    return t("dashboard.nav.group.sales");
+  };
+
+  return { ...nav, flattenLinks, getPageTitle, getInventoryBreadcrumb, getSalesBreadcrumb };
 }
 
 export { getDashboardSectionSlug, isNavActive, getGroupActive } from "./navigation-utils";
