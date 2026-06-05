@@ -1,5 +1,10 @@
 "use client";
 
+import {
+  formatInvoiceDateTime,
+  InvoiceAuthorSignature,
+  InvoiceReceiverSignature,
+} from "@/components/dashboard/sales/invoice-preview-shared";
 import { getHeaderTextColor } from "@/lib/sales/invoice-settings-config";
 import {
   A5_MIN_HEIGHT,
@@ -24,9 +29,11 @@ export function InvoicePreviewGstAdvanceA5({
   showPartyBalance,
   showPhoneOnInvoice,
   showItemDescription,
+  showTimeOnInvoice,
+  enableReceiverSignature,
+  signatureImageUrl,
 }: InvoicePreviewProps) {
   const displayName = businessName.toUpperCase() || "MAYANK ELECTRONICS";
-  const signInitial = displayName.charAt(0) || "M";
   const headerTextColor = getHeaderTextColor(accentHex);
 
   const headerCell = (extra = "") =>
@@ -95,7 +102,7 @@ export function InvoicePreviewGstAdvanceA5({
               {(
                 [
                   { label: "Invoice No.", value: "AABBCCDD/202" },
-                  { label: "Invoice Date", value: "17/01/2023" },
+                  { label: "Invoice Date", value: formatInvoiceDateTime(showTimeOnInvoice) },
                   { label: "Due Date", value: "16/02/2023" },
                 ] as const
               ).map((field, i) => (
@@ -258,6 +265,7 @@ export function InvoicePreviewGstAdvanceA5({
           <div className="border-b border-black px-[6px] py-[4px]" style={{ fontSize: "10px" }}>
             <span style={{ fontWeight: 700 }}>Notes: </span>
             Sample Note
+            <InvoiceReceiverSignature enabled={enableReceiverSignature} fontSize={10} />
           </div>
 
           {/* Footer */}
@@ -271,20 +279,16 @@ export function InvoicePreviewGstAdvanceA5({
               </p>
             </div>
             <div
-              className="flex flex-col items-center justify-end p-[6px] text-center"
+              className="flex flex-col items-center justify-end p-[6px]"
               style={{ width: 148 }}
             >
-              <p
-                className="font-serif italic text-[#999]"
-                style={{ fontSize: 28, fontWeight: 700, lineHeight: 1 }}
-              >
-                {signInitial}
-              </p>
-              <p style={{ fontSize: "9px", marginTop: 6, lineHeight: 1.3 }}>
-                Authorised Signatory For
-                <br />
-                {displayName}
-              </p>
+              <InvoiceAuthorSignature
+                businessName={businessName}
+                signatureImageUrl={signatureImageUrl}
+                captionFontSize={9}
+                nameFontSize={11}
+                imageMaxHeight={40}
+              />
             </div>
           </div>
         </div>

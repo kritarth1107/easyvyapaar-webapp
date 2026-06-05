@@ -1,5 +1,10 @@
 "use client";
 
+import {
+  formatInvoiceDateTime,
+  InvoiceAuthorSignature,
+  InvoiceReceiverSignature,
+} from "@/components/dashboard/sales/invoice-preview-shared";
 import { getHeaderTextColor } from "@/lib/sales/invoice-settings-config";
 import {
   A4_MIN_HEIGHT,
@@ -21,38 +26,17 @@ const MODERN_COL = {
   amount: "11%",
 } as const;
 
-function SignatureMark({ initial }: { initial: string }) {
-  return (
-    <svg viewBox="0 0 80 40" className="mx-auto h-10 w-20 text-slate-700" aria-hidden>
-      <path
-        d="M8 28 C18 8, 32 8, 38 22 C42 32, 48 34, 58 20 C64 12, 70 14, 72 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.2"
-        strokeLinecap="round"
-      />
-      <text
-        x="40"
-        y="36"
-        textAnchor="middle"
-        className="fill-current font-serif italic"
-        style={{ fontSize: 11 }}
-      >
-        {initial}
-      </text>
-    </svg>
-  );
-}
-
 export function InvoicePreviewModern({
   businessName,
   accentHex,
   showPartyBalance,
   showPhoneOnInvoice,
   showItemDescription,
+  showTimeOnInvoice,
+  enableReceiverSignature,
+  signatureImageUrl,
 }: InvoicePreviewProps) {
   const displayName = businessName.toUpperCase() || "MAYANK ELECTRONICS";
-  const signInitial = displayName.charAt(0) || "M";
   const headerTextColor = getHeaderTextColor(accentHex);
 
   const barStyle = {
@@ -127,7 +111,7 @@ export function InvoicePreviewModern({
             </div>
             <div className="mt-4 space-y-1 text-left">
               {metaRow("Invoice No.", "AABBCCDD/202")}
-              {metaRow("Invoice Date", "17/01/2023")}
+              {metaRow("Invoice Date", formatInvoiceDateTime(showTimeOnInvoice))}
               {metaRow("Due Date", "16/02/2023")}
             </div>
             <p
@@ -239,6 +223,7 @@ export function InvoicePreviewModern({
           <div className="min-w-0 flex-1">
             <p style={{ fontSize: "11px", fontWeight: 700 }}>Notes</p>
             <p style={{ fontSize: "11px", marginTop: 4, color: "#333" }}>Sample Note</p>
+            <InvoiceReceiverSignature enabled={enableReceiverSignature} fontSize={11} />
             <p style={{ fontSize: "11px", fontWeight: 700, marginTop: 16 }}>Terms and Conditions</p>
             <p
               style={{ fontSize: "9px", marginTop: 4, lineHeight: 1.5, color: "#444" }}
@@ -297,13 +282,14 @@ export function InvoicePreviewModern({
               Nine Thousand Five Hundred Ninety Six Rupees and Fifty Paise
             </p>
 
-            <div className="mt-8 text-center">
-              <SignatureMark initial={signInitial} />
-              <p style={{ fontSize: "10px", marginTop: 6, fontWeight: 700, lineHeight: 1.35 }}>
-                Authorised Signature for
-                <br />
-                {displayName}
-              </p>
+            <div className="mt-8">
+              <InvoiceAuthorSignature
+                businessName={businessName}
+                signatureImageUrl={signatureImageUrl}
+                label="Authorised Signature for"
+                captionFontSize={10}
+                nameFontSize={13}
+              />
             </div>
           </div>
         </div>

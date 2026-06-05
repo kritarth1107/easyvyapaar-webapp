@@ -161,4 +161,7 @@ export type InvoicePreviewProps = {
   showPartyBalance: boolean;
   showPhoneOnInvoice: boolean;
   showItemDescription: boolean;
+  showTimeOnInvoice: boolean;
+  enableReceiverSignature: boolean;
+  signatureImageUrl: string | null;
 };

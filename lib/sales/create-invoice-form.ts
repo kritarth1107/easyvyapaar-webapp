@@ -227,6 +227,6 @@ export const INVOICE_THEMES = [
   { value: "gst-advance-a5", label: "GST Advance (A5)" },
   { value: "billbook-a4", label: "Billbook A4" },
   { value: "billbook-a5", label: "Billbook (A5)" },
-  { value: "classic", label: "Classic" },
   { value: "modern", label: "Modern" },
+  { value: "simple", label: "Simple" },
 ];

@@ -203,7 +203,7 @@ export function UserAccountMenu({ onOpenSwitchBusiness }: UserAccountMenuProps) 
             </Link>
 
             <Link
-              href="/dashboard/business-profile"
+              href="/dashboard/settings/business-profile"
               role="menuitem"
               className={menuItemClass}
               onClick={close}

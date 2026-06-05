@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { InvoiceSettingsPreview } from "@/components/dashboard/sales/invoice-settings-preview";
+import { InvoiceSignatureInput } from "@/components/dashboard/sales/invoice-signature-input";
 import { ModernSelect } from "@/components/ui/modern-select";
 import { useUserMe } from "@/components/providers/user-me-provider";
 import {
@@ -160,9 +161,9 @@ export function InvoiceSettingsPage() {
         </button>
       </div>
 
-      <div className="flex flex-1 flex-col lg:flex-row">
-        {/* Preview */}
-        <div className="flex-1 overflow-y-auto p-4 scrollbar-brand lg:p-6">
+      <div className="flex flex-col lg:flex-row lg:items-start">
+        {/* Preview — centered in available space */}
+        <div className="min-w-0 flex-1 p-4 lg:p-6">
           <InvoiceSettingsPreview
             themeId={settings.themeId}
             businessName={businessName}
@@ -171,47 +172,23 @@ export function InvoiceSettingsPage() {
             showPartyBalance={settings.showPartyBalance}
             showPhoneOnInvoice={settings.showPhoneOnInvoice}
             showItemDescription={settings.showItemDescription}
+            showTimeOnInvoice={settings.showTimeOnInvoice}
+            enableReceiverSignature={settings.enableReceiverSignature}
+            signatureImageUrl={settings.signatureDataUrl}
           />
         </div>
 
         {/* Settings panel */}
-        <div className="w-full shrink-0 border-t border-slate-200/90 bg-white lg:w-[400px] lg:border-l lg:border-t-0">
-          <div className="max-h-[calc(100vh-4rem)] overflow-y-auto px-4 py-4 scrollbar-brand lg:px-5">
-            {/* Theme mode */}
+        <div className="w-full shrink-0 border-t border-slate-200/90 bg-white lg:w-[400px] lg:shrink-0 lg:border-l lg:border-t-0">
+          <div className="px-4 py-4 lg:px-5">
+            {/* Themes */}
             <div className="space-y-4 border-b border-slate-200/90 pb-4">
-              <div className="flex flex-col gap-2.5">
-                <label className="flex cursor-pointer items-center gap-2">
-                  <input
-                    type="radio"
-                    name="settings-mode"
-                    checked={settings.mode === "themes"}
-                    onChange={() => patch({ mode: "themes" })}
-                    className="accent-brand-primary"
-                  />
-                  <span className="text-sm font-semibold text-brand-primary">
-                    {t("dashboard.invoiceSettings.themes")}
-                  </span>
-                </label>
-                <label className="flex cursor-pointer items-center gap-2">
-                  <input
-                    type="radio"
-                    name="settings-mode"
-                    checked={settings.mode === "custom"}
-                    onChange={() => patch({ mode: "custom" })}
-                    className="accent-brand-primary"
-                  />
-                  <span className="text-sm font-semibold text-brand-primary">
-                    {t("dashboard.invoiceSettings.createCustomTheme")}
-                  </span>
-                </label>
-              </div>
-
-              <p className="text-xs leading-relaxed text-brand-primary-muted">
-                {settings.mode === "themes"
-                  ? t("dashboard.invoiceSettings.selectPrebuiltTheme")
-                  : t("dashboard.invoiceSettings.customThemeHint")}
+              <p className="text-sm font-semibold text-brand-primary">
+                {t("dashboard.invoiceSettings.themes")}
               </p>
-
+              <p className="text-xs leading-relaxed text-brand-primary-muted">
+                {t("dashboard.invoiceSettings.selectPrebuiltTheme")}
+              </p>
               <div className="grid grid-cols-3 gap-2">
                 {INVOICE_THEME_CARDS.map((theme) => {
                   const selected = settings.themeId === theme.id;
@@ -239,15 +216,10 @@ export function InvoiceSettingsPage() {
               </div>
             </div>
 
-            {/* Color — custom mode customization */}
+            {/* Color */}
             <div className="border-b border-slate-200/90 py-4">
-              <p className="mb-3 flex items-center gap-2 text-sm font-semibold text-brand-primary">
+              <p className="mb-3 text-sm font-semibold text-brand-primary">
                 {t("dashboard.invoiceSettings.selectColor")}
-                {settings.mode === "custom" && (
-                  <span className="rounded-sm bg-brand-orange-1/10 px-1.5 py-0.5 text-[10px] font-bold uppercase text-brand-orange-2">
-                    {t("dashboard.invoiceSettings.customBadge")}
-                  </span>
-                )}
               </p>
               <div className="flex flex-wrap gap-2">
                 {THEME_COLOR_SWATCHES.map((color) => {
@@ -328,9 +300,9 @@ export function InvoiceSettingsPage() {
                 hint
               />
               <CheckRow
-                checked={settings.autoApplyLuxuryShare}
-                onChange={(v) => patch({ autoApplyLuxuryShare: v })}
-                label={t("dashboard.invoiceSettings.autoLuxuryShare")}
+                checked={settings.enableReceiverSignature}
+                onChange={(v) => patch({ enableReceiverSignature: v })}
+                label={t("dashboard.invoiceSettings.receiverSignature")}
               />
             </div>
 
@@ -489,30 +461,11 @@ export function InvoiceSettingsPage() {
               <label className="mb-1 mt-4 block text-xs font-medium text-brand-primary-muted">
                 {t("dashboard.invoiceSettings.signature")}
               </label>
-              <ModernSelect
-                value={settings.signatureSource}
-                onChange={(v) => patch({ signatureSource: v })}
-                options={[
-                  { value: "desktop", label: t("dashboard.invoiceSettings.uploadDesktop") },
-                  { value: "draw", label: t("dashboard.invoiceSettings.drawSignature") },
-                ]}
-              />
-              <div className="mt-2 flex items-center gap-2 rounded-md border border-slate-200/90 bg-slate-50/60 px-3 py-2">
-                <span className="flex h-8 w-8 items-center justify-center rounded-sm bg-white text-xs text-brand-primary-muted">
-                  ✒
-                </span>
-                <span className="flex-1 text-sm text-brand-primary">{t("dashboard.invoiceSettings.signature")}</span>
-                <button type="button" className="text-brand-primary-muted hover:text-red-600">
-                  ×
-                </button>
-              </div>
-              <p className="mt-1 text-[11px] text-brand-primary-muted">
-                {t("dashboard.invoiceSettings.signatureHint")}
-              </p>
-              <CheckRow
-                checked={settings.enableReceiverSignature}
-                onChange={(v) => patch({ enableReceiverSignature: v })}
-                label={t("dashboard.invoiceSettings.receiverSignature")}
+              <InvoiceSignatureInput
+                source={settings.signatureSource}
+                dataUrl={settings.signatureDataUrl}
+                onSourceChange={(source) => patch({ signatureSource: source })}
+                onDataUrlChange={(signatureDataUrl) => patch({ signatureDataUrl })}
               />
             </SettingsAccordion>
           </div>

@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { getApiBaseUrl, parseBackendBody } from "@/lib/api/backend";
 import { getHeadersFromRequest } from "@/lib/header-utils";
 import {
+  INDUSTRY_TYPES,
+  type IndustryType,
+} from "@/lib/constants/industry-types";
+import {
   ORGANISATION_TYPES,
   type OrganisationType,
 } from "@/lib/constants/organisation-types";
@@ -31,6 +35,7 @@ export async function POST(request: Request) {
       userName?: unknown;
       organisationName?: unknown;
       organisationType?: unknown;
+      industryType?: unknown;
       gstin?: unknown;
       preferredLanguage?: unknown;
     };
@@ -65,6 +70,14 @@ export async function POST(request: Request) {
     if (!ORGANISATION_TYPES.includes(organisationType)) {
       return NextResponse.json(
         { error: "Select a valid organisation type" },
+        { status: 400 }
+      );
+    }
+
+    const industryType = payload.industryType as IndustryType;
+    if (!INDUSTRY_TYPES.includes(industryType)) {
+      return NextResponse.json(
+        { error: "Select a valid industry type" },
         { status: 400 }
       );
     }
@@ -106,6 +119,7 @@ export async function POST(request: Request) {
           userName,
           organisationName,
           organisationType,
+          industryType,
           preferredLanguage,
           ...(gstin && { gstin }),
         }),

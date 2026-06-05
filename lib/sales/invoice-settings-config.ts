@@ -1,16 +1,12 @@
+import { INDUSTRY_TYPE_OPTIONS } from "@/lib/constants/industry-types";
+
 export type InvoiceThemeId =
   | "gst-advance-a4"
   | "gst-advance-a5"
   | "billbook-a4"
   | "billbook-a5"
-  | "luxury"
-  | "stylish"
   | "modern"
-  | "simple"
-  | "classic"
-  | "bold"
-  | "compact"
-  | "retail";
+  | "simple";
 
 export type ThemeColorId =
   | "sky"
@@ -27,14 +23,8 @@ export const INVOICE_THEME_CARDS: { id: InvoiceThemeId; label: string }[] = [
   { id: "gst-advance-a5", label: "GST Advance (A5)" },
   { id: "billbook-a4", label: "Billbook A4" },
   { id: "billbook-a5", label: "Billbook (A5)" },
-  { id: "luxury", label: "Luxury" },
-  { id: "stylish", label: "Stylish" },
   { id: "modern", label: "Modern" },
   { id: "simple", label: "Simple" },
-  { id: "classic", label: "Classic" },
-  { id: "bold", label: "Bold" },
-  { id: "compact", label: "Compact" },
-  { id: "retail", label: "Retail" },
 ];
 
 export const THEME_COLOR_SWATCHES: { id: ThemeColorId; hex: string; label: string }[] = [
@@ -60,13 +50,7 @@ const LEGACY_ACCENT_COLOR_MAP: Record<string, ThemeColorId> = {
   brown: "peach",
 };
 
-export const INDUSTRY_TYPES = [
-  { value: "mobile", label: "Mobile and accessories" },
-  { value: "kirana", label: "Kirana / General store" },
-  { value: "electronics", label: "Electronics & appliances" },
-  { value: "garments", label: "Garments & textiles" },
-  { value: "hardware", label: "Hardware & building" },
-];
+export const INDUSTRY_TYPES = INDUSTRY_TYPE_OPTIONS;
 
 export const PAYMENT_QR_OPTIONS = [
   { value: "", label: "Select Payment QR" },
@@ -81,7 +65,6 @@ export const TERMS_PRESETS = [
 ];
 
 export type FullInvoiceSettings = {
-  mode: "themes" | "custom";
   themeId: InvoiceThemeId;
   accentColor: ThemeColorId;
   showPartyBalance: boolean;
@@ -91,7 +74,6 @@ export type FullInvoiceSettings = {
   showPhoneOnInvoice: boolean;
   showTimeOnInvoice: boolean;
   priceHistory: boolean;
-  autoApplyLuxuryShare: boolean;
   industryType: string;
   showPoNumber: boolean;
   showEwayBill: boolean;
@@ -107,12 +89,12 @@ export type FullInvoiceSettings = {
   paymentQr: string;
   termsPreset: string;
   termsText: string;
-  signatureSource: string;
+  signatureSource: "desktop" | "draw";
+  signatureDataUrl: string | null;
   enableReceiverSignature: boolean;
 };
 
 export const DEFAULT_FULL_INVOICE_SETTINGS: FullInvoiceSettings = {
-  mode: "themes",
   themeId: "gst-advance-a4",
   accentColor: "grey",
   showPartyBalance: true,
@@ -122,8 +104,7 @@ export const DEFAULT_FULL_INVOICE_SETTINGS: FullInvoiceSettings = {
   showPhoneOnInvoice: true,
   showTimeOnInvoice: false,
   priceHistory: false,
-  autoApplyLuxuryShare: true,
-  industryType: "mobile",
+  industryType: "MOBILE_ACCESSORIES",
   showPoNumber: false,
   showEwayBill: false,
   showVehicleNumber: false,
@@ -139,11 +120,18 @@ export const DEFAULT_FULL_INVOICE_SETTINGS: FullInvoiceSettings = {
   termsPreset: "sales",
   termsText: "",
   signatureSource: "desktop",
+  signatureDataUrl: null,
   enableReceiverSignature: false,
 };
 
 const LEGACY_THEME_ID_MAP: Record<string, InvoiceThemeId> = {
   "advanced-gst": "gst-advance-a4",
+  luxury: "modern",
+  stylish: "modern",
+  classic: "simple",
+  bold: "simple",
+  compact: "billbook-a5",
+  retail: "billbook-a4",
 };
 
 export function normalizeThemeId(themeId: string): InvoiceThemeId {

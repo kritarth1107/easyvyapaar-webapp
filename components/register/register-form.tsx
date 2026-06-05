@@ -13,7 +13,12 @@ import {
   type LocaleCode,
   type TranslationKey,
 } from "@/lib/localization";
+import {
+  INDUSTRY_TYPE_OPTIONS,
+  type IndustryType,
+} from "@/lib/constants/industry-types";
 import { ORGANISATION_TYPES, type OrganisationType } from "@/lib/constants/organisation-types";
+import { ModernSelect } from "@/components/ui/modern-select";
 import { OrganisationSelectModal } from "@/components/auth/organisation-select-modal";
 import { completeAuthSessionOrganisation } from "@/lib/auth/complete-auth-session";
 import { setStoredActiveOrganisationId } from "@/lib/auth/active-organisation";
@@ -204,10 +209,20 @@ export function RegisterForm({ initialMobile = "" }: RegisterFormProps) {
   const [contactName, setContactName] = useState("");
   const [tradeName, setTradeName] = useState("");
   const [organisationType, setOrganisationType] = useState<OrganisationType | "">("");
+  const [industryType, setIndustryType] = useState<IndustryType | "">("");
   const [mobile, setMobile] = useState(normalizeIndianMobileInput(initialMobile));
 
   const [verificationToken, setVerificationToken] = useState("");
   const [otpDigits, setOtpDigits] = useState<string[]>(Array(6).fill(""));
+
+  const organisationTypeOptions = useMemo(
+    () =>
+      ORGANISATION_TYPES.map((type) => ({
+        value: type,
+        label: t(`register.orgTypes.${type}` as TranslationKey),
+      })),
+    [t],
+  );
 
   const otpValue = otpDigits.join("");
   const isValidMobile = INDIAN_MOBILE_REGEX.test(mobile);
@@ -327,6 +342,10 @@ export function RegisterForm({ initialMobile = "" }: RegisterFormProps) {
       setError(t("register.details.orgTypeError"));
       return;
     }
+    if (!industryType) {
+      setError(t("register.details.industryTypeError"));
+      return;
+    }
     if (!isValidMobile) {
       setError(t("register.details.mobileError"));
       return;
@@ -342,6 +361,7 @@ export function RegisterForm({ initialMobile = "" }: RegisterFormProps) {
         userName: contactName.trim(),
         organisationName: tradeName.trim(),
         organisationType,
+        industryType,
         mobile,
         preferredLanguage: locale,
       };
@@ -644,29 +664,46 @@ export function RegisterForm({ initialMobile = "" }: RegisterFormProps) {
               />
             </div>
 
-            <div>
-              <label htmlFor="orgType" className="block text-sm font-semibold text-brand-primary">
-                {t("register.details.selectType")}
-                {gstFieldsLocked && (
-                  <span className="ml-2 text-xs font-normal text-slate-500">
-                    {t("common.fromGst")}
-                  </span>
-                )}
-              </label>
-              <select
-                id="orgType"
-                value={organisationType}
-                disabled={gstFieldsLocked}
-                onChange={(e) => setOrganisationType(e.target.value as OrganisationType)}
-                className={`${fieldClass} mt-2 ${gstFieldsLocked ? "cursor-not-allowed bg-slate-50 text-slate-600" : ""}`}
-              >
-                <option value="">{t("register.details.chooseOrgType")}</option>
-                {ORGANISATION_TYPES.map((type) => (
-                  <option key={type} value={type}>
-                    {t(`register.orgTypes.${type}` as TranslationKey)}
-                  </option>
-                ))}
-              </select>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label htmlFor="orgType" className="block text-sm font-semibold text-brand-primary">
+                  {t("register.details.selectType")}
+                  {gstFieldsLocked && (
+                    <span className="ml-2 text-xs font-normal text-slate-500">
+                      {t("common.fromGst")}
+                    </span>
+                  )}
+                </label>
+                <div className="mt-2">
+                  <ModernSelect
+                    value={organisationType}
+                    onChange={(v) => setOrganisationType(v as OrganisationType)}
+                    options={organisationTypeOptions}
+                    placeholder={t("register.details.chooseOrgType")}
+                    searchable
+                    searchPlaceholder={t("register.details.chooseOrgType")}
+                    disabled={gstFieldsLocked}
+                    aria-label={t("register.details.selectType")}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="industryType" className="block text-sm font-semibold text-brand-primary">
+                  {t("register.details.industryType")}
+                </label>
+                <div className="mt-2">
+                  <ModernSelect
+                    value={industryType}
+                    onChange={(v) => setIndustryType(v as IndustryType)}
+                    options={INDUSTRY_TYPE_OPTIONS}
+                    placeholder={t("register.details.chooseIndustryType")}
+                    searchable
+                    searchPlaceholder={t("register.details.chooseIndustryType")}
+                    aria-label={t("register.details.industryType")}
+                  />
+                </div>
+              </div>
             </div>
 
             <div>

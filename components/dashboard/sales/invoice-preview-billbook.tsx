@@ -1,5 +1,10 @@
 "use client";
 
+import {
+  formatInvoiceDateTime,
+  InvoiceAuthorSignature,
+  InvoiceReceiverSignature,
+} from "@/components/dashboard/sales/invoice-preview-shared";
 import { getHeaderTextColor } from "@/lib/sales/invoice-settings-config";
 import {
   BILLBOOK_COL,
@@ -32,10 +37,12 @@ export function InvoicePreviewBillbook({
   showPartyBalance,
   showPhoneOnInvoice,
   showItemDescription,
+  showTimeOnInvoice,
+  enableReceiverSignature,
+  signatureImageUrl,
   pageSize,
 }: BillbookPreviewProps) {
   const displayName = businessName.toUpperCase() || "MAYANK ELECTRONICS";
-  const signInitial = displayName.charAt(0) || "M";
   const headerTextColor = getHeaderTextColor(accentHex);
   const page = PAGE_SIZES[pageSize];
   const s = pageScale(pageSize);
@@ -124,7 +131,7 @@ export function InvoicePreviewBillbook({
               {(
                 [
                   { label: "Invoice No.", value: "AABBCCDD/202" },
-                  { label: "Invoice Date", value: "17/01/2023" },
+                  { label: "Invoice Date", value: formatInvoiceDateTime(showTimeOnInvoice) },
                   { label: "Due Date", value: "16/02/2023" },
                 ] as const
               ).map((field, i) => (
@@ -261,6 +268,7 @@ export function InvoicePreviewBillbook({
             <div className="flex-1 border-r border-black p-[8px]">
               <p style={{ fontSize: "11px", fontWeight: 700 }}>Notes</p>
               <p style={{ fontSize: "11px", marginTop: 3 }}>Sample Note</p>
+              <InvoiceReceiverSignature enabled={enableReceiverSignature} fontSize={11} />
             </div>
             <div className="border-r border-black p-[8px]" style={{ width: "46%" }}>
               <p style={{ fontSize: "11px", fontWeight: 700 }}>Terms and Conditions</p>
@@ -271,20 +279,15 @@ export function InvoicePreviewBillbook({
               </p>
             </div>
             <div
-              className="flex flex-col items-center justify-end p-[8px] text-center"
+              className="flex flex-col items-center justify-end p-[8px]"
               style={{ width: px(168) }}
             >
-              <p
-                className="font-serif italic text-[#999]"
-                style={{ fontSize: 32, fontWeight: 700, lineHeight: 1 }}
-              >
-                {signInitial}
-              </p>
-              <p style={{ fontSize: "10px", marginTop: 8, lineHeight: 1.35 }}>
-                Authorised Signatory For
-                <br />
-                {displayName}
-              </p>
+              <InvoiceAuthorSignature
+                businessName={businessName}
+                signatureImageUrl={signatureImageUrl}
+                captionFontSize={10}
+                nameFontSize={12}
+              />
             </div>
           </div>
         </div>
