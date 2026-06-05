@@ -655,6 +655,12 @@ export type MessageTree = {
       subtitle: string;
       saveChanges: string;
       loading: string;
+      loadError: string;
+      saveSuccess: string;
+      saveError: string;
+      saving: string;
+      gstVerifiedBadge: string;
+      gstLockedNote: string;
       createNewBusiness: string;
       chatSupport: string;
       closeFinancialYear: string;

@@ -645,6 +645,13 @@ export const enMessages: MessageTree = {
       subtitle: "Edit Your Company Settings And Information",
       saveChanges: "Save Changes",
       loading: "Loading business details…",
+      loadError: "Could not load business details. Showing saved shop info.",
+      saveSuccess: "Business details saved successfully.",
+      saveError: "Could not save business details. Please try again.",
+      saving: "Saving…",
+      gstVerifiedBadge: "Verified",
+      gstLockedNote:
+        "GST has been verified for this business. Fields marked with a green checkmark match your GST records and cannot be edited.",
       createNewBusiness: "Create new business",
       chatSupport: "Chat Support",
       closeFinancialYear: "Close Financial Year",

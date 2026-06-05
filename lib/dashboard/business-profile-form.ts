@@ -1,6 +1,7 @@
-import type { OrganisationSummary } from "@/lib/types/user-api";
+import { INDIAN_STATE_CODE_LABELS } from "@/lib/constants/indian-state-codes";
 import { INDUSTRY_TYPE_OPTIONS } from "@/lib/constants/industry-types";
 import { ORGANISATION_TYPE_LABELS } from "@/lib/constants/organisation-types";
+import type { OrganisationSummary } from "@/lib/types/user-api";
 
 export const INDIAN_STATES = [
   "Andhra Pradesh",
@@ -27,6 +28,8 @@ export const INDIAN_STATES = [
   "Uttarakhand",
   "West Bengal",
 ] as const;
+
+export const INDUSTRY_TYPE_NONE = "NONE";
 
 export const BUSINESS_TYPES = [
   "Retailer",
@@ -70,6 +73,7 @@ export type BusinessProfileForm = {
   pincode: string;
   city: string;
   gstRegistered: boolean;
+  gstVerified: boolean;
   gstNumber: string;
   enableEInvoicing: boolean;
   pan: string;
@@ -93,27 +97,18 @@ export const DEFAULT_BUSINESS_PROFILE: BusinessProfileForm = {
   pincode: "",
   city: "",
   gstRegistered: true,
+  gstVerified: false,
   gstNumber: "",
   enableEInvoicing: false,
   pan: "",
   enableTds: false,
   enableTcs: false,
-  businessTypes: ["Retailer"],
-  industryType: "MOBILE_ACCESSORIES",
+  businessTypes: [],
+  industryType: INDUSTRY_TYPE_NONE,
   registrationType: "Proprietorship",
   signatureSource: "desktop",
   signatureDataUrl: null,
   additionalDetails: [],
-};
-
-/** Demo defaults aligned with invoice preview sample */
-const SAMPLE_DEFAULTS: Partial<BusinessProfileForm> = {
-  phone: "9399576767",
-  billingAddress: "Bazarpara patna",
-  state: "Chhattisgarh",
-  pincode: "497331",
-  city: "Baikunthpur",
-  gstNumber: "22FGDPS5345Q1ZS",
 };
 
 export function buildBusinessProfileFromOrg(
@@ -130,7 +125,6 @@ export function buildBusinessProfileFromOrg(
 
   return {
     ...DEFAULT_BUSINESS_PROFILE,
-    ...SAMPLE_DEFAULTS,
     name: org.name || "",
     logoDataUrl: org.logo ?? null,
     gstNumber: org.gstNumber ?? "",
@@ -140,9 +134,14 @@ export function buildBusinessProfileFromOrg(
   };
 }
 
-export const INDUSTRY_OPTIONS = INDUSTRY_TYPE_OPTIONS;
+export const INDUSTRY_OPTIONS = [
+  { value: INDUSTRY_TYPE_NONE, label: "None" },
+  ...INDUSTRY_TYPE_OPTIONS,
+];
 
-export const STATE_OPTIONS = INDIAN_STATES.map((s) => ({ value: s, label: s }));
+export const STATE_OPTIONS = Object.values(INDIAN_STATE_CODE_LABELS)
+  .sort((a, b) => a.localeCompare(b))
+  .map((label) => ({ value: label, label }));
 
 export const REGISTRATION_OPTIONS = REGISTRATION_TYPES.map((r) => ({
   value: r,

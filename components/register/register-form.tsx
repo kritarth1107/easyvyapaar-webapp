@@ -17,7 +17,12 @@ import {
   INDUSTRY_TYPE_OPTIONS,
   type IndustryType,
 } from "@/lib/constants/industry-types";
-import { ORGANISATION_TYPES, type OrganisationType } from "@/lib/constants/organisation-types";
+import {
+  mapConstitutionTypeToOrganisationType,
+  ORGANISATION_TYPES,
+  resolveOrganisationTypeLabel,
+  type OrganisationType,
+} from "@/lib/constants/organisation-types";
 import { ModernSelect } from "@/components/ui/modern-select";
 import { OrganisationSelectModal } from "@/components/auth/organisation-select-modal";
 import { completeAuthSessionOrganisation } from "@/lib/auth/complete-auth-session";
@@ -205,6 +210,7 @@ export function RegisterForm({ initialMobile = "" }: RegisterFormProps) {
   const [gstin, setGstin] = useState("");
   const [gstVerified, setGstVerified] = useState(false);
   const [gstSkipped, setGstSkipped] = useState(false);
+  const [gstConstitutionType, setGstConstitutionType] = useState("");
 
   const [contactName, setContactName] = useState("");
   const [tradeName, setTradeName] = useState("");
@@ -222,6 +228,16 @@ export function RegisterForm({ initialMobile = "" }: RegisterFormProps) {
         label: t(`register.orgTypes.${type}` as TranslationKey),
       })),
     [t],
+  );
+
+  const organisationTypeDisplayLabel = useMemo(
+    () =>
+      resolveOrganisationTypeLabel(
+        organisationType,
+        organisationTypeOptions,
+        gstConstitutionType,
+      ),
+    [organisationType, organisationTypeOptions, gstConstitutionType],
   );
 
   const otpValue = otpDigits.join("");
@@ -304,10 +320,15 @@ export function RegisterForm({ initialMobile = "" }: RegisterFormProps) {
         setTradeName(success.data.legalName);
       }
 
-      const mapped = success.data?.mappedOrganisationType;
-      if (mapped && ORGANISATION_TYPES.includes(mapped as OrganisationType)) {
-        setOrganisationType(mapped as OrganisationType);
-      }
+      const constitutionType = success.data?.constitutionType?.trim() ?? "";
+      setGstConstitutionType(constitutionType);
+
+      const mappedFromApi = success.data?.mappedOrganisationType;
+      const mapped =
+        mappedFromApi && ORGANISATION_TYPES.includes(mappedFromApi as OrganisationType)
+          ? (mappedFromApi as OrganisationType)
+          : mapConstitutionTypeToOrganisationType(constitutionType) ?? "OTHER";
+      setOrganisationType(mapped);
 
       setInfoMessage(success.details || success.message);
       goToStep(3);
@@ -322,6 +343,7 @@ export function RegisterForm({ initialMobile = "" }: RegisterFormProps) {
     setGstin("");
     setGstVerified(false);
     setGstSkipped(true);
+    setGstConstitutionType("");
     setError(null);
     setInfoMessage(t("register.details.skipGstInfo"));
     goToStep(3);
@@ -675,16 +697,25 @@ export function RegisterForm({ initialMobile = "" }: RegisterFormProps) {
                   )}
                 </label>
                 <div className="mt-2">
-                  <ModernSelect
-                    value={organisationType}
-                    onChange={(v) => setOrganisationType(v as OrganisationType)}
-                    options={organisationTypeOptions}
-                    placeholder={t("register.details.chooseOrgType")}
-                    searchable
-                    searchPlaceholder={t("register.details.chooseOrgType")}
-                    disabled={gstFieldsLocked}
-                    aria-label={t("register.details.selectType")}
-                  />
+                  {gstFieldsLocked ? (
+                    <input
+                      readOnly
+                      disabled
+                      value={organisationTypeDisplayLabel}
+                      className={`${fieldClass} cursor-not-allowed bg-slate-50 text-slate-600`}
+                      aria-label={t("register.details.selectType")}
+                    />
+                  ) : (
+                    <ModernSelect
+                      value={organisationType}
+                      onChange={(v) => setOrganisationType(v as OrganisationType)}
+                      options={organisationTypeOptions}
+                      placeholder={t("register.details.chooseOrgType")}
+                      searchable
+                      searchPlaceholder={t("register.details.chooseOrgType")}
+                      aria-label={t("register.details.selectType")}
+                    />
+                  )}
                 </div>
               </div>
 

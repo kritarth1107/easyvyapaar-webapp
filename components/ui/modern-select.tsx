@@ -90,7 +90,10 @@ export function ModernSelect({
     [options]
   );
 
-  const selectedLabel = options.find((o) => o.value === value)?.label;
+  const selectedLabel =
+    options.find((o) => o.value === value)?.label ??
+    (value.trim() ? value : undefined);
+  const hasSelection = Boolean(value.trim() && selectedLabel);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -164,18 +167,22 @@ export function ModernSelect({
         } ${open ? "bg-white text-brand-primary" : "text-brand-primary"}`
       : `flex h-9 w-full items-center justify-between gap-1 rounded-md border border-slate-200/90 bg-white px-2.5 text-xs font-semibold transition-colors ${
           disabled
-            ? "cursor-not-allowed opacity-60"
+            ? hasSelection
+              ? "cursor-not-allowed border-slate-200/70 bg-slate-50 text-brand-primary"
+              : "cursor-not-allowed opacity-60 text-brand-primary-muted/70"
             : open
               ? "border-brand-orange-1/50 ring-2 ring-brand-orange-1/15"
               : "hover:border-slate-300"
-        } text-brand-primary`
+        } ${!disabled || hasSelection ? "text-brand-primary" : ""}`
     : `flex h-10 w-full items-center justify-between gap-2 rounded-md border bg-white px-3 text-left text-sm transition-all ${
         disabled
-          ? "cursor-not-allowed border-slate-200/70 bg-slate-50 opacity-60"
+          ? hasSelection
+            ? "cursor-not-allowed border-slate-200/70 bg-slate-50 text-brand-primary"
+            : "cursor-not-allowed border-slate-200/70 bg-slate-50 text-brand-primary-muted/70 opacity-60"
           : open
             ? "border-brand-orange-1/50 ring-2 ring-brand-orange-1/15"
             : "border-slate-200/90 hover:border-slate-300"
-      } ${value ? "text-brand-primary" : "text-brand-primary-muted/70"}`;
+      } ${!disabled && (value ? "text-brand-primary" : "text-brand-primary-muted/70")}`;
 
   return (
     <div
