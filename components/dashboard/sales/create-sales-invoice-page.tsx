@@ -1,26 +1,63 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AddItemsToBillModal } from "@/components/dashboard/sales/add-items-to-bill-modal";
 import { BankAccountModal } from "@/components/dashboard/sales/bank-account-modal";
 import { InvoiceSettingsModal } from "@/components/dashboard/sales/invoice-settings-modal";
-import { PartySelectModal } from "@/components/dashboard/sales/party-select-modal";
+import { SalesInvoicePreviewModal } from "@/components/dashboard/sales/sales-invoice-preview-modal";
+import {
+  PartySelectModal,
+  type SelectedInvoiceParty,
+} from "@/components/dashboard/sales/party-select-modal";
 import { ModernSelect } from "@/components/ui/modern-select";
-import type { InventoryItem } from "@/lib/dashboard/mock-inventory-items";
-import { MOCK_BANK_ACCOUNTS } from "@/lib/dashboard/mock-bank-accounts";
-import { MOCK_PARTIES, WALK_IN_PARTY_ID } from "@/lib/dashboard/mock-parties";
+import type { InventoryBillPick } from "@/lib/dashboard/mock-inventory-items";
+import { WALK_IN_PARTY_ID } from "@/lib/dashboard/mock-parties";
+import { fetchOrganisationBankAccounts } from "@/lib/organisations/organisation-bank-api-client";
+import { fetchBusinessProfile } from "@/lib/business/business-profile-api-client";
+import { fetchPartyDetail } from "@/lib/parties/parties-api-client";
+import { maskBankAccountNumber } from "@/lib/parties/party-detail-utils";
+import type { OrganisationBankAccount } from "@/lib/types/organisation-bank-api";
+import {
+  getInvoiceLineDisplay,
+  invoiceLinePriceFromInput,
+  invoiceLinePriceInputValue,
+  normalizeSalesTaxMode,
+} from "@/lib/sales/invoice-tax";
 import {
   calcInvoiceTotals,
-  calcLineItem,
+  clampInvoiceLineQty,
   createInitialInvoiceForm,
   formatInr,
-  lineItemFromInventory,
+  getMaxQtyForLine,
+  mergeInventoryPickIntoLines,
   PAYMENT_MODES,
   type CreateInvoiceFormState,
   type InvoiceLineItem,
 } from "@/lib/sales/create-invoice-form";
+import { mapCreateInvoiceFormToRequest } from "@/lib/sales/map-create-invoice-request";
+import {
+  mergeInvoiceSettingsIntoStored,
+  storedSettingsToInvoiceSettings,
+} from "@/lib/sales/map-stored-invoice-settings";
+import {
+  DEFAULT_STORED_SALES_INVOICE_SETTINGS,
+  type StoredSalesInvoiceSettings,
+} from "@/lib/sales/invoice-settings-config";
+import {
+  fetchSalesInvoiceSettings,
+  updateSalesInvoiceSettings,
+} from "@/lib/sales/sales-invoice-settings-api-client";
+import { buildLiveInvoicePreviewModel } from "@/lib/sales/build-live-invoice-preview";
+import {
+  formatGstinOrPanLine,
+  organisationProfileToSnapshot,
+  type InvoiceOrganisationSnapshot,
+} from "@/lib/sales/invoice-preview-formatters";
+import { createSalesInvoice, fetchNextInvoiceNumber } from "@/lib/sales/sales-api-client";
+import type { InvoiceSettings } from "@/lib/sales/create-invoice-form";
+import type { LiveInvoicePreviewModel } from "@/lib/sales/build-live-invoice-preview";
 import { useTranslation } from "@/lib/localization";
 import { useUserMe } from "@/components/providers/user-me-provider";
 
@@ -34,6 +71,8 @@ function formatMessage(template: string, params?: Record<string, string | number
 
 const inputSmClass =
   "h-9 w-full rounded-md border border-slate-200/90 bg-white px-2.5 text-sm text-brand-primary outline-none focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
+const textareaClass =
+  "w-full rounded-md border border-slate-200/90 bg-white px-3 py-2 text-sm text-brand-primary outline-none placeholder:text-brand-primary-muted/60 focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
 const inputGroupClass =
   "flex h-9 overflow-hidden rounded-md border border-slate-200/90 bg-white focus-within:border-brand-orange-1/50 focus-within:ring-2 focus-within:ring-brand-orange-1/15";
 const inputGroupInnerClass =
@@ -131,15 +170,52 @@ function addDays(iso: string, days: number): string {
 export function CreateSalesInvoicePage() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { activeOrganisation } = useUserMe();
+  const { activeOrganisation, activeOrganisationId } = useUserMe();
   const businessName = activeOrganisation?.name ?? "Your Business";
 
   const [form, setForm] = useState<CreateInvoiceFormState>(createInitialInvoiceForm);
+  const [selectedParty, setSelectedParty] = useState<SelectedInvoiceParty | null>(null);
   const [partyModalOpen, setPartyModalOpen] = useState(false);
   const [addItemsOpen, setAddItemsOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [bankModalOpen, setBankModalOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [loadingMeta, setLoadingMeta] = useState(true);
+  const [bankAccounts, setBankAccounts] = useState<OrganisationBankAccount[]>([]);
+  const [bankAccountsLoading, setBankAccountsLoading] = useState(false);
+  const [storedInvoiceSettings, setStoredInvoiceSettings] = useState<StoredSalesInvoiceSettings>(
+    DEFAULT_STORED_SALES_INVOICE_SETTINGS,
+  );
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewModel, setPreviewModel] = useState<LiveInvoicePreviewModel | null>(null);
+  const [saveSuccessMessage, setSaveSuccessMessage] = useState<string | null>(null);
+  const [organisationSnapshot, setOrganisationSnapshot] = useState<InvoiceOrganisationSnapshot>({
+    businessAddress: "",
+    businessPhone: "",
+    businessTaxLine: "",
+    placeOfSupply: "",
+  });
+
+  const fallbackOrganisationSnapshot = useMemo(
+    (): InvoiceOrganisationSnapshot => ({
+      businessAddress: "",
+      businessPhone: "",
+      businessTaxLine: formatGstinOrPanLine(
+        activeOrganisation?.gstNumber,
+        activeOrganisation?.pan,
+      ),
+      placeOfSupply: "",
+    }),
+    [activeOrganisation?.gstNumber, activeOrganisation?.pan],
+  );
+
+  const resolvedOrganisationSnapshot =
+    organisationSnapshot.businessAddress ||
+    organisationSnapshot.businessPhone ||
+    organisationSnapshot.placeOfSupply
+      ? organisationSnapshot
+      : fallbackOrganisationSnapshot;
 
   const patch = useCallback((partial: Partial<CreateInvoiceFormState>) => {
     setForm((prev) => ({ ...prev, ...partial }));
@@ -147,22 +223,189 @@ export function CreateSalesInvoicePage() {
 
   const totals = useMemo(() => calcInvoiceTotals(form), [form]);
 
-  const selectedParty = useMemo(
-    () => MOCK_PARTIES.find((p) => p.id === form.partyId) ?? null,
-    [form.partyId]
-  );
+  const canSave =
+    !saving &&
+    !loadingMeta &&
+    Boolean(activeOrganisationId) &&
+    form.lineItems.length > 0 &&
+    form.lineItems.every((line) => !line.serialised || line.serialNumbers.length === 1) &&
+    (selectedParty !== null || form.cashSaleDefault);
 
-  const canSave = form.lineItems.length > 0 && (form.partyId !== null || form.cashSaleDefault);
+  useEffect(() => {
+    const orgId = activeOrganisationId?.trim();
+    if (!orgId) {
+      setOrganisationSnapshot({
+        businessAddress: "",
+        businessPhone: "",
+        businessTaxLine: formatGstinOrPanLine(
+          activeOrganisation?.gstNumber,
+          activeOrganisation?.pan,
+        ),
+        placeOfSupply: "",
+      });
+      return;
+    }
 
-  const handleAddItems = (items: InventoryItem[]) => {
-    const newLines = items.map(lineItemFromInventory);
-    patch({ lineItems: [...form.lineItems, ...newLines] });
+    let cancelled = false;
+
+    fetchBusinessProfile(orgId)
+      .then((profile) => {
+        if (!cancelled) setOrganisationSnapshot(organisationProfileToSnapshot(profile));
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setOrganisationSnapshot({
+            businessAddress: "",
+            businessPhone: "",
+            businessTaxLine: formatGstinOrPanLine(
+              activeOrganisation?.gstNumber,
+              activeOrganisation?.pan,
+            ),
+            placeOfSupply: "",
+          });
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeOrganisation?.gstNumber, activeOrganisation?.pan, activeOrganisationId]);
+
+  useEffect(() => {
+    const orgId = activeOrganisationId?.trim();
+    if (!orgId) {
+      setLoadingMeta(false);
+      return;
+    }
+
+    let cancelled = false;
+    setLoadingMeta(true);
+
+    fetchNextInvoiceNumber(orgId)
+      .then((next) => {
+        if (!cancelled) {
+          patch({
+            invoicePrefix: next.invoicePrefix,
+            invoiceNumber: next.invoiceNumber,
+          });
+        }
+      })
+      .catch(() => {
+        // Keep default prefix/number from initial form if API fails.
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingMeta(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeOrganisationId, patch]);
+
+  const loadBankAccounts = useCallback(async () => {
+    const orgId = activeOrganisationId?.trim();
+    if (!orgId) {
+      setBankAccounts([]);
+      return;
+    }
+
+    setBankAccountsLoading(true);
+    try {
+      const data = await fetchOrganisationBankAccounts(orgId);
+      setBankAccounts(data);
+    } catch {
+      setBankAccounts([]);
+    } finally {
+      setBankAccountsLoading(false);
+    }
+  }, [activeOrganisationId]);
+
+  useEffect(() => {
+    void loadBankAccounts();
+  }, [loadBankAccounts]);
+
+  useEffect(() => {
+    const orgId = activeOrganisationId?.trim();
+    if (!orgId) return;
+
+    let cancelled = false;
+    fetchSalesInvoiceSettings(orgId)
+      .then((data) => {
+        if (cancelled) return;
+        setStoredInvoiceSettings(data);
+        patch({ settings: storedSettingsToInvoiceSettings(data) });
+      })
+      .catch(() => {
+        // Keep form defaults if settings API fails.
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeOrganisationId, patch]);
+
+  const handleInvoiceSettingsSave = async (
+    nextSettings: InvoiceSettings,
+    invoiceMeta?: { invoicePrefix: string; invoiceNumber: string },
+  ) => {
+    const orgId = activeOrganisationId?.trim();
+    patch({
+      settings: nextSettings,
+      ...(invoiceMeta
+        ? {
+            invoicePrefix: invoiceMeta.invoicePrefix,
+            invoiceNumber: invoiceMeta.invoiceNumber,
+          }
+        : {}),
+    });
+    if (!orgId) return;
+
+    const merged = mergeInvoiceSettingsIntoStored(storedInvoiceSettings, nextSettings);
+    try {
+      const updated = await updateSalesInvoiceSettings(orgId, merged);
+      setStoredInvoiceSettings(updated);
+      patch({ settings: storedSettingsToInvoiceSettings(updated) });
+    } catch {
+      setStoredInvoiceSettings(merged);
+    }
+  };
+
+  const handleAddItems = (picks: InventoryBillPick[]) => {
+    setForm((prev) => {
+      let lineItems = prev.lineItems;
+      for (const pick of picks) {
+        lineItems = mergeInventoryPickIntoLines(lineItems, pick);
+      }
+      if (lineItems === prev.lineItems) return prev;
+      return { ...prev, lineItems };
+    });
   };
 
   const updateLine = (id: string, partial: Partial<InvoiceLineItem>) => {
-    patch({
-      lineItems: form.lineItems.map((l) => (l.id === id ? { ...l, ...partial } : l)),
-    });
+    setForm((prev) => ({
+      ...prev,
+      lineItems: prev.lineItems.map((line) => {
+        if (line.id !== id) return line;
+        const next = { ...line, ...partial };
+        if ("qty" in partial && !line.serialised) {
+          next.qty = clampInvoiceLineQty(line, Number(partial.qty) || 1, prev.lineItems);
+        }
+        return next;
+      }),
+    }));
+  };
+
+  const adjustLineQty = (id: string, delta: number) => {
+    setForm((prev) => ({
+      ...prev,
+      lineItems: prev.lineItems.map((line) => {
+        if (line.id !== id || line.serialised) return line;
+        return {
+          ...line,
+          qty: clampInvoiceLineQty(line, line.qty + delta, prev.lineItems),
+        };
+      }),
+    }));
   };
 
   const removeLine = (id: string) => {
@@ -184,21 +427,58 @@ export function CreateSalesInvoicePage() {
   };
 
   const handleCashSaleToggle = (checked: boolean) => {
-    patch({
-      cashSaleDefault: checked,
-      partyId: checked
-        ? WALK_IN_PARTY_ID
-        : form.partyId === WALK_IN_PARTY_ID
-          ? null
-          : form.partyId,
-    });
+    if (checked) {
+      const walkIn: SelectedInvoiceParty = {
+        partyId: WALK_IN_PARTY_ID,
+        name: t("dashboard.salesInvoices.create.cashWalkIn"),
+        balance: 0,
+        isCashSale: true,
+      };
+      setSelectedParty(walkIn);
+      patch({ partyId: WALK_IN_PARTY_ID, cashSaleDefault: true });
+      return;
+    }
+
+    if (selectedParty?.isCashSale) {
+      setSelectedParty(null);
+      patch({ partyId: null, cashSaleDefault: false });
+    } else {
+      patch({ cashSaleDefault: false });
+    }
   };
 
-  const handlePartySelect = (partyId: string, cashSale = false) => {
+  const handlePartySelect = (party: SelectedInvoiceParty) => {
+    setSelectedParty(party);
     patch({
-      partyId,
-      cashSaleDefault: cashSale || partyId === WALK_IN_PARTY_ID,
+      partyId: party.partyId,
+      cashSaleDefault: Boolean(party.isCashSale),
     });
+
+    const orgId = activeOrganisationId?.trim();
+    if (!orgId || party.isCashSale || party.partyId === WALK_IN_PARTY_ID) return;
+
+    void fetchPartyDetail(orgId, party.partyId)
+      .then((detail) => {
+        setSelectedParty((current) => {
+          if (!current || current.partyId !== party.partyId) return current;
+          return {
+            ...current,
+            phone: detail.phone ?? current.phone,
+            ...(detail.billingAddress?.trim()
+              ? { billingAddress: detail.billingAddress.trim() }
+              : {}),
+            ...(detail.shippingAddress?.trim()
+              ? { shippingAddress: detail.shippingAddress.trim() }
+              : {}),
+            ...(detail.gstin?.trim() ? { gstin: detail.gstin.trim() } : {}),
+            ...(detail.pan?.trim() ? { pan: detail.pan.trim().toUpperCase() } : {}),
+            balance: detail.currentBalance,
+          };
+        });
+      })
+      .catch(() => {
+        // Keep summary data from party picker.
+      });
   };
 
   const handleFullyPaidToggle = (checked: boolean) => {
@@ -208,8 +488,61 @@ export function CreateSalesInvoicePage() {
     });
   };
 
-  const validateAndSave = (saveAndNew: boolean) => {
-    if (!form.partyId && !form.cashSaleDefault) {
+  const resetForNewInvoice = useCallback(async () => {
+    const orgId = activeOrganisationId?.trim();
+    setSelectedParty(null);
+    const fresh = createInitialInvoiceForm();
+    if (orgId) {
+      try {
+        const next = await fetchNextInvoiceNumber(orgId);
+        fresh.invoicePrefix = next.invoicePrefix;
+        fresh.invoiceNumber = next.invoiceNumber;
+      } catch {
+        // Keep defaults.
+      }
+    }
+    setForm(fresh);
+  }, [activeOrganisationId]);
+
+  const selectedBank = bankAccounts.find((b) => b.bankAccountId === form.bankAccountId) ?? null;
+  const selectedBankLabel = selectedBank
+    ? [selectedBank.bankName, maskBankAccountNumber(selectedBank.accountNumber)]
+        .filter(Boolean)
+        .join(" · ")
+    : null;
+
+  const livePreviewModel = useMemo(
+    () =>
+      buildLiveInvoicePreviewModel({
+        form,
+        party: selectedParty,
+        businessName,
+        organisation: resolvedOrganisationSnapshot,
+        bankAccount: selectedBank,
+        storedSettings: storedInvoiceSettings,
+      }),
+    [
+      form,
+      selectedParty,
+      businessName,
+      resolvedOrganisationSnapshot,
+      selectedBank,
+      storedInvoiceSettings,
+    ],
+  );
+
+  const openDraftPreview = () => {
+    setPreviewModel(livePreviewModel);
+    setPreviewOpen(true);
+  };
+
+  const validateAndSave = async (saveAndNew: boolean) => {
+    const orgId = activeOrganisationId?.trim();
+    if (!orgId) {
+      setError(t("dashboard.salesInvoices.create.noOrganisation"));
+      return;
+    }
+    if (!selectedParty && !form.cashSaleDefault) {
       setError(t("dashboard.salesInvoices.create.validationParty"));
       return;
     }
@@ -217,15 +550,32 @@ export function CreateSalesInvoicePage() {
       setError(t("dashboard.salesInvoices.create.validationItems"));
       return;
     }
+
+    setSaving(true);
     setError(null);
-    if (saveAndNew) {
-      setForm(createInitialInvoiceForm());
-    } else {
-      router.push("/dashboard/sales/invoices");
+    setSaveSuccessMessage(null);
+    try {
+      const invoice = await createSalesInvoice(
+        orgId,
+        mapCreateInvoiceFormToRequest(
+          form,
+          selectedParty?.name,
+          selectedBank,
+          storedInvoiceSettings,
+        ),
+      );
+      if (saveAndNew) {
+        setSaveSuccessMessage(t("dashboard.salesInvoices.create.savedSuccess"));
+        await resetForNewInvoice();
+      } else {
+        router.push(`/dashboard/sales/invoices/${encodeURIComponent(invoice.invoiceId)}`);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("dashboard.salesInvoices.create.saveError"));
+    } finally {
+      setSaving(false);
     }
   };
-
-  const selectedBank = MOCK_BANK_ACCOUNTS.find((b) => b.id === form.bankAccountId);
 
   return (
     <div className="flex min-h-full flex-col bg-white">
@@ -246,6 +596,14 @@ export function CreateSalesInvoicePage() {
         <div className="flex shrink-0 items-center gap-2">
           <button
             type="button"
+            disabled={form.lineItems.length === 0}
+            onClick={openDraftPreview}
+            className="hidden h-10 items-center rounded-md border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 sm:inline-flex"
+          >
+            {t("dashboard.salesInvoices.create.previewInvoice")}
+          </button>
+          <button
+            type="button"
             onClick={() => setSettingsOpen(true)}
             className="relative inline-flex h-10 items-center gap-2 rounded-md border border-slate-200/90 bg-white px-3 text-sm font-semibold text-brand-primary hover:bg-slate-50"
           >
@@ -256,7 +614,7 @@ export function CreateSalesInvoicePage() {
           <button
             type="button"
             disabled={!canSave}
-            onClick={() => validateAndSave(true)}
+            onClick={() => void validateAndSave(true)}
             className="hidden h-10 items-center rounded-md border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 sm:inline-flex"
           >
             {t("dashboard.salesInvoices.create.saveAndNew")}
@@ -264,10 +622,10 @@ export function CreateSalesInvoicePage() {
           <button
             type="button"
             disabled={!canSave}
-            onClick={() => validateAndSave(false)}
+            onClick={() => void validateAndSave(false)}
             className="inline-flex h-10 items-center rounded-md bg-gradient-to-r from-brand-primary to-brand-primary-light px-4 text-sm font-semibold text-white shadow-[0_2px_10px_-4px_rgba(3,31,73,0.35)] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {t("dashboard.salesInvoices.create.saveInvoice")}
+            {saving ? t("dashboard.salesInvoices.create.saving") : t("dashboard.salesInvoices.create.saveInvoice")}
           </button>
         </div>
       </div>
@@ -277,6 +635,11 @@ export function CreateSalesInvoicePage() {
           {error}
         </div>
       )}
+      {saveSuccessMessage && !error ? (
+        <div className="mx-4 mt-3 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-900 lg:mx-6">
+          {saveSuccessMessage}
+        </div>
+      ) : null}
 
       <div className="flex-1 p-4 lg:p-6">
         {/* Top section: Bill To + Invoice meta — 50/50 */}
@@ -422,9 +785,8 @@ export function CreateSalesInvoicePage() {
                   <th className="w-10 px-3 py-2">{t("dashboard.salesInvoices.create.colNo")}</th>
                   <th className="min-w-[200px] px-3 py-2">{t("dashboard.salesInvoices.create.colItems")}</th>
                   <th className="w-24 px-3 py-2">{t("dashboard.salesInvoices.create.colHsn")}</th>
-                  <th className="w-20 px-3 py-2">{t("dashboard.salesInvoices.create.colQty")}</th>
+                  <th className="w-28 px-3 py-2">{t("dashboard.salesInvoices.create.colQty")}</th>
                   <th className="w-28 px-3 py-2">{t("dashboard.salesInvoices.create.colPrice")}</th>
-                  <th className="w-24 px-3 py-2">{t("dashboard.salesInvoices.create.colDiscount")}</th>
                   <th className="w-20 px-3 py-2">{t("dashboard.salesInvoices.create.colTax")}</th>
                   <th className="w-28 px-3 py-2 text-right">{t("dashboard.salesInvoices.create.colAmount")}</th>
                   <th className="w-10 px-2" />
@@ -433,7 +795,7 @@ export function CreateSalesInvoicePage() {
               <tbody>
                 {form.lineItems.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="p-0">
+                    <td colSpan={8} className="p-0">
                       <div className="flex min-h-[140px] items-center justify-center gap-4 p-4">
                         <button
                           type="button"
@@ -454,59 +816,106 @@ export function CreateSalesInvoicePage() {
                   </tr>
                 ) : (
                   form.lineItems.map((line, idx) => {
-                    const calc = calcLineItem(line);
+                    const salesTaxMode = normalizeSalesTaxMode(line.salesTaxMode);
+                    const lineDisplay = getInvoiceLineDisplay({
+                      qty: line.qty,
+                      pricePerItem: line.pricePerItem,
+                      discount: line.discount,
+                      discountType: line.discountType,
+                      gstPercent: line.gstPercent,
+                      salesTaxMode,
+                    });
                     return (
                       <tr key={line.id} className="border-b border-slate-50 hover:bg-blue-50/20">
-                        <td className="px-3 py-2 tabular-nums text-brand-primary-muted">{idx + 1}</td>
-                        <td className="px-3 py-2">
+                        <td className="align-top px-3 py-2 tabular-nums text-brand-primary-muted">{idx + 1}</td>
+                        <td className="align-top px-3 py-2">
                           <p className="font-medium text-brand-primary">{line.name}</p>
-                          <p className="text-[11px] text-brand-primary-muted">{line.unit}</p>
+                          {line.serialised && line.serialNumbers[0] ? (
+                            <p className="mt-0.5 font-mono text-[11px] text-violet-700">
+                              {line.serialNumbers[0]}
+                            </p>
+                          ) : (
+                            <p className="text-[11px] text-brand-primary-muted">{line.unit}</p>
+                          )}
                         </td>
-                        <td className="px-3 py-2">
+                        <td className="align-top px-3 py-2">
                           <input
                             value={line.hsn}
                             onChange={(e) => updateLine(line.id, { hsn: e.target.value })}
                             className={inputSmClass}
                           />
                         </td>
-                        <td className="px-3 py-2">
-                          <input
-                            type="number"
-                            min={1}
-                            value={line.qty}
-                            onChange={(e) => updateLine(line.id, { qty: Number(e.target.value) || 1 })}
-                            className={`${inputSmClass} tabular-nums`}
-                          />
+                        <td className="align-top px-3 py-2">
+                          {line.serialised ? (
+                            <div className={`${inputSmClass} w-10 text-center tabular-nums`}>1</div>
+                          ) : (
+                            (() => {
+                              const maxQty = getMaxQtyForLine(line, form.lineItems);
+                              return (
+                                <div className={inputGroupClass}>
+                                  <button
+                                    type="button"
+                                    disabled={line.qty <= 1}
+                                    onClick={() => adjustLineQty(line.id, -1)}
+                                    className="flex h-9 w-8 shrink-0 items-center justify-center border-r border-slate-200/90 text-base font-medium text-brand-primary hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                                    aria-label={t("dashboard.salesInvoices.create.decreaseQty")}
+                                  >
+                                    −
+                                  </button>
+                                  <input
+                                    type="number"
+                                    min={1}
+                                    max={maxQty > 0 ? maxQty : 1}
+                                    value={line.qty}
+                                    onChange={(e) =>
+                                      updateLine(line.id, { qty: Number(e.target.value) || 1 })
+                                    }
+                                    className={`${inputGroupInnerClass} w-10 min-w-0 text-center [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`}
+                                  />
+                                  <button
+                                    type="button"
+                                    disabled={maxQty <= 0 || line.qty >= maxQty}
+                                    onClick={() => adjustLineQty(line.id, 1)}
+                                    className="flex h-9 w-8 shrink-0 items-center justify-center border-l border-slate-200/90 text-base font-medium text-brand-primary hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                                    aria-label={t("dashboard.salesInvoices.create.increaseQty")}
+                                  >
+                                    +
+                                  </button>
+                                </div>
+                              );
+                            })()
+                          )}
                         </td>
-                        <td className="px-3 py-2">
+                        <td className="align-top px-3 py-2">
                           <input
                             type="number"
                             min={0}
-                            value={line.pricePerItem}
+                            step="0.01"
+                            value={invoiceLinePriceInputValue(
+                              line.pricePerItem,
+                              line.gstPercent,
+                              salesTaxMode,
+                            )}
                             onChange={(e) =>
-                              updateLine(line.id, { pricePerItem: Number(e.target.value) || 0 })
+                              updateLine(line.id, {
+                                pricePerItem: invoiceLinePriceFromInput(
+                                  Number(e.target.value) || 0,
+                                  line.gstPercent,
+                                  salesTaxMode,
+                                ),
+                              })
                             }
                             className={`${inputSmClass} tabular-nums`}
                           />
                         </td>
-                        <td className="px-3 py-2">
-                          <input
-                            type="number"
-                            min={0}
-                            value={line.discount}
-                            onChange={(e) =>
-                              updateLine(line.id, { discount: Number(e.target.value) || 0 })
-                            }
-                            className={`${inputSmClass} tabular-nums`}
-                          />
+                        <td className="align-top px-3 py-2 pt-[10px] text-right tabular-nums text-brand-primary-muted">
+                          <p>{formatInr(lineDisplay.tax)}</p>
+                          <p className="text-[10px]">({line.gstPercent}%)</p>
                         </td>
-                        <td className="px-3 py-2 tabular-nums text-brand-primary-muted">
-                          {line.gstPercent}%
+                        <td className="align-top px-3 py-2 pt-[10px] text-right font-semibold tabular-nums text-brand-primary">
+                          {formatInr(lineDisplay.amount)}
                         </td>
-                        <td className="px-3 py-2 text-right font-semibold tabular-nums text-brand-primary">
-                          {formatInr(calc.amount)}
-                        </td>
-                        <td className="px-2 py-2">
+                        <td className="align-top px-2 py-2">
                           <button
                             type="button"
                             onClick={() => removeLine(line.id)}
@@ -523,7 +932,7 @@ export function CreateSalesInvoicePage() {
               </tbody>
               <tfoot>
                 <tr className="border-t border-slate-200 bg-slate-50/50">
-                  <td colSpan={7} className="px-3 py-2 text-xs font-bold uppercase text-brand-primary-muted">
+                  <td colSpan={6} className="px-3 py-2 text-xs font-bold uppercase text-brand-primary-muted">
                     {t("dashboard.salesInvoices.create.subtotal")}
                   </td>
                   <td className="px-3 py-2 text-right font-bold tabular-nums text-brand-primary">
@@ -547,7 +956,7 @@ export function CreateSalesInvoicePage() {
                   onChange={(e) => patch({ notes: e.target.value })}
                   placeholder={t("dashboard.salesInvoices.create.notesPlaceholder")}
                   rows={3}
-                  className="mt-1 w-full rounded-md border border-slate-200/90 px-3 py-2 text-sm outline-none focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15"
+                  className={`mt-1 ${textareaClass}`}
                 />
               </div>
             ) : (
@@ -570,7 +979,7 @@ export function CreateSalesInvoicePage() {
                   onChange={(e) => patch({ terms: e.target.value })}
                   placeholder={t("dashboard.salesInvoices.create.termsPlaceholder")}
                   rows={3}
-                  className="mt-1 w-full rounded-md border border-slate-200/90 px-3 py-2 text-sm outline-none focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15"
+                  className={`mt-1 ${textareaClass}`}
                 />
               </div>
             ) : (
@@ -584,16 +993,42 @@ export function CreateSalesInvoicePage() {
             )}
 
             {form.showBankAccount ? (
-              <div className="rounded-md border border-slate-200/90 bg-slate-50/40 px-3 py-2 text-sm">
-                <span className="text-brand-primary-muted">Bank: </span>
-                <span className="font-medium text-brand-primary">{selectedBank?.label}</span>
-                <button
-                  type="button"
-                  onClick={() => setBankModalOpen(true)}
-                  className="ml-2 text-xs font-semibold text-brand-primary hover:underline"
-                >
-                  Change
-                </button>
+              <div className="rounded-md border border-slate-200/90 bg-slate-50/40 p-3 text-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium text-brand-primary-muted">
+                      {t("dashboard.createParty.bankName")}
+                    </p>
+                    <p className="font-semibold text-brand-primary">
+                      {selectedBank?.bankName || selectedBank?.accountHolderName || "—"}
+                    </p>
+                    {selectedBank ? (
+                      <p className="mt-1 text-xs text-brand-primary-mid">
+                        {t("dashboard.salesInvoices.create.acc")}:{" "}
+                        {maskBankAccountNumber(selectedBank.accountNumber)}
+                        {selectedBank.ifscCode ? ` • IFSC: ${selectedBank.ifscCode}` : ""}
+                      </p>
+                    ) : (
+                      <p className="mt-1 text-xs text-brand-primary-mid">{selectedBankLabel ?? "—"}</p>
+                    )}
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setBankModalOpen(true)}
+                      className="text-xs font-semibold text-brand-primary hover:underline"
+                    >
+                      {t("dashboard.businessProfile.change")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => patch({ showBankAccount: false, bankAccountId: null })}
+                      className="text-xs font-semibold text-red-600 hover:underline"
+                    >
+                      {t("dashboard.createParty.removeBank")}
+                    </button>
+                  </div>
+                </div>
               </div>
             ) : (
               <button
@@ -676,14 +1111,38 @@ export function CreateSalesInvoicePage() {
               <div className="divide-y divide-slate-100 px-4">
                 <TotalsRow
                   label={t("dashboard.salesInvoices.create.taxableAmount")}
-                  value={formatInr(totals.taxableAmount)}
+                  value={formatInr(
+                    form.discountTiming === "before_tax" && totals.discountAmount > 0
+                      ? totals.subtotal + totals.additionalChargesTotal
+                      : totals.taxableAmount,
+                  )}
                 />
 
                 <div className="grid grid-cols-[1fr_auto] items-center gap-4 py-2.5">
-                  <div className="flex min-w-0 items-center gap-2">
+                  <div className="flex min-w-0 flex-wrap items-center gap-2">
                     <span className="shrink-0 text-sm font-medium text-brand-primary">
                       + {t("dashboard.salesInvoices.create.addDiscount")}
                     </span>
+                    <div className="h-9 w-[128px] shrink-0">
+                      <ModernSelect
+                        value={form.discountTiming}
+                        onChange={(v) =>
+                          patch({ discountTiming: v as "after_tax" | "before_tax" })
+                        }
+                        options={[
+                          {
+                            value: "after_tax",
+                            label: t("dashboard.salesInvoices.create.discountAfterTax"),
+                          },
+                          {
+                            value: "before_tax",
+                            label: t("dashboard.salesInvoices.create.discountBeforeTax"),
+                          },
+                        ]}
+                        variant="compact"
+                        className="h-full w-full"
+                      />
+                    </div>
                     <div className={`${inputGroupClass} w-[148px] shrink-0`}>
                       <div className="h-full w-[52px] shrink-0">
                         <ModernSelect
@@ -710,9 +1169,29 @@ export function CreateSalesInvoicePage() {
                     </div>
                   </div>
                   <span className="shrink-0 text-sm font-semibold tabular-nums text-red-600">
-                    - {formatInr(totals.discountAmount)}
+                    {totals.discountAmount > 0 ? `- ${formatInr(totals.discountAmount)}` : formatInr(0)}
                   </span>
                 </div>
+
+                {form.discountTiming === "before_tax" && totals.discountAmount > 0 ? (
+                  <TotalsRow
+                    label={t("dashboard.salesInvoices.create.netTaxable")}
+                    value={formatInr(totals.taxableAmount)}
+                  />
+                ) : null}
+
+                {totals.gstSplit.map((row) => (
+                  <div key={`gst-${row.gstPercent}`}>
+                    <TotalsRow
+                      label={`${t("dashboard.salesInvoices.create.cgst")} (${row.cgstPercent}%)`}
+                      value={formatInr(row.cgst)}
+                    />
+                    <TotalsRow
+                      label={`${t("dashboard.salesInvoices.create.sgst")} (${row.sgstPercent}%)`}
+                      value={formatInr(row.sgst)}
+                    />
+                  </div>
+                ))}
 
                 <div className="grid grid-cols-[1fr_auto] items-center gap-4 py-2.5">
                   <div className="flex min-w-0 items-center gap-3">
@@ -807,9 +1286,9 @@ export function CreateSalesInvoicePage() {
 
       <AddItemsToBillModal
         open={addItemsOpen}
+        organisationId={activeOrganisationId}
         onClose={() => setAddItemsOpen(false)}
         onAdd={handleAddItems}
-        showPurchasePrice={form.settings.showPurchasePrice}
       />
 
       <InvoiceSettingsModal
@@ -818,18 +1297,39 @@ export function CreateSalesInvoicePage() {
         settings={form.settings}
         invoicePrefix={form.invoicePrefix}
         invoiceNumber={form.invoiceNumber}
-        onSave={(settings) => patch({ settings })}
+        onSave={(settings, invoiceMeta) => void handleInvoiceSettingsSave(settings, invoiceMeta)}
+      />
+
+      <SalesInvoicePreviewModal
+        open={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+        model={previewModel}
+        storedSettings={storedInvoiceSettings}
+        footer={
+          <button
+            type="button"
+            onClick={() => setPreviewOpen(false)}
+            className="inline-flex h-10 items-center rounded-md border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50"
+          >
+            {t("common.close")}
+          </button>
+        }
       />
 
       <BankAccountModal
         open={bankModalOpen}
         onClose={() => setBankModalOpen(false)}
+        organisationId={activeOrganisationId}
+        accounts={bankAccounts}
+        loading={bankAccountsLoading}
+        onRefresh={loadBankAccounts}
         selectedId={form.bankAccountId}
         onSave={(id) => patch({ bankAccountId: id, showBankAccount: true })}
       />
 
       <PartySelectModal
         open={partyModalOpen}
+        organisationId={activeOrganisationId}
         onClose={() => setPartyModalOpen(false)}
         onSelect={handlePartySelect}
       />

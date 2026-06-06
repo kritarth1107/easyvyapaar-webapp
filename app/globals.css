@@ -48,17 +48,15 @@
   --color-brand-orange-4: var(--brand-orange-4);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Dashboard uses light surfaces — keep readable text regardless of OS theme */
+.dashboard-content {
+  color: var(--brand-primary);
 }
 
 .brand-gradient-orange {
@@ -534,5 +532,65 @@ body {
     animation: none;
     width: 100%;
     margin-left: 0;
+  }
+}
+
+/* Off-screen holder for invoice print clone (screen only) */
+#invoice-print-clone-root {
+  position: fixed;
+  left: -10000px;
+  top: 0;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  pointer-events: none;
+  visibility: hidden;
+  z-index: -1;
+}
+
+@media print {
+  html.invoice-print-active,
+  body.invoice-print-active {
+    background: #fff !important;
+    color: #111 !important;
+    color-scheme: light !important;
+  }
+
+  body.invoice-print-active > *:not(#invoice-print-clone-root) {
+    display: none !important;
+  }
+
+  #invoice-print-clone-root {
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    pointer-events: auto !important;
+    visibility: visible !important;
+    z-index: auto !important;
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  #invoice-print-clone-root * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    box-shadow: none !important;
+  }
+
+  #invoice-print-clone-root [data-invoice-document] th,
+  #invoice-print-clone-root [data-invoice-document] td {
+    border-color: #000 !important;
+  }
+
+  #invoice-print-clone-root [class*="rounded-xl"]:not([data-invoice-document]):not(.invoice-doc-border),
+  #invoice-print-clone-root [class*="rounded-lg"]:not([data-invoice-document]):not(.invoice-doc-border),
+  #invoice-print-clone-root [class*="shadow"]:not([data-invoice-document]):not(.invoice-doc-border) {
+    border-radius: 0 !important;
+    box-shadow: none !important;
   }
 }

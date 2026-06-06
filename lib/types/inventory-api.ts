@@ -1,5 +1,31 @@
 export type InventoryItemStockStatus = "in_stock" | "low_stock" | "out_of_stock";
 
+export type PaginationMeta = {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+};
+
+export type InventoryItemListParams = {
+  search?: string;
+  category?: string;
+  stockStatus?: InventoryItemStockStatus;
+  page?: number;
+  limit?: number;
+};
+
+export type InventoryItemListResponse = {
+  items: InventoryItemSummary[];
+  pagination: PaginationMeta;
+};
+
+export type InventoryStockStats = {
+  stockValue: number;
+  lowStockCount: number;
+  totalItems: number;
+};
+
 export type InventoryItemSummary = {
   itemId: string;
   name: string;
@@ -11,8 +37,10 @@ export type InventoryItemSummary = {
   salePrice: number;
   purchasePrice: number;
   gstPercent: number;
+  salesTaxMode: "with_tax" | "without_tax";
   serialised: boolean;
   status: InventoryItemStockStatus;
+  availableSerialNumbers?: string[];
 };
 
 export type InventoryCategory = {
@@ -39,6 +67,10 @@ export type InventoryPartyPrice = {
 export type InventoryCustomField = {
   field: string;
   value: string;
+};
+
+export type InventoryPurchaseSupplier = {
+  partyId: string;
 };
 
 export type InventoryItemDetail = {
@@ -68,6 +100,7 @@ export type InventoryItemDetail = {
   description?: string;
   partyPrices: InventoryPartyPrice[];
   customFields: InventoryCustomField[];
+  purchaseSuppliers: InventoryPurchaseSupplier[];
   status: "ACTIVE" | "INACTIVE" | "ARCHIVED";
   createdByUserId: string;
   updatedByUserId?: string;
@@ -99,6 +132,40 @@ export type CreateInventoryItemRequest = {
   description?: string;
   partyPrices?: InventoryPartyPrice[];
   customFields?: InventoryCustomField[];
+  purchaseSuppliers?: InventoryPurchaseSupplier[];
+};
+
+export type StockAdjustmentType = "add" | "reduce";
+
+export type InventoryStockAdjustment = {
+  adjustmentId: string;
+  organisationId: string;
+  itemId: string;
+  itemName: string;
+  unit: string;
+  adjustmentDate: string;
+  type: StockAdjustmentType;
+  quantity: number;
+  serialNumbers?: string[];
+  remarks?: string;
+  stockBefore: number;
+  stockAfter: number;
+  createdByUserId: string;
+  createdAt: string;
+};
+
+export type CreateStockAdjustmentRequest = {
+  organisationId: string;
+  adjustmentDate: string;
+  type: StockAdjustmentType;
+  quantity?: number;
+  serialNumbers?: string[];
+  remarks?: string;
+};
+
+export type StockAdjustmentResult = {
+  adjustment: InventoryStockAdjustment;
+  item: InventoryItemDetail;
 };
 
 export type InventorySuccessResponse<T> = {

@@ -42,6 +42,6 @@ export const DASHBOARD_NOTIFICATIONS: DashboardNotification[] = [
     titleKey: "dashboard.notificationFeed.paymentTitle",
     messageKey: "dashboard.notificationFeed.paymentMessage",
     timeKey: "dashboard.notificationFeed.paymentTime",
-    href: "/dashboard/payments",
+    href: "/dashboard/finance/payments",
   },
 ];

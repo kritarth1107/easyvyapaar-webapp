@@ -14,6 +14,7 @@ import type { InvoicePreviewProps } from "@/lib/sales/invoice-preview-data";
 type InvoiceSettingsPreviewProps = InvoicePreviewProps & {
   themeId: InvoiceThemeId;
   themeLabel: string;
+  embedded?: boolean;
 };
 
 const IMPLEMENTED_THEMES: Partial<Record<InvoiceThemeId, ComponentType<InvoicePreviewProps>>> = {
@@ -30,6 +31,7 @@ const PREVIEW_SHELL_CLASS = "mx-auto flex w-full justify-center";
 export function InvoiceSettingsPreview({
   themeId,
   themeLabel,
+  embedded = false,
   ...previewProps
 }: InvoiceSettingsPreviewProps) {
   const Preview = IMPLEMENTED_THEMES[themeId];
@@ -37,7 +39,7 @@ export function InvoiceSettingsPreview({
   if (Preview) {
     return (
       <div className={PREVIEW_SHELL_CLASS}>
-        <Preview {...previewProps} />
+        <Preview {...previewProps} embedded={embedded} />
       </div>
     );
   }

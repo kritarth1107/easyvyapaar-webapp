@@ -19,7 +19,10 @@ type InvoiceSettingsModalProps = {
   settings: InvoiceSettings;
   invoicePrefix: string;
   invoiceNumber: string;
-  onSave: (settings: InvoiceSettings) => void;
+  onSave: (
+    settings: InvoiceSettings,
+    invoiceMeta?: { invoicePrefix: string; invoiceNumber: string },
+  ) => void;
 };
 
 function CloseIcon() {
@@ -100,7 +103,7 @@ export function InvoiceSettingsModal({
   }, [open, onClose]);
 
   const save = () => {
-    onSave(draft);
+    onSave(draft, { invoicePrefix: prefix, invoiceNumber: sequence });
     onClose();
   };
 

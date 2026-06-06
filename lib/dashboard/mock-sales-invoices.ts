@@ -1,4 +1,10 @@
-export type SalesInvoiceStatus = "paid" | "partial" | "unpaid" | "cancelled";
+export type SalesInvoiceStatus =
+  | "paid"
+  | "partial"
+  | "unpaid"
+  | "partial_return"
+  | "returned"
+  | "cancelled";
 
 export type SalesInvoice = {
   id: string;

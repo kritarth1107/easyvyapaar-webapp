@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { useUserMe } from "@/components/providers/user-me-provider";
 import {
   ChartLegend,
   DonutChart,
@@ -13,6 +14,7 @@ import {
   type AlertPriority,
   type LowStockAlertRow,
 } from "@/lib/dashboard/low-stock-analytics";
+import { useInventoryItems } from "@/lib/inventory/use-inventory-items";
 import { ModernSelect } from "@/components/ui/modern-select";
 import { useTranslation } from "@/lib/localization";
 
@@ -151,7 +153,7 @@ function AlertRowCard({
             {t("dashboard.lowStockPage.reorder")}
           </button>
           <Link
-            href="/dashboard/inventory/items"
+            href={`/dashboard/inventory/items/${encodeURIComponent(item.id)}`}
             className="inline-flex h-8 items-center rounded-md border border-slate-200/90 px-3 text-xs font-semibold text-brand-primary hover:bg-slate-50"
           >
             {t("dashboard.lowStockPage.viewItem")}
@@ -164,7 +166,14 @@ function AlertRowCard({
 
 export function LowStockPage() {
   const { t } = useTranslation();
-  const analytics = useMemo(() => computeLowStockAnalytics(), []);
+  const { activeOrganisationId, isWorkspaceLoading } = useUserMe();
+  const { items, loading, error } = useInventoryItems(activeOrganisationId, {
+    stockStatus: "low_stock",
+    limit: 100,
+    page: 1,
+  });
+  const analytics = useMemo(() => computeLowStockAnalytics(items), [items]);
+  const isLoading = isWorkspaceLoading || loading;
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("all");
   const [sort, setSort] = useState<"stock" | "deficit" | "name">("deficit");
@@ -222,6 +231,20 @@ export function LowStockPage() {
 
   return (
     <div className="p-4 lg:p-6">
+      {!activeOrganisationId && !isWorkspaceLoading && (
+        <p className="mb-4 rounded-md border border-amber-200/80 bg-amber-50/60 px-4 py-3 text-sm text-amber-900">
+          {t("dashboard.inventory.noOrganisation")}
+        </p>
+      )}
+      {error && (
+        <p className="mb-4 rounded-md border border-red-200/80 bg-red-50/60 px-4 py-3 text-sm text-red-800">
+          {t("dashboard.inventory.loadError")}
+        </p>
+      )}
+      {isLoading && (
+        <p className="mb-4 text-sm text-brand-primary-muted">{t("dashboard.inventory.loading")}</p>
+      )}
+
       <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <Link

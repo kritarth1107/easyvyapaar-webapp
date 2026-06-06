@@ -124,6 +124,20 @@ export const DEFAULT_FULL_INVOICE_SETTINGS: FullInvoiceSettings = {
   enableReceiverSignature: false,
 };
 
+/** Full settings page + quick-create-invoice modal toggles persisted per organisation. */
+export type StoredSalesInvoiceSettings = FullInvoiceSettings & {
+  showPrefixSequence: boolean;
+  showPurchasePrice: boolean;
+  showItemImage: boolean;
+};
+
+export const DEFAULT_STORED_SALES_INVOICE_SETTINGS: StoredSalesInvoiceSettings = {
+  ...DEFAULT_FULL_INVOICE_SETTINGS,
+  showPrefixSequence: true,
+  showPurchasePrice: true,
+  showItemImage: false,
+};
+
 const LEGACY_THEME_ID_MAP: Record<string, InvoiceThemeId> = {
   "advanced-gst": "gst-advance-a4",
   luxury: "modern",
@@ -133,6 +147,13 @@ const LEGACY_THEME_ID_MAP: Record<string, InvoiceThemeId> = {
   compact: "billbook-a5",
   retail: "billbook-a4",
 };
+
+export type InvoicePrintPageSize = "a4" | "a5";
+
+export function resolveInvoicePageSizeFromTheme(themeId: InvoiceThemeId | string): InvoicePrintPageSize {
+  const normalized = normalizeThemeId(themeId);
+  return normalized === "gst-advance-a5" || normalized === "billbook-a5" ? "a5" : "a4";
+}
 
 export function normalizeThemeId(themeId: string): InvoiceThemeId {
   if (LEGACY_THEME_ID_MAP[themeId]) {

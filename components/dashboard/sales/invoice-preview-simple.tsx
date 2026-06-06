@@ -1,31 +1,37 @@
 "use client";
 
 import {
-  formatInvoiceDateTime,
   InvoiceAuthorSignature,
+  InvoicePreviewBillToDetails,
+  InvoicePreviewBusinessDetails,
+  InvoicePreviewGstBreakdownTable,
+  InvoicePreviewItemDetails,
+  InvoicePreviewShippingAddress,
+  InvoicePreviewSummaryRows,
   InvoiceReceiverSignature,
 } from "@/components/dashboard/sales/invoice-preview-shared";
 import { getHeaderTextColor } from "@/lib/sales/invoice-settings-config";
+import { resolveInvoicePreviewContent } from "@/lib/sales/invoice-preview-document";
 import {
   A4_MIN_HEIGHT,
   A4_WIDTH,
   COL,
   fmtRupee,
-  LINES,
-  SUMMARY_ROWS,
   type InvoicePreviewProps,
 } from "@/lib/sales/invoice-preview-data";
 
-export function InvoicePreviewSimple({
-  businessName,
-  accentHex,
-  showPartyBalance,
-  showPhoneOnInvoice,
-  showItemDescription,
-  showTimeOnInvoice,
-  enableReceiverSignature,
-  signatureImageUrl,
-}: InvoicePreviewProps) {
+export function InvoicePreviewSimple(props: InvoicePreviewProps) {
+  const {
+    businessName,
+    accentHex,
+    showPartyBalance,
+    showPhoneOnInvoice,
+    showItemDescription,
+    enableReceiverSignature,
+    signatureImageUrl,
+    embedded = false,
+  } = props;
+  const content = resolveInvoicePreviewContent(props);
   const displayName = businessName.toUpperCase() || "MAYANK ELECTRONICS";
   const headerTextColor = getHeaderTextColor(accentHex);
 
@@ -45,10 +51,11 @@ export function InvoicePreviewSimple({
     </div>
   );
 
-  return (
-    <div className="mx-auto w-fit max-w-full rounded-xl border border-slate-200/90 bg-white p-5 shadow-sm sm:p-6 lg:p-8">
+  const documentNode = (
       <div
-        className="mx-auto shrink-0 font-[Arial,Helvetica,sans-serif] text-black"
+        data-invoice-document
+        data-invoice-page-size="a4"
+        className="mx-auto flex shrink-0 flex-col font-[Arial,Helvetica,sans-serif] text-black"
         style={{ width: A4_WIDTH, minHeight: A4_MIN_HEIGHT, fontSize: "12px", lineHeight: 1.35 }}
       >
         <div className="box-border border border-black">
@@ -70,17 +77,12 @@ export function InvoicePreviewSimple({
               </div>
               <div className="min-w-0 flex-1">
                 <p style={{ fontSize: "16px", fontWeight: 700, lineHeight: 1.1 }}>{displayName}</p>
-                <p style={{ fontSize: "10px", marginTop: 4, lineHeight: 1.45 }}>
-                  Bazarpara patna, Baikunthpur, Chhattisgarh, 497331
-                  <br />
-                  {showPhoneOnInvoice && (
-                    <>
-                      Mobile : 9399576767
-                      <br />
-                    </>
-                  )}
-                  GSTIN : 22FGDPS5345Q1ZS
-                </p>
+                <InvoicePreviewBusinessDetails
+                  content={content}
+                  showPhoneOnInvoice={showPhoneOnInvoice}
+                  fontSize={10}
+                  marginTop={4}
+                />
               </div>
             </div>
             <div
@@ -97,9 +99,9 @@ export function InvoicePreviewSimple({
                 ORIGINAL FOR RECIPIENT
               </div>
               <div className="space-y-1">
-                {metaRow("Invoice No.", "AABBCCDD/202")}
-                {metaRow("Invoice Date", formatInvoiceDateTime(showTimeOnInvoice))}
-                {metaRow("Due Date", "16/02/2023")}
+                {metaRow("Invoice No.", content.invoiceNumber)}
+                {metaRow("Invoice Date", content.invoiceDate)}
+                {metaRow("Due Date", content.dueDate)}
               </div>
             </div>
           </div>
@@ -111,23 +113,14 @@ export function InvoicePreviewSimple({
             </div>
             <div className="flex">
               <div className="flex-1 border-r border-black p-[8px]">
-                <p style={{ fontSize: "11px", fontWeight: 700 }}>Sample Party</p>
-                <p style={{ fontSize: "10px", marginTop: 3, lineHeight: 1.45 }}>
-                  No F2, Outer Circle, Connaught Circus, New Delhi, DELHI, 110001
-                  <br />
-                  Mobile: 7400417400
-                  <br />
-                  GSTIN: 07ABCCH2702H4ZZ
-                  <br />
-                  Place of Supply: Karnataka
-                </p>
+                <InvoicePreviewBillToDetails
+                  content={content}
+                  nameFontSize={11}
+                  fontSize={10}
+                />
               </div>
               <div className="p-[8px]" style={{ width: 200 }}>
-                <p style={{ fontSize: "10px", lineHeight: 1.45, color: "#333" }}>
-                  1234123 324324234,
-                  <br />
-                  Bengaluru,
-                </p>
+                <InvoicePreviewShippingAddress content={content} fontSize={10} label="" />
               </div>
             </div>
           </div>
@@ -167,14 +160,18 @@ export function InvoicePreviewSimple({
               </tr>
             </thead>
             <tbody>
-              {LINES.map((line, idx) => (
+              {content.lines.map((line, idx) => (
                 <tr key={`${line.name}-${idx}`} className="align-top">
                   <td className="border-b border-black px-2 py-2 text-center">{idx + 1}</td>
                   <td className="border-b border-black px-2 py-2">
                     <p style={{ fontWeight: 700, fontSize: "10px" }}>{line.name.toUpperCase()}</p>
-                    {showItemDescription && line.desc && (
-                      <p style={{ fontSize: "9px", color: "#666", marginTop: 2 }}>{line.desc}</p>
-                    )}
+                    <InvoicePreviewItemDetails
+                      serial={line.serial}
+                      desc={line.desc}
+                      showDescription={showItemDescription}
+                      fontSize={9}
+                      color="#666"
+                    />
                   </td>
                   <td className="border-b border-black px-2 py-2 text-center">{line.hsn}</td>
                   <td className="border-b border-black px-2 py-2 text-center">{line.qty}</td>
@@ -201,9 +198,9 @@ export function InvoicePreviewSimple({
                   SUBTOTAL
                 </td>
                 <td className="px-2 py-1.5" />
-                <td className="px-2 py-1.5 text-right font-bold">{fmtRupee("1,051.43")}</td>
-                <td className="px-2 py-1.5 text-right font-bold">{fmtRupee("1,724.57")}</td>
-                <td className="px-2 py-1.5 text-right font-bold">{fmtRupee("9,596.5")}</td>
+                <td className="px-2 py-1.5 text-right font-bold">{fmtRupee(content.totalDisc)}</td>
+                <td className="px-2 py-1.5 text-right font-bold">{fmtRupee(content.totalTax)}</td>
+                <td className="px-2 py-1.5 text-right font-bold">{fmtRupee(content.totalAmount)}</td>
               </tr>
             </tfoot>
           </table>
@@ -212,43 +209,35 @@ export function InvoicePreviewSimple({
           <div className="flex border-t border-black">
             <div className="min-w-0 flex-1 border-r border-black p-[8px]">
               <p style={{ fontSize: "10px", fontWeight: 700 }}>NOTES</p>
-              <p style={{ fontSize: "10px", marginTop: 3 }}>Sample Note</p>
+              <p style={{ fontSize: "10px", marginTop: 3 }}>{content.notes}</p>
               <InvoiceReceiverSignature enabled={enableReceiverSignature} fontSize={10} />
               <p style={{ fontSize: "10px", fontWeight: 700, marginTop: 12 }}>TERMS AND CONDITIONS</p>
               <p
                 style={{ fontSize: "8px", marginTop: 3, lineHeight: 1.45, color: "#444" }}
                 className="uppercase"
               >
-                NOTE:- IF ALL THE GOODS ARE DEFECTIVE, THE SERVICE CENTER WILL BE MADE FROM SERVICE
-                CENTER, THERE WILL BE NO RESPOSSIBILITY FOR THE STORE. ALL DISPUTES ARE SUBJECT TO
-                LOCAL JURISDICTION ONLY. E. &amp; O.E.
+                {content.terms}
               </p>
             </div>
 
             <div className="shrink-0 p-[8px]" style={{ width: "44%" }}>
-              <div className="space-y-1">
-                {SUMMARY_ROWS.map((row) => (
-                  <div
-                    key={row.label}
-                    className="flex justify-between gap-3"
-                    style={{ fontSize: "10px", fontWeight: row.bold ? 700 : 400 }}
-                  >
-                    <span>{row.label}</span>
-                    <span>{fmtRupee(row.value)}</span>
-                  </div>
-                ))}
+              <InvoicePreviewSummaryRows rows={content.summaryRows} fontSize={10} />
+              <div className="mt-2">
+                <InvoicePreviewGstBreakdownTable rows={content.gstRows} fontSize={9} />
+              </div>
+              <div className="mt-2 space-y-1">
                 {showPartyBalance && (
                   <>
                     <div className="flex justify-between gap-3" style={{ fontSize: "10px" }}>
                       <span>Previous Balance</span>
-                      <span>{fmtRupee("-1,92,050.15")}</span>
+                      <span>{fmtRupee(content.previousBalance)}</span>
                     </div>
                     <div
                       className="flex justify-between gap-3"
                       style={{ fontSize: "10px", fontWeight: 700 }}
                     >
                       <span>Current Balance</span>
-                      <span>{fmtRupee("-1,82,453.65")}</span>
+                      <span>{fmtRupee(content.currentBalance)}</span>
                     </div>
                   </>
                 )}
@@ -258,7 +247,7 @@ export function InvoicePreviewSimple({
                     style={{ fontSize: "10px", fontWeight: 700 }}
                   >
                     <span>Current Balance</span>
-                    <span>{fmtRupee("9,596.5")}</span>
+                    <span>{fmtRupee(content.totalAmount)}</span>
                   </div>
                 )}
               </div>
@@ -269,7 +258,7 @@ export function InvoicePreviewSimple({
               >
                 <span style={{ fontWeight: 700 }}>Total Amount (in words):</span>
                 <br />
-                Nine Thousand Five Hundred Ninety Six Rupees and Fifty Paise
+                {content.amountInWords}
               </p>
 
               <div className="mt-6">
@@ -285,6 +274,13 @@ export function InvoicePreviewSimple({
           </div>
         </div>
       </div>
+  );
+
+  if (embedded) return documentNode;
+
+  return (
+    <div className="mx-auto w-fit max-w-full rounded-xl border border-slate-200/90 bg-white p-5 shadow-sm sm:p-6 lg:p-8">
+      {documentNode}
     </div>
   );
 }

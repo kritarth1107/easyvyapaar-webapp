@@ -1,14 +1,18 @@
 "use client";
 
 import {
-  formatInvoiceDateTime,
   InvoiceAuthorSignature,
+  InvoicePreviewBillToDetails,
+  InvoicePreviewBusinessDetails,
+  InvoicePreviewGstBreakdownTable,
+  InvoicePreviewItemDetails,
+  InvoicePreviewSummaryRows,
   InvoiceReceiverSignature,
 } from "@/components/dashboard/sales/invoice-preview-shared";
 import { getHeaderTextColor } from "@/lib/sales/invoice-settings-config";
+import { resolveInvoicePreviewContent } from "@/lib/sales/invoice-preview-document";
 import {
   BILLBOOK_COL,
-  BILLBOOK_LINES,
   fmtRupee,
   PAGE_SIZES,
   pageScale,
@@ -31,17 +35,19 @@ const BILLBOOK_ITEMS_BODY: Record<InvoicePageSize, number> = {
   a5: 72,
 };
 
-export function InvoicePreviewBillbook({
-  businessName,
-  accentHex,
-  showPartyBalance,
-  showPhoneOnInvoice,
-  showItemDescription,
-  showTimeOnInvoice,
-  enableReceiverSignature,
-  signatureImageUrl,
-  pageSize,
-}: BillbookPreviewProps) {
+export function InvoicePreviewBillbook(props: BillbookPreviewProps) {
+  const {
+    businessName,
+    accentHex,
+    showPartyBalance,
+    showPhoneOnInvoice,
+    showItemDescription,
+    enableReceiverSignature,
+    signatureImageUrl,
+    pageSize,
+    embedded = false,
+  } = props;
+  const content = resolveInvoicePreviewContent(props);
   const displayName = businessName.toUpperCase() || "MAYANK ELECTRONICS";
   const headerTextColor = getHeaderTextColor(accentHex);
   const page = PAGE_SIZES[pageSize];
@@ -53,10 +59,11 @@ export function InvoicePreviewBillbook({
 
   const headerStyle = { backgroundColor: accentHex, color: headerTextColor };
 
-  return (
-    <div className="mx-auto w-fit max-w-full rounded-xl border border-slate-200/90 bg-white p-5 shadow-sm sm:p-6 lg:p-8">
+  const documentNode = (
       <div
-        className="mx-auto shrink-0 bg-white font-[Arial,Helvetica,sans-serif] text-black"
+        data-invoice-document
+        data-invoice-page-size="a4"
+        className="mx-auto flex shrink-0 flex-col bg-white font-[Arial,Helvetica,sans-serif] text-black"
         style={{
           width: page.width,
           minHeight: page.minHeight,
@@ -101,15 +108,11 @@ export function InvoicePreviewBillbook({
             </div>
             <div className="min-w-0 flex-1 text-center">
               <p style={{ fontSize: "18px", fontWeight: 700, lineHeight: 1.1 }}>{displayName}</p>
-              <p style={{ fontSize: "11px", marginTop: 4, lineHeight: 1.4 }}>
-                Bazarpara patna, Baikunthpur, Chhattisgarh, 497331
-                {showPhoneOnInvoice && (
-                  <>
-                    <br />
-                    Mobile: 9399576767
-                  </>
-                )}
-              </p>
+              <InvoicePreviewBusinessDetails
+                content={content}
+                showPhoneOnInvoice={showPhoneOnInvoice}
+                fontSize={11}
+              />
             </div>
             <div className="shrink-0" style={{ width: px(56) }} />
           </div>
@@ -118,21 +121,14 @@ export function InvoicePreviewBillbook({
           <div className="flex border-b border-black" style={{ minHeight: px(72) }}>
             <div className="flex-1 border-r border-black p-[8px]">
               <p style={{ fontSize: "11px", fontWeight: 700 }}>BILL TO</p>
-              <p style={{ fontSize: "12px", fontWeight: 700, marginTop: 3 }}>SAMPLE PARTY</p>
-              <p style={{ fontSize: "11px", marginTop: 3, lineHeight: 1.4 }}>
-                No F2, Outer Circle, Connaught Circus,
-                <br />
-                New Delhi, DELHI, 110001
-                <br />
-                Mobile: 7400417400
-              </p>
+              <InvoicePreviewBillToDetails content={content} />
             </div>
             <div className="flex" style={{ width: px(280) }}>
               {(
                 [
-                  { label: "Invoice No.", value: "AABBCCDD/202" },
-                  { label: "Invoice Date", value: formatInvoiceDateTime(showTimeOnInvoice) },
-                  { label: "Due Date", value: "16/02/2023" },
+                  { label: "Invoice No.", value: content.invoiceNumber },
+                  { label: "Invoice Date", value: content.invoiceDate },
+                  { label: content.dueDateLabel, value: content.dueDate },
                 ] as const
               ).map((field, i) => (
                 <div
@@ -188,14 +184,17 @@ export function InvoicePreviewBillbook({
               </tr>
             </thead>
             <tbody>
-              {BILLBOOK_LINES.map((line, idx) => (
+              {content.billbookLines.map((line, idx) => (
                 <tr key={`${line.name}-${idx}`}>
                   <td className={`${VC} border-l-0 text-center`}>{idx + 1}</td>
                   <td className={VC}>
                     <p style={{ fontWeight: 700, fontSize: "11px" }}>{line.name}</p>
-                    {showItemDescription && line.desc && (
-                      <p style={{ fontSize: "10px", color: "#444", marginTop: 2 }}>{line.desc}</p>
-                    )}
+                    <InvoicePreviewItemDetails
+                      serial={line.serial}
+                      desc={line.desc}
+                      showDescription={showItemDescription}
+                      fontSize={10}
+                    />
                   </td>
                   <td className={`${VC} text-center`}>{line.qty}</td>
                   <td className={`${VC} text-right`}>{line.rate}</td>
@@ -223,36 +222,45 @@ export function InvoicePreviewBillbook({
                   TOTAL
                 </td>
                 <td className={`${SB} border-t text-right`} style={{ fontWeight: 700 }}>
-                  {fmtRupee("1,051.43")}
+                  {fmtRupee(content.totalDisc)}
                 </td>
                 <td className={`${SBR} border-t text-right`} style={{ fontWeight: 700 }}>
-                  {fmtRupee("9,596.5")}
+                  {fmtRupee(content.totalAmount)}
                 </td>
               </tr>
-              <tr>
-                <td className={SBL} colSpan={5} style={{ textAlign: "right" }}>
-                  RECEIVED AMOUNT
-                </td>
-                <td className={`${SBR} text-right`}>{fmtRupee("0")}</td>
-              </tr>
-              {showPartyBalance && (
-                <tr>
-                  <td className={SBL} colSpan={5} style={{ textAlign: "right" }}>
-                    PREVIOUS BALANCE
-                  </td>
-                  <td className={`${SBR} text-right`}>{fmtRupee("-1,92,050.15")}</td>
-                </tr>
+              {!content.hidePaymentSummary && (
+                <>
+                  <tr>
+                    <td className={SBL} colSpan={5} style={{ textAlign: "right" }}>
+                      RECEIVED AMOUNT
+                    </td>
+                    <td className={`${SBR} text-right`}>{fmtRupee(content.receivedAmount)}</td>
+                  </tr>
+                  {showPartyBalance && (
+                    <tr>
+                      <td className={SBL} colSpan={5} style={{ textAlign: "right" }}>
+                        PREVIOUS BALANCE
+                      </td>
+                      <td className={`${SBR} text-right`}>{fmtRupee(content.previousBalance)}</td>
+                    </tr>
+                  )}
+                  <tr>
+                    <td className={SBL} colSpan={5} style={{ textAlign: "right", fontWeight: 700 }}>
+                      CURRENT BALANCE
+                    </td>
+                    <td className={`${SBR} text-right`} style={{ fontWeight: 700 }}>
+                      {showPartyBalance ? fmtRupee(content.currentBalance) : fmtRupee(content.totalAmount)}
+                    </td>
+                  </tr>
+                </>
               )}
-              <tr>
-                <td className={SBL} colSpan={5} style={{ textAlign: "right", fontWeight: 700 }}>
-                  CURRENT BALANCE
-                </td>
-                <td className={`${SBR} text-right`} style={{ fontWeight: 700 }}>
-                  {showPartyBalance ? fmtRupee("-1,82,453.65") : fmtRupee("9,596.5")}
-                </td>
-              </tr>
             </tbody>
           </table>
+
+          <div className="border-t border-black px-[8px] py-[6px]">
+            <InvoicePreviewSummaryRows rows={content.summaryRows} fontSize={11} />
+          </div>
+          <InvoicePreviewGstBreakdownTable rows={content.gstRows} fontSize={11} />
 
           {/* Amount in words */}
           <div
@@ -260,23 +268,19 @@ export function InvoicePreviewBillbook({
             style={{ fontSize: "11px" }}
           >
             <span style={{ fontWeight: 700 }}>Total Amount (in words) </span>
-            Nine Thousand Five Hundred Ninety Six Rupees and Fifty Paise
+            {content.amountInWords}
           </div>
 
           {/* Footer */}
           <div className="flex" style={{ minHeight: px(96) }}>
             <div className="flex-1 border-r border-black p-[8px]">
               <p style={{ fontSize: "11px", fontWeight: 700 }}>Notes</p>
-              <p style={{ fontSize: "11px", marginTop: 3 }}>Sample Note</p>
+              <p style={{ fontSize: "11px", marginTop: 3 }}>{content.notes}</p>
               <InvoiceReceiverSignature enabled={enableReceiverSignature} fontSize={11} />
             </div>
             <div className="border-r border-black p-[8px]" style={{ width: "46%" }}>
               <p style={{ fontSize: "11px", fontWeight: 700 }}>Terms and Conditions</p>
-              <p style={{ fontSize: "10px", marginTop: 3, lineHeight: 1.45 }}>
-                NOTE:- IF ALL THE GOODS ARE DEFECTIVE, THE SERVICE CENTER WILL BE MADE FROM SERVICE
-                CENTER, THERE WILL BE NO RESPOSSIBILITY FOR THE STORE. ALL DISPUTES ARE SUBJECT TO
-                LOCAL JURISDICTION ONLY. E. &amp; O.E.
-              </p>
+              <p style={{ fontSize: "10px", marginTop: 3, lineHeight: 1.45 }}>{content.terms}</p>
             </div>
             <div
               className="flex flex-col items-center justify-end p-[8px]"
@@ -292,6 +296,13 @@ export function InvoicePreviewBillbook({
           </div>
         </div>
       </div>
+  );
+
+  if (embedded) return documentNode;
+
+  return (
+    <div className="mx-auto w-fit max-w-full rounded-xl border border-slate-200/90 bg-white p-5 shadow-sm sm:p-6 lg:p-8">
+      {documentNode}
     </div>
   );
 }

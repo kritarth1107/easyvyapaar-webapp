@@ -1,3 +1,4 @@
+import { INDUSTRY_TYPES, type IndustryType } from "@/lib/constants/industry-types";
 import { ORGANISATION_TYPES, type OrganisationType } from "@/lib/constants/organisation-types";
 import type { OrganisationSummary, UserMeData } from "@/lib/types/user-api";
 
@@ -21,6 +22,15 @@ function normalizeOrganisationType(value: unknown): OrganisationType | string | 
   return value.trim();
 }
 
+function normalizeIndustryType(value: unknown): IndustryType | string | null | undefined {
+  if (typeof value !== "string" || !value.trim()) return undefined;
+  const upper = value.trim().toUpperCase().replace(/\s+/g, "_");
+  if ((INDUSTRY_TYPES as readonly string[]).includes(upper)) {
+    return upper as IndustryType;
+  }
+  return value.trim();
+}
+
 export function normalizeOrganisationSummary(raw: unknown): OrganisationSummary | null {
   const o = asRecord(raw);
   if (!o) return null;
@@ -40,6 +50,7 @@ export function normalizeOrganisationSummary(raw: unknown): OrganisationSummary 
     organisationType: normalizeOrganisationType(
       o.organisationType ?? o.organisation_type ?? o.type ?? o.orgType
     ),
+    industryType: normalizeIndustryType(o.industryType ?? o.industry_type),
   };
 }
 

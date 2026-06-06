@@ -137,7 +137,7 @@ export function DashboardOverview() {
           value={formatInr(shopStats.toPay)}
           hint={t("dashboard.toPayHint")}
           accent="amber"
-          href="/dashboard/payments"
+          href="/dashboard/finance/payments"
         />
         <KpiCard
           label={t("dashboard.lowStock")}
@@ -210,9 +210,9 @@ export function DashboardOverview() {
           <div className="mt-4 grid grid-cols-2 gap-2">
             {[
               { label: t("dashboard.actionPos"), href: "/dashboard/pos" },
-              { label: t("dashboard.actionParty"), href: "/dashboard/parties" },
+              { label: t("dashboard.actionParty"), href: "/dashboard/parties/all-parties" },
               { label: t("dashboard.actionItem"), href: "/dashboard/inventory/items" },
-              { label: t("dashboard.actionPayment"), href: "/dashboard/payments" },
+              { label: t("dashboard.actionPayment"), href: "/dashboard/finance/payments" },
               { label: t("dashboard.actionPurchase"), href: "/dashboard/purchases" },
               { label: t("dashboard.actionExpense"), href: "/dashboard/expenses" },
             ].map((action) => (

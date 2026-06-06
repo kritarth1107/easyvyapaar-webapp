@@ -1,13 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { useUserMe } from "@/components/providers/user-me-provider";
 import {
-  getInventorySummary,
-  MOCK_INVENTORY_ITEMS,
   type InventoryItem,
   type InventoryItemStatus,
 } from "@/lib/dashboard/mock-inventory-items";
+import { fetchInventoryCategories, fetchInventoryStockStats } from "@/lib/inventory/inventory-api-client";
+import { useInventoryItems } from "@/lib/inventory/use-inventory-items";
+import type { InventoryStockStats } from "@/lib/types/inventory-api";
 import { CreateItemModal } from "@/components/dashboard/inventory/create-item-modal";
 import { ModernSelect } from "@/components/ui/modern-select";
 import { useTranslation } from "@/lib/localization";
@@ -172,30 +175,54 @@ function CompactStatCard({
 
 export function InventoryPage() {
   const { t } = useTranslation();
+  const { activeOrganisationId, isWorkspaceLoading } = useUserMe();
   const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [category, setCategory] = useState<string>("all");
+  const [page, setPage] = useState(1);
   const [createOpen, setCreateOpen] = useState(false);
+  const [categoryOptions, setCategoryOptions] = useState<string[]>([]);
+  const [stockStats, setStockStats] = useState<InventoryStockStats | null>(null);
 
-  const categories = useMemo(() => {
-    const set = new Set(MOCK_INVENTORY_ITEMS.map((i) => i.category));
-    return ["all", ...Array.from(set).sort()];
-  }, []);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedQuery(query), 300);
+    return () => window.clearTimeout(timer);
+  }, [query]);
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return MOCK_INVENTORY_ITEMS.filter((item) => {
-      if (category !== "all" && item.category !== category) return false;
-      if (!q) return true;
-      return (
-        item.name.toLowerCase().includes(q) ||
-        item.sku.toLowerCase().includes(q) ||
-        item.hsn.includes(q) ||
-        item.category.toLowerCase().includes(q)
-      );
-    });
-  }, [query, category]);
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedQuery, category]);
 
-  const summary = getInventorySummary(MOCK_INVENTORY_ITEMS);
+  const { items, pagination, loading, error, reload } = useInventoryItems(activeOrganisationId, {
+    search: debouncedQuery,
+    category,
+    page,
+    limit: 20,
+  });
+
+  useEffect(() => {
+    const orgId = activeOrganisationId?.trim();
+    if (!orgId) {
+      setCategoryOptions([]);
+      setStockStats(null);
+      return;
+    }
+
+    void Promise.all([fetchInventoryCategories(orgId), fetchInventoryStockStats(orgId)])
+      .then(([categories, stats]) => {
+        setCategoryOptions(categories.map((row) => row.name).sort());
+        setStockStats(stats);
+      })
+      .catch(() => {
+        setCategoryOptions([]);
+        setStockStats(null);
+      });
+  }, [activeOrganisationId]);
+
+  const categories = useMemo(() => ["all", ...categoryOptions], [categoryOptions]);
+
+  const isLoading = isWorkspaceLoading || loading;
+  const showNoOrganisation = !isWorkspaceLoading && !activeOrganisationId;
 
   return (
     <div className="p-4 lg:p-6">
@@ -211,7 +238,8 @@ export function InventoryPage() {
         <button
           type="button"
           onClick={() => setCreateOpen(true)}
-          className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-gradient-to-r from-brand-orange-2 to-brand-orange-1 px-4 text-sm font-semibold text-white shadow-[0_2px_10px_-4px_rgba(246,62,22,0.4)] transition-all hover:brightness-105"
+          disabled={!activeOrganisationId}
+          className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-gradient-to-r from-brand-orange-2 to-brand-orange-1 px-4 text-sm font-semibold text-white shadow-[0_2px_10px_-4px_rgba(246,62,22,0.4)] transition-all hover:brightness-105 disabled:opacity-60"
         >
           <span aria-hidden className="text-lg leading-none">
             +
@@ -220,18 +248,30 @@ export function InventoryPage() {
         </button>
       </div>
 
+      {showNoOrganisation && (
+        <p className="mb-4 rounded-md border border-amber-200/80 bg-amber-50/60 px-4 py-3 text-sm text-amber-900">
+          {t("dashboard.inventory.noOrganisation")}
+        </p>
+      )}
+
+      {error && (
+        <p className="mb-4 rounded-md border border-red-200/80 bg-red-50/60 px-4 py-3 text-sm text-red-800">
+          {t("dashboard.inventory.loadError")}
+        </p>
+      )}
+
       <div className="mb-6 grid max-w-xl grid-cols-1 gap-3 sm:grid-cols-2">
         <CompactStatCard
           variant="stock-value"
           label={t("dashboard.inventory.stockValue")}
-          value={formatInrCompact(summary.stockValue)}
+          value={isLoading ? "—" : formatInrCompact(stockStats?.stockValue ?? 0)}
           hint={t("dashboard.inventory.stockValueHint")}
           href="/dashboard/inventory/stock-summary"
         />
         <CompactStatCard
           variant="low-stock"
           label={t("dashboard.inventory.lowStock")}
-          value={String(summary.lowStock)}
+          value={isLoading ? "—" : String(stockStats?.lowStockCount ?? 0)}
           href="/dashboard/inventory/low-stock"
         />
       </div>
@@ -283,40 +323,98 @@ export function InventoryPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 ? (
+              {isLoading ? (
+                <tr>
+                  <td colSpan={7} className="px-4 py-12 text-center text-sm text-slate-500">
+                    {t("dashboard.inventory.loading")}
+                  </td>
+                </tr>
+              ) : items.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-4 py-12 text-center text-sm text-slate-500">
                     {t("dashboard.inventory.empty")}
                   </td>
                 </tr>
               ) : (
-                filtered.map((item) => <InventoryRow key={item.id} item={item} />)
+                items.map((item) => <InventoryRow key={item.id} item={item} />)
               )}
             </tbody>
           </table>
         </div>
+
+        {pagination.totalPages > 1 && (
+          <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3">
+            <p className="text-xs text-brand-primary-muted">
+              Page {pagination.page} of {pagination.totalPages} ({pagination.total} items)
+            </p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                disabled={pagination.page <= 1 || isLoading}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                className="h-8 rounded-md border border-slate-200/90 px-3 text-xs font-semibold text-brand-primary disabled:opacity-50"
+              >
+                Previous
+              </button>
+              <button
+                type="button"
+                disabled={pagination.page >= pagination.totalPages || isLoading}
+                onClick={() => setPage((p) => p + 1)}
+                className="h-8 rounded-md border border-slate-200/90 px-3 text-xs font-semibold text-brand-primary disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
-      <CreateItemModal open={createOpen} onClose={() => setCreateOpen(false)} />
+      <CreateItemModal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        organisationId={activeOrganisationId}
+        onSaved={() => void reload()}
+      />
     </div>
   );
 }
 
 function InventoryRow({ item }: { item: InventoryItem }) {
   const { t } = useTranslation();
+  const router = useRouter();
+  const itemHref = `/dashboard/inventory/items/${encodeURIComponent(item.id)}`;
+
+  const openItem = () => {
+    router.push(itemHref);
+  };
 
   return (
-    <tr className="border-b border-slate-100 last:border-b-0 transition-colors hover:bg-slate-50/60">
+    <tr
+      className="cursor-pointer border-b border-slate-100 last:border-b-0 transition-colors hover:bg-slate-50/60"
+      onClick={openItem}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          openItem();
+        }
+      }}
+      tabIndex={0}
+      role="link"
+      aria-label={item.name}
+    >
       <td className="px-4 py-3">
-        <p className="font-semibold text-brand-primary">{item.name}</p>
-        {item.serialised && (
-          <Link
-            href="/dashboard/inventory/serial-tracking"
-            className="mt-0.5 inline-block text-[11px] font-medium text-violet-600 hover:text-violet-800 hover:underline"
-          >
-            {t("dashboard.inventory.serialTracking")}
-          </Link>
-        )}
+        <div className="flex flex-col items-start gap-0.5">
+          <p className="font-semibold text-brand-primary">{item.name}</p>
+          {item.serialised && (
+            <Link
+              href="/dashboard/inventory/serial-tracking"
+              onClick={(e) => e.stopPropagation()}
+              className="text-[11px] font-medium text-violet-600 hover:text-violet-800 hover:underline"
+            >
+              {t("dashboard.inventory.serialTracking")}
+            </Link>
+          )}
+        </div>
       </td>
       <td className="px-4 py-3">
         <p className="font-mono text-xs text-brand-primary">{item.sku}</p>

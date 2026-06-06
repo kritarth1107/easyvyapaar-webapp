@@ -48,7 +48,7 @@ export const DASHBOARD_NAV_GROUPS: NavGroupConfig[] = [
     id: "parties",
     icon: "parties",
     items: [
-      { id: "parties", href: "/dashboard/parties", icon: "parties" },
+      { id: "parties", href: "/dashboard/parties/all-parties", icon: "parties" },
       { id: "customers", href: "/dashboard/parties/customers", icon: "users" },
       { id: "suppliers", href: "/dashboard/parties/suppliers", icon: "users" },
       { id: "outstanding", href: "/dashboard/parties/outstanding", icon: "wallet" },
@@ -89,16 +89,27 @@ export const DASHBOARD_NAV_GROUPS: NavGroupConfig[] = [
     id: "reports",
     icon: "reports",
     items: [
+      { id: "reports-hub", href: "/dashboard/reports", icon: "reports" },
       { id: "gst-reports", href: "/dashboard/reports/gst-reports", icon: "reports" },
       { id: "financial-reports", href: "/dashboard/reports/financial-reports", icon: "chart" },
       { id: "inventory-reports", href: "/dashboard/reports/inventory-reports", icon: "warehouse" },
       { id: "party-reports", href: "/dashboard/reports/party-reports", icon: "parties" },
     ],
   },
+  {
+    id: "staff-payroll",
+    icon: "staff",
+    items: [
+      { id: "staff-list", href: "/dashboard/staff-payroll/staffs", icon: "staff" },
+      { id: "staff-create", href: "/dashboard/staff-payroll/staffs/create-new", icon: "staff" },
+      { id: "payroll", href: "/dashboard/staff-payroll/payroll", icon: "wallet" },
+      { id: "attendance", href: "/dashboard/staff-payroll/attendance", icon: "document" },
+      { id: "attendance-report", href: "/dashboard/staff-payroll/attendance/report", icon: "chart" },
+    ],
+  },
 ];
 
 export const DASHBOARD_NAV_BOTTOM: Omit<DashboardNavLink, "label">[] = [
-  { id: "staff", href: "/dashboard/staff", icon: "staff" },
   { id: "whatsapp-integration", href: "/dashboard/integrations/whatsapp-integration", icon: "whatsapp" },
 ];
 
@@ -107,6 +118,11 @@ export const DASHBOARD_SETTINGS_GROUP: NavGroupConfig = {
   icon: "settings",
   items: [
     { id: "business-profile", href: "/dashboard/settings/business-profile", icon: "settings" },
+    {
+      id: "business-bank-accounts",
+      href: "/dashboard/settings/business-bank-accounts",
+      icon: "wallet",
+    },
     { id: "invoice-themes", href: "/dashboard/sales/invoices/settings", icon: "document" },
     { id: "print-settings", href: "/dashboard/settings/print-settings", icon: "settings" },
     { id: "settings", href: "/dashboard/settings/settings", icon: "settings" },

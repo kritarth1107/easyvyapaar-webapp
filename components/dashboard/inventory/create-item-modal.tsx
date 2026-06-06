@@ -1,19 +1,36 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { CategorySelect } from "@/components/dashboard/inventory/category-select";
+import {
+  CategorySelect,
+  type CategoryOption,
+} from "@/components/dashboard/inventory/category-select";
 import { CreateCategoryModal } from "@/components/dashboard/inventory/create-category-modal";
 import { CreateUnitModal } from "@/components/dashboard/inventory/create-unit-modal";
+import { HsnPickerDrawer } from "@/components/dashboard/inventory/hsn-picker-drawer";
 import { SerialNumbersSection } from "@/components/dashboard/inventory/serial-numbers-section";
 import { UnitSelect } from "@/components/dashboard/inventory/unit-select";
 import { ModernSelect } from "@/components/ui/modern-select";
-import { MOCK_INVENTORY_ITEMS } from "@/lib/dashboard/mock-inventory-items";
+import {
+  createInventoryCategory,
+  createInventoryItem,
+} from "@/lib/inventory/inventory-api-client";
+import { fetchParties } from "@/lib/parties/parties-api-client";
+import type { PartySummary } from "@/lib/types/parties-api";
+import { mapFormToCreateItemRequest } from "@/lib/inventory/map-form-to-create-request";
+import { useUserMe } from "@/components/providers/user-me-provider";
+import { formatIndustryTypeLabel } from "@/lib/constants/industry-types";
+import {
+  getCatalogCategoriesForIndustry,
+  mergeCategoryOptions,
+  normalizeIndustryType,
+} from "@/lib/inventory/predefined-categories";
+import { resolveCategoryIdForSave } from "@/lib/inventory/resolve-category-for-save";
 import {
   createInitialItemForm,
   createSerialRow,
   generateItemCode,
-  getInitialCategoryList,
   getInitialUnitList,
   GST_RATE_OPTIONS,
   normalizeUnitName,
@@ -25,7 +42,8 @@ import { useTranslation, type TranslationKey } from "@/lib/localization";
 type CreateItemModalProps = {
   open: boolean;
   onClose: () => void;
-  onSaved?: (saveAndNew: boolean) => void;
+  organisationId: string | null;
+  onSaved?: () => void;
 };
 
 function CloseIcon() {
@@ -146,19 +164,38 @@ function FormField({
   );
 }
 
-export function CreateItemModal({ open, onClose, onSaved }: CreateItemModalProps) {
+export function CreateItemModal({ open, onClose, organisationId, onSaved }: CreateItemModalProps) {
   const { t } = useTranslation();
+  const { activeOrganisation } = useUserMe();
+  const industryType = activeOrganisation?.industryType ?? null;
   const [mounted, setMounted] = useState(false);
   const [section, setSection] = useState<CreateItemSection>("basic");
   const [form, setForm] = useState<CreateItemFormState>(createInitialItemForm);
   const [nameError, setNameError] = useState(false);
+  const [categoryError, setCategoryError] = useState(false);
   const [serialError, setSerialError] = useState<string | null>(null);
-  const [categories, setCategories] = useState<string[]>(() =>
-    getInitialCategoryList(MOCK_INVENTORY_ITEMS.map((i) => i.category))
+  const [customCategories, setCustomCategories] = useState<CategoryOption[]>([]);
+  const resolvedCategoryIds = useRef(new Map<string, string>());
+  const categories = useMemo(
+    () =>
+      mergeCategoryOptions(
+        getCatalogCategoriesForIndustry(industryType),
+        customCategories,
+      ),
+    [customCategories, industryType],
   );
+  const industryLabel = useMemo(() => {
+    const normalized = normalizeIndustryType(industryType);
+    return normalized ? formatIndustryTypeLabel(normalized) : null;
+  }, [industryType]);
   const [createCategoryOpen, setCreateCategoryOpen] = useState(false);
   const [units, setUnits] = useState<string[]>(() => getInitialUnitList());
   const [createUnitOpen, setCreateUnitOpen] = useState(false);
+  const [hsnPickerOpen, setHsnPickerOpen] = useState(false);
+  const [saveLoading, setSaveLoading] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [suppliers, setSuppliers] = useState<PartySummary[]>([]);
+  const [suppliersLoading, setSuppliersLoading] = useState(false);
 
   const patch = useCallback(
     (partial: Partial<CreateItemFormState>) => setForm((prev) => ({ ...prev, ...partial })),
@@ -166,9 +203,11 @@ export function CreateItemModal({ open, onClose, onSaved }: CreateItemModalProps
   );
 
   const resetForm = useCallback(() => {
-    setForm(createInitialItemForm());
+    setForm({ ...createInitialItemForm(), itemCode: generateItemCode() });
     setSection("basic");
     setNameError(false);
+    setCategoryError(false);
+    setSaveError(null);
   }, []);
 
   useEffect(() => setMounted(true), []);
@@ -176,7 +215,7 @@ export function CreateItemModal({ open, onClose, onSaved }: CreateItemModalProps
   useEffect(() => {
     if (!open) return;
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape" && !hsnPickerOpen) onClose();
     };
     const prev = document.body.style.overflow;
     document.addEventListener("keydown", onKeyDown);
@@ -185,13 +224,43 @@ export function CreateItemModal({ open, onClose, onSaved }: CreateItemModalProps
       document.removeEventListener("keydown", onKeyDown);
       document.body.style.overflow = prev;
     };
-  }, [open, onClose]);
+  }, [open, onClose, hsnPickerOpen]);
+
+  useEffect(() => {
+    if (!open) setHsnPickerOpen(false);
+  }, [open]);
 
   useEffect(() => {
     if (!open) {
       resetForm();
     }
   }, [open, resetForm]);
+
+  useEffect(() => {
+    const orgId = organisationId?.trim();
+    if (!open || !orgId) {
+      setSuppliers([]);
+      return;
+    }
+
+    let cancelled = false;
+    setSuppliersLoading(true);
+
+    fetchParties(orgId, { view: "suppliers", limit: 100, page: 1 })
+      .then((data) => {
+        if (!cancelled) setSuppliers(data.items);
+      })
+      .catch(() => {
+        if (!cancelled) setSuppliers([]);
+      })
+      .finally(() => {
+        if (!cancelled) setSuppliersLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, organisationId]);
 
   const handleSerialisationChange = (enabled: boolean) => {
     if (enabled) {
@@ -211,8 +280,10 @@ export function CreateItemModal({ open, onClose, onSaved }: CreateItemModalProps
 
   const validate = () => {
     const nameOk = form.name.trim().length > 0;
+    const categoryOk = form.categoryId.trim().length > 0;
     setNameError(!nameOk);
-    if (!nameOk) {
+    setCategoryError(!categoryOk);
+    if (!nameOk || !categoryOk) {
       setSection("basic");
       return false;
     }
@@ -238,11 +309,32 @@ export function CreateItemModal({ open, onClose, onSaved }: CreateItemModalProps
     return true;
   };
 
-  const handleSave = (saveAndNew: boolean) => {
+  const handleSave = async (saveAndNew: boolean) => {
     if (!validate()) return;
-    onSaved?.(saveAndNew);
-    if (saveAndNew) resetForm();
-    else onClose();
+
+    const orgId = organisationId?.trim();
+    if (!orgId) return;
+
+    setSaveLoading(true);
+    setSaveError(null);
+    try {
+      const categoryId = await resolveCategoryIdForSave(
+        form.categoryId,
+        orgId,
+        resolvedCategoryIds.current,
+      );
+      const payload = mapFormToCreateItemRequest({ ...form, categoryId }, orgId);
+      await createInventoryItem(payload);
+      onSaved?.();
+      if (saveAndNew) resetForm();
+      else onClose();
+    } catch (err) {
+      setSaveError(
+        err instanceof Error ? err.message : t("dashboard.inventory.createItem.saveError"),
+      );
+    } finally {
+      setSaveLoading(false);
+    }
   };
 
   const sections = useMemo(() => {
@@ -259,6 +351,7 @@ export function CreateItemModal({ open, onClose, onSaved }: CreateItemModalProps
     list.push(
       { id: "stock", label: t("dashboard.inventory.createItem.sections.stock"), group: "advance" },
       { id: "pricing", label: t("dashboard.inventory.createItem.sections.pricing"), group: "advance" },
+      { id: "suppliers", label: t("dashboard.inventory.createItem.sections.suppliers"), group: "advance" },
       { id: "party", label: t("dashboard.inventory.createItem.sections.party"), group: "advance" },
       { id: "custom", label: t("dashboard.inventory.createItem.sections.custom"), group: "advance" }
     );
@@ -283,9 +376,12 @@ export function CreateItemModal({ open, onClose, onSaved }: CreateItemModalProps
     }
   }, [form.serialised, section, sections]);
 
-  if (!open || !mounted) return null;
+  if (!mounted) return null;
+  if (!open) return null;
 
-  return createPortal(
+  return (
+    <>
+      {createPortal(
     <div
       className="fixed inset-0 z-[110] flex items-center justify-center bg-brand-primary/45 p-3 backdrop-blur-[3px] sm:p-4"
       role="dialog"
@@ -365,8 +461,14 @@ export function CreateItemModal({ open, onClose, onSaved }: CreateItemModalProps
                   form={form}
                   patch={patch}
                   nameError={nameError}
+                  categoryError={categoryError}
                   categories={categories}
+                  industryLabel={industryLabel}
                   units={units}
+                  onCategoryChange={(categoryId) => {
+                    patch({ categoryId });
+                    setCategoryError(false);
+                  }}
                   onAddCategory={() => setCreateCategoryOpen(true)}
                   onAddUnit={() => setCreateUnitOpen(true)}
                   onSerialisationChange={handleSerialisationChange}
@@ -388,39 +490,61 @@ export function CreateItemModal({ open, onClose, onSaved }: CreateItemModalProps
                   patch={patch}
                   units={units}
                   onAddUnit={() => setCreateUnitOpen(true)}
+                  onOpenHsnPicker={() => setHsnPickerOpen(true)}
                   t={t}
                 />
               )}
               {section === "pricing" && <PricingSection form={form} patch={patch} t={t} />}
+              {section === "suppliers" && (
+                <SuppliersSection
+                  form={form}
+                  setForm={setForm}
+                  suppliers={suppliers}
+                  suppliersLoading={suppliersLoading}
+                  t={t}
+                />
+              )}
               {section === "party" && <PartySection form={form} setForm={setForm} t={t} />}
               {section === "custom" && <CustomSection form={form} setForm={setForm} t={t} />}
             </div>
           </div>
         </div>
 
-        <footer className="flex h-[68px] shrink-0 items-center justify-between gap-3 border-t border-slate-100 bg-brand-surface/30 px-6">
-          <button
-            type="button"
-            onClick={onClose}
-            className="h-10 rounded-md border border-slate-200/90 bg-white px-5 text-sm font-semibold text-brand-primary transition-colors hover:bg-slate-50"
-          >
-            {t("dashboard.inventory.createItem.cancel")}
-          </button>
-          <div className="flex flex-wrap gap-2">
+        <footer className="shrink-0 border-t border-slate-100 bg-brand-surface/30 px-6 py-3">
+          {saveError && (
+            <p className="mb-2 text-sm font-medium text-red-600">{saveError}</p>
+          )}
+          <div className="flex min-h-10 items-center justify-between gap-3">
             <button
               type="button"
-              onClick={() => handleSave(true)}
-              className="h-10 rounded-md border border-slate-200/90 bg-white px-5 text-sm font-semibold text-brand-primary transition-colors hover:border-brand-orange-1/40 hover:bg-brand-surface-warm"
+              onClick={onClose}
+              disabled={saveLoading}
+              className="h-10 rounded-md border border-slate-200/90 bg-white px-5 text-sm font-semibold text-brand-primary transition-colors hover:bg-slate-50 disabled:opacity-60"
             >
-              {t("dashboard.inventory.createItem.saveAndNew")}
+              {t("dashboard.inventory.createItem.cancel")}
             </button>
-            <button
-              type="button"
-              onClick={() => handleSave(false)}
-              className="h-10 rounded-md bg-gradient-to-r from-brand-orange-2 to-brand-orange-1 px-5 text-sm font-semibold text-white shadow-[0_2px_10px_-4px_rgba(246,62,22,0.4)] transition-all hover:brightness-105"
-            >
-              {t("dashboard.inventory.createItem.saveItem")}
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => void handleSave(true)}
+                disabled={saveLoading || !organisationId}
+                className="h-10 rounded-md border border-slate-200/90 bg-white px-5 text-sm font-semibold text-brand-primary transition-colors hover:border-brand-orange-1/40 hover:bg-brand-surface-warm disabled:opacity-60"
+              >
+                {saveLoading
+                  ? t("dashboard.inventory.createItem.saving")
+                  : t("dashboard.inventory.createItem.saveAndNew")}
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleSave(false)}
+                disabled={saveLoading || !organisationId}
+                className="h-10 rounded-md bg-gradient-to-r from-brand-orange-2 to-brand-orange-1 px-5 text-sm font-semibold text-white shadow-[0_2px_10px_-4px_rgba(246,62,22,0.4)] transition-all hover:brightness-105 disabled:opacity-60"
+              >
+                {saveLoading
+                  ? t("dashboard.inventory.createItem.saving")
+                  : t("dashboard.inventory.createItem.saveItem")}
+              </button>
+            </div>
           </div>
         </footer>
       </div>
@@ -429,8 +553,31 @@ export function CreateItemModal({ open, onClose, onSaved }: CreateItemModalProps
         open={createCategoryOpen}
         onClose={() => setCreateCategoryOpen(false)}
         onAdd={(name) => {
-          setCategories((prev) => getInitialCategoryList([...prev, name]));
-          patch({ category: name });
+          const orgId = organisationId?.trim();
+          if (!orgId) return;
+          void createInventoryCategory(orgId, name)
+            .then((category) => {
+              resolvedCategoryIds.current.set(category.name.toLowerCase(), category.categoryId);
+              setCustomCategories((prev) => {
+                if (
+                  prev.some(
+                    (row) =>
+                      row.categoryId === category.categoryId ||
+                      row.name.toLowerCase() === category.name.toLowerCase(),
+                  )
+                ) {
+                  return prev;
+                }
+                return [...prev, { categoryId: category.categoryId, name: category.name }];
+              });
+              patch({ categoryId: category.categoryId });
+              setCategoryError(false);
+            })
+            .catch((err) => {
+              setSaveError(
+                err instanceof Error ? err.message : t("dashboard.inventory.createItem.saveError"),
+              );
+            });
         }}
       />
       <CreateUnitModal
@@ -444,6 +591,14 @@ export function CreateItemModal({ open, onClose, onSaved }: CreateItemModalProps
       />
     </div>,
     document.body
+      )}
+      <HsnPickerDrawer
+        open={hsnPickerOpen}
+        onClose={() => setHsnPickerOpen(false)}
+        initialQuery={form.hsn}
+        onSelect={(code) => patch({ hsn: code })}
+      />
+    </>
   );
 }
 
@@ -506,7 +661,7 @@ function SectionIcon({ id, active }: { id: CreateItemSection; active: boolean })
       </svg>
     );
   }
-  if (id === "party") {
+  if (id === "party" || id === "suppliers") {
     return (
       <svg viewBox="0 0 20 20" fill="none" className={cls} aria-hidden>
         <circle cx="10" cy="7" r="2.5" stroke="currentColor" strokeWidth="1.35" />
@@ -643,8 +798,11 @@ function BasicSection({
   form,
   patch,
   nameError,
+  categoryError,
   categories,
+  industryLabel,
   units,
+  onCategoryChange,
   onAddCategory,
   onAddUnit,
   onSerialisationChange,
@@ -653,8 +811,11 @@ function BasicSection({
   form: CreateItemFormState;
   patch: (p: Partial<CreateItemFormState>) => void;
   nameError: boolean;
-  categories: string[];
+  categoryError: boolean;
+  categories: CategoryOption[];
+  industryLabel: string | null;
   units: string[];
+  onCategoryChange: (categoryId: string) => void;
   onAddCategory: () => void;
   onAddUnit: () => void;
   onSerialisationChange: (enabled: boolean) => void;
@@ -683,13 +844,36 @@ function BasicSection({
             ))}
           </div>
         </AlignedFieldColumn>
-        <AlignedFieldColumn label={t("dashboard.inventory.createItem.category")}>
+        <AlignedFieldColumn
+          label={t("dashboard.inventory.createItem.category")}
+          required
+          footer={
+            categoryError ? (
+              <p className="text-xs font-medium text-red-600">
+                {t("dashboard.inventory.createItem.categoryRequired")}
+              </p>
+            ) : undefined
+          }
+          reserveFooter={categoryError}
+        >
           <CategorySelect
-            value={form.category}
+            value={form.categoryId}
             categories={categories}
-            onChange={(category) => patch({ category })}
+            onChange={onCategoryChange}
             onAddCategory={onAddCategory}
           />
+          {industryLabel ? (
+            <p className="mt-1 text-xs text-brand-primary-muted">
+              {t("dashboard.inventory.createItem.categoriesForIndustry").replace(
+                "{industry}",
+                industryLabel,
+              )}
+            </p>
+          ) : (
+            <p className="mt-1 text-xs text-brand-primary-muted">
+              {t("dashboard.inventory.createItem.categoriesGeneral")}
+            </p>
+          )}
         </AlignedFieldColumn>
       </div>
 
@@ -783,12 +967,14 @@ function StockSection({
   patch,
   units,
   onAddUnit,
+  onOpenHsnPicker,
   t,
 }: {
   form: CreateItemFormState;
   patch: (p: Partial<CreateItemFormState>) => void;
   units: string[];
   onAddUnit: () => void;
+  onOpenHsnPicker: () => void;
   t: (key: TranslationKey) => string;
 }) {
   return (
@@ -822,7 +1008,11 @@ function StockSection({
             placeholder={t("dashboard.inventory.createItem.hsnPlaceholder")}
             className={inputClass}
           />
-          <button type="button" className="mt-1.5 text-xs font-semibold text-brand-orange-2 hover:underline">
+          <button
+            type="button"
+            onClick={onOpenHsnPicker}
+            className="mt-1.5 text-xs font-semibold text-brand-orange-2 hover:underline"
+          >
             {t("dashboard.inventory.createItem.findHsn")}
           </button>
         </div>
@@ -998,6 +1188,112 @@ function PricingSection({
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function SuppliersSection({
+  form,
+  setForm,
+  suppliers,
+  suppliersLoading,
+  t,
+}: {
+  form: CreateItemFormState;
+  setForm: React.Dispatch<React.SetStateAction<CreateItemFormState>>;
+  suppliers: PartySummary[];
+  suppliersLoading: boolean;
+  t: (key: TranslationKey) => string;
+}) {
+  const supplierOptions = useMemo(
+    () => [
+      { value: "", label: t("dashboard.inventory.createItem.noSupplierSelected") },
+      ...suppliers.map((party) => ({ value: party.partyId, label: party.name })),
+    ],
+    [suppliers, t],
+  );
+
+  const updateRow = (id: string, partyId: string) => {
+    setForm((prev) => ({
+      ...prev,
+      purchaseSuppliers: prev.purchaseSuppliers.map((row) =>
+        row.id === id ? { ...row, partyId } : row,
+      ),
+    }));
+  };
+
+  const addRow = () => {
+    setForm((prev) => ({
+      ...prev,
+      purchaseSuppliers: [
+        ...prev.purchaseSuppliers,
+        { id: String(Date.now()), partyId: "" },
+      ],
+    }));
+  };
+
+  const removeRow = (id: string) => {
+    setForm((prev) => ({
+      ...prev,
+      purchaseSuppliers:
+        prev.purchaseSuppliers.length > 1
+          ? prev.purchaseSuppliers.filter((row) => row.id !== id)
+          : prev.purchaseSuppliers.map((row) =>
+              row.id === id ? { ...row, partyId: "" } : row,
+            ),
+    }));
+  };
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <p className="text-sm font-semibold text-brand-primary">
+          {t("dashboard.inventory.createItem.purchaseFromSupplier")}
+        </p>
+        <p className="mt-1 text-sm text-brand-primary-muted">
+          {t("dashboard.inventory.createItem.purchaseFromSupplierHint")}
+        </p>
+      </div>
+
+      {!suppliersLoading && suppliers.length === 0 ? (
+        <p className="rounded-md border border-dashed border-slate-200/90 bg-slate-50/60 px-4 py-3 text-sm text-brand-primary-muted">
+          {t("dashboard.inventory.createItem.noSuppliersFound")}
+        </p>
+      ) : (
+        <div className="space-y-3">
+          {form.purchaseSuppliers.map((row) => (
+            <div key={row.id} className="flex items-center gap-2">
+              <div className="min-w-0 flex-1">
+                <ModernSelect
+                  value={row.partyId}
+                  onChange={(partyId) => updateRow(row.id, partyId)}
+                  options={supplierOptions}
+                  disabled={suppliersLoading}
+                  aria-label={t("dashboard.inventory.createItem.selectSupplier")}
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => removeRow(row.id)}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-slate-200/90 text-brand-primary-muted hover:bg-red-50 hover:text-red-600"
+                aria-label={t("dashboard.inventory.createItem.removeSupplier")}
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {suppliers.length > 0 && (
+        <button
+          type="button"
+          onClick={addRow}
+          className="text-sm font-semibold text-brand-orange-2 hover:text-brand-orange-1 hover:underline"
+        >
+          + {t("dashboard.inventory.createItem.addPurchaseSupplier")}
+        </button>
+      )}
     </div>
   );
 }

@@ -3,9 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { ModernSelect } from "@/components/ui/modern-select";
-import { MOCK_INVENTORY_ITEMS } from "@/lib/dashboard/mock-inventory-items";
-import type { InventoryItem } from "@/lib/dashboard/mock-inventory-items";
+import type { InventoryBillPick, InventoryItem } from "@/lib/dashboard/mock-inventory-items";
+import { fetchInventoryItems } from "@/lib/inventory/inventory-api-client";
+import { fetchParties } from "@/lib/parties/parties-api-client";
 import { formatInr } from "@/lib/sales/create-invoice-form";
+import type { PartySummary } from "@/lib/types/parties-api";
 import { useTranslation } from "@/lib/localization";
 
 function formatMessage(template: string, params?: Record<string, string | number>): string {
@@ -16,11 +18,33 @@ function formatMessage(template: string, params?: Record<string, string | number
   );
 }
 
+type BillListRow =
+  | { type: "item"; item: InventoryItem }
+  | { type: "serial"; item: InventoryItem; serialNumber: string };
+
+function expandInventoryRows(items: InventoryItem[]): BillListRow[] {
+  const rows: BillListRow[] = [];
+  for (const item of items) {
+    if (item.serialised) {
+      for (const serialNumber of item.availableSerials ?? []) {
+        rows.push({ type: "serial", item, serialNumber });
+      }
+    } else {
+      rows.push({ type: "item", item });
+    }
+  }
+  return rows;
+}
+
+function billListRowKey(row: BillListRow): string {
+  return row.type === "serial" ? `${row.item.id}::${row.serialNumber}` : row.item.id;
+}
+
 type AddItemsToBillModalProps = {
   open: boolean;
+  organisationId: string | null;
   onClose: () => void;
-  onAdd: (items: InventoryItem[]) => void;
-  showPurchasePrice: boolean;
+  onAdd: (picks: InventoryBillPick[]) => void;
 };
 
 function CloseIcon() {
@@ -33,15 +57,21 @@ function CloseIcon() {
 
 export function AddItemsToBillModal({
   open,
+  organisationId,
   onClose,
   onAdd,
-  showPurchasePrice,
 }: AddItemsToBillModalProps) {
   const { t } = useTranslation();
   const [mounted, setMounted] = useState(false);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("all");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [items, setItems] = useState<InventoryItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [suppliers, setSuppliers] = useState<PartySummary[]>([]);
+  const [suppliersLoading, setSuppliersLoading] = useState(false);
+  const [selectedSupplierId, setSelectedSupplierId] = useState("");
 
   useEffect(() => setMounted(true), []);
 
@@ -50,6 +80,7 @@ export function AddItemsToBillModal({
       setQuery("");
       setCategory("all");
       setSelected(new Set());
+      setSelectedSupplierId("");
       return;
     }
     const onKeyDown = (e: KeyboardEvent) => {
@@ -63,43 +94,138 @@ export function AddItemsToBillModal({
     };
   }, [open, onClose]);
 
+  useEffect(() => {
+    const orgId = organisationId?.trim();
+    if (!open || !orgId) {
+      setItems([]);
+      return;
+    }
+
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      setLoading(true);
+      setLoadError(null);
+
+      fetchInventoryItems(orgId, {
+        limit: 100,
+        page: 1,
+        ...(query.trim() ? { search: query.trim() } : {}),
+        ...(category !== "all" ? { category } : {}),
+      })
+        .then((data) => {
+          if (!cancelled) setItems(data.tableItems);
+        })
+        .catch((err) => {
+          if (!cancelled) {
+            setItems([]);
+            setLoadError(
+              err instanceof Error ? err.message : t("dashboard.salesInvoices.create.noItemsFound"),
+            );
+          }
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
+    }, query.trim() ? 250 : 0);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [open, organisationId, query, category, t]);
+
+  useEffect(() => {
+    const orgId = organisationId?.trim();
+    if (!open || !orgId) {
+      setSuppliers([]);
+      return;
+    }
+
+    let cancelled = false;
+    setSuppliersLoading(true);
+
+    fetchParties(orgId, { view: "suppliers", limit: 100, page: 1 })
+      .then((data) => {
+        if (!cancelled) setSuppliers(data.items);
+      })
+      .catch(() => {
+        if (!cancelled) setSuppliers([]);
+      })
+      .finally(() => {
+        if (!cancelled) setSuppliersLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, organisationId]);
+
+  const selectedSupplier = useMemo(
+    () => suppliers.find((party) => party.partyId === selectedSupplierId),
+    [suppliers, selectedSupplierId],
+  );
+
+  const supplierOptions = useMemo(
+    () => [
+      { value: "", label: t("dashboard.salesInvoices.create.noSupplierSelected") },
+      ...suppliers.map((party) => ({ value: party.partyId, label: party.name })),
+    ],
+    [suppliers, t],
+  );
+
   const categories = useMemo(() => {
-    const cats = [...new Set(MOCK_INVENTORY_ITEMS.map((i) => i.category))].sort();
+    const cats = [...new Set(items.map((i) => i.category))].sort();
     return [{ value: "all", label: t("dashboard.salesInvoices.create.allCategories") }, ...cats.map((c) => ({ value: c, label: c }))];
-  }, [t]);
+  }, [items, t]);
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return MOCK_INVENTORY_ITEMS.filter((item) => {
-      if (category !== "all" && item.category !== category) return false;
-      if (!q) return true;
-      return (
-        item.name.toLowerCase().includes(q) ||
-        item.sku.toLowerCase().includes(q) ||
-        item.hsn.includes(q) ||
-        item.category.toLowerCase().includes(q)
-      );
-    });
-  }, [query, category]);
+  const listRows = useMemo(() => expandInventoryRows(items), [items]);
 
-  const toggleSelect = (id: string) => {
+  const rowCanAdd = (row: BillListRow) =>
+    row.type === "serial" ? true : row.item.stock > 0;
+
+  const toggleSelect = (row: BillListRow) => {
+    if (!rowCanAdd(row)) return;
+    const key = billListRowKey(row);
     setSelected((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
   };
 
-  const addSingle = (item: InventoryItem) => {
-    onAdd([item]);
+  const buildPick = (row: BillListRow): InventoryBillPick | null => {
+    if (!rowCanAdd(row)) return null;
+    const supplierMeta = selectedSupplier
+      ? { supplierId: selectedSupplier.partyId, supplierName: selectedSupplier.name }
+      : undefined;
+
+    if (row.type === "serial") {
+      return {
+        item: row.item,
+        serialNumbers: [row.serialNumber],
+        ...supplierMeta,
+      };
+    }
+    return { item: row.item, ...supplierMeta };
+  };
+
+  const addSingle = (row: BillListRow) => {
+    const pick = buildPick(row);
+    if (!pick) return;
+    onAdd([pick]);
     onClose();
   };
 
   const addSelected = () => {
-    const items = MOCK_INVENTORY_ITEMS.filter((i) => selected.has(i.id));
-    if (items.length) {
-      onAdd(items);
+    const picks: InventoryBillPick[] = [];
+    for (const row of listRows) {
+      if (!selected.has(billListRowKey(row))) continue;
+      const pick = buildPick(row);
+      if (pick) picks.push(pick);
+    }
+    if (picks.length) {
+      onAdd(picks);
       onClose();
     }
   };
@@ -115,7 +241,7 @@ export function AddItemsToBillModal({
       onClick={onClose}
     >
       <div
-        className="flex h-[min(640px,90vh)] w-[min(960px,calc(100vw-2rem))] flex-col overflow-hidden rounded-md border border-slate-200/90 bg-white shadow-xl"
+        className="flex h-[min(680px,90vh)] w-[min(960px,calc(100vw-2rem))] flex-col overflow-hidden rounded-md border border-slate-200/90 bg-white shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-5 py-4">
@@ -160,64 +286,113 @@ export function AddItemsToBillModal({
           </button>
         </div>
 
+        <div className="shrink-0 border-b border-slate-100 bg-slate-50/50 px-4 py-3">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-brand-primary">
+                {t("dashboard.salesInvoices.create.purchaseFromSupplier")}
+              </p>
+              <p className="mt-0.5 text-xs text-brand-primary-muted">
+                {t("dashboard.salesInvoices.create.purchaseFromSupplierHint")}
+              </p>
+            </div>
+            <div className="w-full shrink-0 sm:max-w-xs">
+              <ModernSelect
+                value={selectedSupplierId}
+                onChange={setSelectedSupplierId}
+                options={supplierOptions}
+                disabled={suppliersLoading}
+                aria-label={t("dashboard.salesInvoices.create.selectSupplier")}
+              />
+            </div>
+          </div>
+        </div>
+
         <div className="min-h-0 flex-1 overflow-auto scrollbar-brand">
-          <table className="w-full min-w-[720px] text-left text-sm">
+          <table className="w-full min-w-[640px] text-left text-sm">
             <thead className="sticky top-0 z-10 bg-white">
               <tr className="border-b border-slate-100 text-[11px] font-bold uppercase tracking-wide text-brand-primary-muted">
                 <th className="px-4 py-2.5">{t("dashboard.salesInvoices.create.colItemName")}</th>
                 <th className="px-4 py-2.5">{t("dashboard.salesInvoices.create.colItemCode")}</th>
                 <th className="px-4 py-2.5">{t("dashboard.salesInvoices.create.colStock")}</th>
                 <th className="px-4 py-2.5 text-right">{t("dashboard.salesInvoices.create.colSalePrice")}</th>
-                {showPurchasePrice && (
-                  <th className="px-4 py-2.5 text-right">
-                    {t("dashboard.salesInvoices.create.colPurchasePrice")}
-                  </th>
-                )}
                 <th className="px-4 py-2.5 text-right">{t("dashboard.salesInvoices.create.colQty")}</th>
               </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 ? (
+              {loading ? (
                 <tr>
-                  <td
-                    colSpan={showPurchasePrice ? 6 : 5}
-                    className="px-4 py-10 text-center text-sm text-brand-primary-muted"
-                  >
+                  <td colSpan={5} className="px-4 py-10 text-center text-sm text-brand-primary-muted">
+                    {t("common.pleaseWait")}
+                  </td>
+                </tr>
+              ) : loadError ? (
+                <tr>
+                  <td colSpan={5} className="px-4 py-10 text-center text-sm text-red-600">
+                    {loadError}
+                  </td>
+                </tr>
+              ) : listRows.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-4 py-10 text-center text-sm text-brand-primary-muted">
                     {t("dashboard.salesInvoices.create.noItemsFound")}
                   </td>
                 </tr>
               ) : (
-                filtered.map((item) => (
-                  <tr
-                    key={item.id}
-                    onClick={() => toggleSelect(item.id)}
-                    className={`cursor-pointer border-b border-slate-50 transition-colors hover:bg-blue-50/30 ${selected.has(item.id) ? "bg-brand-primary/[0.04]" : ""}`}
-                  >
-                    <td className="px-4 py-2.5 font-medium text-brand-primary">{item.name}</td>
-                    <td className="px-4 py-2.5 font-mono text-xs text-brand-primary-muted">{item.sku}</td>
-                    <td className="px-4 py-2.5 tabular-nums text-brand-primary-mid">
-                      {item.stock} {item.unit}
-                    </td>
-                    <td className="px-4 py-2.5 text-right tabular-nums">{formatInr(item.salePrice)}</td>
-                    {showPurchasePrice && (
-                      <td className="px-4 py-2.5 text-right tabular-nums text-brand-primary-muted">
-                        {formatInr(item.purchasePrice)}
+                listRows.map((row) => {
+                  const { item } = row;
+                  const key = billListRowKey(row);
+                  const canAdd = rowCanAdd(row);
+                  const isSelected = selected.has(key);
+
+                  return (
+                    <tr
+                      key={key}
+                      onClick={() => toggleSelect(row)}
+                      className={`border-b border-slate-50 transition-colors ${
+                        !canAdd
+                          ? "cursor-not-allowed opacity-50"
+                          : `cursor-pointer hover:bg-blue-50/20 ${isSelected ? "bg-brand-primary/[0.04]" : ""}`
+                      }`}
+                    >
+                      <td className="align-top px-4 py-2.5">
+                        <p className="font-medium text-brand-primary">{item.name}</p>
+                        {row.type === "serial" ? (
+                          <p className="mt-0.5 font-mono text-[11px] text-violet-700">{row.serialNumber}</p>
+                        ) : (
+                          <p className="mt-0.5 text-[11px] text-brand-primary-muted">{item.unit}</p>
+                        )}
+                        {selectedSupplier && (
+                          <p className="mt-0.5 text-[11px] text-violet-700">
+                            {t("dashboard.salesInvoices.create.purchaseFromSupplier")}: {selectedSupplier.name}
+                          </p>
+                        )}
                       </td>
-                    )}
-                    <td className="px-4 py-2.5 text-right">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          addSingle(item);
-                        }}
-                        className="rounded-sm px-2.5 py-1 text-xs font-semibold text-brand-primary hover:bg-brand-primary/[0.06]"
-                      >
-                        + {t("dashboard.salesInvoices.create.add")}
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                      <td className="align-top px-4 py-2.5 font-mono text-xs text-brand-primary-muted">
+                        {item.sku}
+                      </td>
+                      <td className="align-top px-4 py-2.5 tabular-nums text-brand-primary-mid">
+                        {row.type === "serial" ? `1 ${item.unit}` : `${item.stock} ${item.unit}`}
+                      </td>
+                      <td className="align-top px-4 py-2.5 text-right tabular-nums font-semibold text-brand-primary">
+                        {formatInr(item.salePrice)}
+                      </td>
+                      <td className="align-top px-4 py-2.5 text-right">
+                        <button
+                          type="button"
+                          disabled={!canAdd}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            addSingle(row);
+                          }}
+                          className="rounded-sm px-2.5 py-1 text-xs font-semibold text-brand-primary hover:bg-brand-primary/[0.06] disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          + {t("dashboard.salesInvoices.create.add")}
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

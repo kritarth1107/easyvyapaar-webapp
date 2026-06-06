@@ -1,14 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
-import {
-  getSalesInvoiceSummary,
-  MOCK_SALES_INVOICES,
-  type SalesInvoice,
-  type SalesInvoiceStatus,
-} from "@/lib/dashboard/mock-sales-invoices";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useUserMe } from "@/components/providers/user-me-provider";
+import type { SalesInvoiceStatus } from "@/lib/dashboard/mock-sales-invoices";
 import { ModernSelect } from "@/components/ui/modern-select";
+import { fetchSalesInvoices } from "@/lib/sales/sales-api-client";
+import type { SalesInvoiceSummary } from "@/lib/types/sales-api";
 import { useTranslation } from "@/lib/localization";
 
 function formatInr(amount: number): string {
@@ -66,12 +65,16 @@ function StatusBadge({ status }: { status: SalesInvoiceStatus }) {
     paid: "bg-emerald-50 text-emerald-800 ring-emerald-600/15",
     partial: "bg-amber-50 text-amber-900 ring-amber-600/15",
     unpaid: "bg-red-50 text-red-800 ring-red-600/15",
+    partial_return: "bg-violet-50 text-violet-800 ring-violet-600/15",
+    returned: "bg-slate-200/80 text-slate-800 ring-slate-500/20",
     cancelled: "bg-slate-100 text-slate-600 ring-slate-400/20",
   };
   const labels: Record<SalesInvoiceStatus, string> = {
     paid: t("dashboard.salesInvoices.statusPaid"),
     partial: t("dashboard.salesInvoices.statusPartial"),
     unpaid: t("dashboard.salesInvoices.statusUnpaid"),
+    partial_return: t("dashboard.salesInvoices.statusPartialReturn"),
+    returned: t("dashboard.salesInvoices.statusReturned"),
     cancelled: t("dashboard.salesInvoices.statusCancelled"),
   };
 
@@ -86,23 +89,82 @@ function StatusBadge({ status }: { status: SalesInvoiceStatus }) {
 
 export function SalesInvoicesPage() {
   const { t } = useTranslation();
+  const { activeOrganisationId } = useUserMe();
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<string>("all");
+  const [invoices, setInvoices] = useState<SalesInvoiceSummary[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  const summary = useMemo(() => getSalesInvoiceSummary(), []);
+  const load = useCallback(async () => {
+    const orgId = activeOrganisationId?.trim();
+    if (!orgId) {
+      setInvoices([]);
+      return;
+    }
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const data = await fetchSalesInvoices(orgId, {
+        status: status as SalesInvoiceSummary["status"] | "all",
+        search: query.trim() || undefined,
+        limit: 100,
+        page: 1,
+      });
+      setInvoices(data.items);
+    } catch (err) {
+      setInvoices([]);
+      setLoadError(err instanceof Error ? err.message : t("dashboard.salesInvoices.empty"));
+    } finally {
+      setLoading(false);
+    }
+  }, [activeOrganisationId, query, status, t]);
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return MOCK_SALES_INVOICES.filter((inv) => {
-      if (status !== "all" && inv.status !== status) return false;
-      if (!q) return true;
-      return (
-        inv.invoiceNo.toLowerCase().includes(q) ||
-        inv.partyName.toLowerCase().includes(q) ||
-        inv.partyPhone?.includes(q)
-      );
-    });
-  }, [query, status]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void load();
+    }, query ? 250 : 0);
+    return () => window.clearTimeout(timer);
+  }, [load, query]);
+
+  const summary = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    const monthPrefix = today.slice(0, 7);
+    let todaySales = 0;
+    let monthSales = 0;
+    let paidToday = 0;
+    let unpaidAmount = 0;
+    let unpaidCount = 0;
+    let partialCount = 0;
+
+    for (const inv of invoices) {
+      if (inv.invoiceDate === today) {
+        todaySales += inv.totalAmount;
+        if (inv.status === "paid") paidToday += 1;
+      }
+      if (inv.invoiceDate.startsWith(monthPrefix)) {
+        monthSales += inv.totalAmount;
+      }
+      if (inv.status === "unpaid") {
+        unpaidCount += 1;
+        unpaidAmount += inv.balanceAmount;
+      }
+      if (inv.status === "partial" || inv.status === "partial_return") {
+        partialCount += 1;
+        unpaidAmount += inv.balanceAmount;
+      }
+    }
+
+    return {
+      todaySales,
+      monthSales,
+      totalCount: invoices.length,
+      unpaidAmount,
+      unpaidCount,
+      partialCount,
+      paidToday,
+    };
+  }, [invoices]);
 
   return (
     <div className="p-4 lg:p-6">
@@ -180,6 +242,8 @@ export function SalesInvoicesPage() {
                 { value: "paid", label: t("dashboard.salesInvoices.statusPaid") },
                 { value: "partial", label: t("dashboard.salesInvoices.statusPartial") },
                 { value: "unpaid", label: t("dashboard.salesInvoices.statusUnpaid") },
+                { value: "partial_return", label: t("dashboard.salesInvoices.statusPartialReturn") },
+                { value: "returned", label: t("dashboard.salesInvoices.statusReturned") },
                 { value: "cancelled", label: t("dashboard.salesInvoices.statusCancelled") },
               ]}
               aria-label={t("dashboard.salesInvoices.filterStatus")}
@@ -202,14 +266,26 @@ export function SalesInvoicesPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan={8} className="px-4 py-12 text-center text-sm text-brand-primary-muted">
+                    {t("common.pleaseWait")}
+                  </td>
+                </tr>
+              ) : loadError ? (
+                <tr>
+                  <td colSpan={8} className="px-4 py-12 text-center text-sm text-red-600">
+                    {loadError}
+                  </td>
+                </tr>
+              ) : invoices.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="px-4 py-12 text-center text-sm text-brand-primary-muted">
                     {t("dashboard.salesInvoices.empty")}
                   </td>
                 </tr>
               ) : (
-                filtered.map((inv) => <InvoiceRow key={inv.id} invoice={inv} />)
+                invoices.map((inv) => <InvoiceRow key={inv.invoiceId} invoice={inv} />)
               )}
             </tbody>
           </table>
@@ -219,34 +295,48 @@ export function SalesInvoicesPage() {
   );
 }
 
-function InvoiceRow({ invoice }: { invoice: SalesInvoice }) {
-  const balance = invoice.total - invoice.amountPaid;
+function InvoiceRow({ invoice }: { invoice: SalesInvoiceSummary }) {
+  const router = useRouter();
+  const href = `/dashboard/sales/invoices/${encodeURIComponent(invoice.invoiceId)}`;
+
+  const openInvoice = () => {
+    router.push(href);
+  };
 
   return (
-    <tr className="border-b border-slate-100 last:border-b-0 transition-colors hover:bg-blue-50/20">
+    <tr
+      className="cursor-pointer border-b border-slate-100 last:border-b-0 transition-colors hover:bg-blue-50/40 hover:[&_span]:underline"
+      onClick={openInvoice}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          openInvoice();
+        }
+      }}
+      tabIndex={0}
+      role="link"
+      aria-label={`Open invoice ${invoice.displayNumber}`}
+    >
       <td className="px-4 py-3">
-        <p className="font-mono text-xs font-semibold text-brand-primary">{invoice.invoiceNo}</p>
+        <span className="font-mono text-xs font-semibold text-brand-primary underline-offset-2">
+          {invoice.displayNumber}
+        </span>
       </td>
-      <td className="px-4 py-3 text-brand-primary-mid">{formatDate(invoice.date)}</td>
+      <td className="px-4 py-3 text-brand-primary-mid">{formatDate(invoice.invoiceDate)}</td>
       <td className="px-4 py-3">
         <p className="font-medium text-brand-primary">{invoice.partyName}</p>
-        {invoice.partyPhone && (
-          <p className="text-[11px] text-brand-primary-muted">{invoice.partyPhone}</p>
-        )}
       </td>
-      <td className="px-4 py-3 text-right tabular-nums text-brand-primary">{invoice.items}</td>
+      <td className="px-4 py-3 text-right tabular-nums text-brand-primary">—</td>
       <td className="px-4 py-3 text-right">
-        <p className="font-semibold tabular-nums text-brand-primary">{formatInr(invoice.total)}</p>
-        {balance > 0 && invoice.status !== "cancelled" && (
+        <p className="font-semibold tabular-nums text-brand-primary">{formatInr(invoice.totalAmount)}</p>
+        {invoice.balanceAmount > 0 && invoice.status !== "cancelled" && (
           <p className="text-[11px] tabular-nums text-amber-700">
-            Due {formatInr(balance)}
+            Due {formatInr(invoice.balanceAmount)}
           </p>
         )}
       </td>
-      <td className="px-4 py-3 text-right tabular-nums text-brand-primary-muted">
-        {formatInr(invoice.gstAmount)}
-      </td>
-      <td className="px-4 py-3 text-brand-primary-mid">{invoice.paymentMode ?? "—"}</td>
+      <td className="px-4 py-3 text-right tabular-nums text-brand-primary-muted">—</td>
+      <td className="px-4 py-3 text-brand-primary-mid">—</td>
       <td className="px-4 py-3">
         <StatusBadge status={invoice.status} />
       </td>

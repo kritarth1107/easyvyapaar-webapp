@@ -1,13 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { InvoiceSettingsPreview } from "@/components/dashboard/sales/invoice-settings-preview";
 import { InvoiceSignatureInput } from "@/components/dashboard/sales/invoice-signature-input";
 import { ModernSelect } from "@/components/ui/modern-select";
 import { useUserMe } from "@/components/providers/user-me-provider";
+import { fetchBusinessProfile } from "@/lib/business/business-profile-api-client";
 import {
-  DEFAULT_FULL_INVOICE_SETTINGS,
+  organisationProfileToSnapshot,
+  type InvoiceOrganisationSnapshot,
+} from "@/lib/sales/invoice-preview-formatters";
+import {
+  DEFAULT_STORED_SALES_INVOICE_SETTINGS,
   getAccentHex,
   getHeaderTextColor,
   INDUSTRY_TYPES,
@@ -15,8 +20,12 @@ import {
   PAYMENT_QR_OPTIONS,
   TERMS_PRESETS,
   THEME_COLOR_SWATCHES,
-  type FullInvoiceSettings,
+  type StoredSalesInvoiceSettings,
 } from "@/lib/sales/invoice-settings-config";
+import {
+  fetchSalesInvoiceSettings,
+  updateSalesInvoiceSettings,
+} from "@/lib/sales/sales-invoice-settings-api-client";
 import { useTranslation } from "@/lib/localization";
 
 const inputClass =
@@ -106,24 +115,97 @@ function SettingsAccordion({
 
 export function InvoiceSettingsPage() {
   const { t } = useTranslation();
-  const { activeOrganisation } = useUserMe();
+  const { activeOrganisation, activeOrganisationId } = useUserMe();
   const businessName = activeOrganisation?.name ?? "Your Business";
 
-  const [settings, setSettings] = useState<FullInvoiceSettings>(DEFAULT_FULL_INVOICE_SETTINGS);
-  const [saved, setSaved] = useState(DEFAULT_FULL_INVOICE_SETTINGS);
+  const [settings, setSettings] = useState<StoredSalesInvoiceSettings>(
+    DEFAULT_STORED_SALES_INVOICE_SETTINGS,
+  );
+  const [saved, setSaved] = useState(DEFAULT_STORED_SALES_INVOICE_SETTINGS);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [openSections, setOpenSections] = useState({
     invoiceDetails: true,
     partyDetails: false,
     itemColumns: false,
     miscellaneous: false,
   });
+  const [organisationSnapshot, setOrganisationSnapshot] = useState<InvoiceOrganisationSnapshot | null>(
+    null,
+  );
+
+  const loadSettings = useCallback(async () => {
+    const orgId = activeOrganisationId?.trim();
+    if (!orgId) {
+      setSettings(DEFAULT_STORED_SALES_INVOICE_SETTINGS);
+      setSaved(DEFAULT_STORED_SALES_INVOICE_SETTINGS);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const data = await fetchSalesInvoiceSettings(orgId);
+      const withIndustry =
+        data.industryType || activeOrganisation?.industryType
+          ? {
+              ...data,
+              industryType: data.industryType || activeOrganisation?.industryType || data.industryType,
+            }
+          : data;
+      setSettings(withIndustry);
+      setSaved(withIndustry);
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : t("dashboard.invoiceSettings.loadError"));
+      const fallback = {
+        ...DEFAULT_STORED_SALES_INVOICE_SETTINGS,
+        ...(activeOrganisation?.industryType
+          ? { industryType: activeOrganisation.industryType }
+          : {}),
+      };
+      setSettings(fallback);
+      setSaved(fallback);
+    } finally {
+      setLoading(false);
+    }
+  }, [activeOrganisation?.industryType, activeOrganisationId, t]);
+
+  useEffect(() => {
+    void loadSettings();
+  }, [loadSettings]);
+
+  useEffect(() => {
+    const orgId = activeOrganisationId?.trim();
+    if (!orgId) {
+      setOrganisationSnapshot(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    fetchBusinessProfile(orgId)
+      .then((profile) => {
+        if (!cancelled) setOrganisationSnapshot(organisationProfileToSnapshot(profile));
+      })
+      .catch(() => {
+        if (!cancelled) setOrganisationSnapshot(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeOrganisationId]);
 
   const dirty = useMemo(
     () => JSON.stringify(settings) !== JSON.stringify(saved),
     [settings, saved]
   );
 
-  const patch = (partial: Partial<FullInvoiceSettings>) => {
+  const patch = (partial: Partial<StoredSalesInvoiceSettings>) => {
+    setSaveMessage(null);
     setSettings((prev) => ({ ...prev, ...partial }));
   };
 
@@ -135,7 +217,25 @@ export function InvoiceSettingsPage() {
   const themeLabel =
     INVOICE_THEME_CARDS.find((th) => th.id === settings.themeId)?.label ?? "GST Advance A4";
 
-  const save = () => setSaved({ ...settings });
+  const save = async () => {
+    const orgId = activeOrganisationId?.trim();
+    if (!orgId) return;
+
+    setSaving(true);
+    setSaveMessage(null);
+    try {
+      const updated = await updateSalesInvoiceSettings(orgId, settings);
+      setSettings(updated);
+      setSaved(updated);
+      setSaveMessage(t("dashboard.invoiceSettings.saveSuccess"));
+    } catch (err) {
+      setSaveMessage(
+        err instanceof Error ? err.message : t("dashboard.invoiceSettings.saveError"),
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="flex min-h-full flex-col bg-brand-surface">
@@ -153,13 +253,30 @@ export function InvoiceSettingsPage() {
         </div>
         <button
           type="button"
-          disabled={!dirty}
-          onClick={save}
+          disabled={!dirty || saving || loading || !activeOrganisationId}
+          onClick={() => void save()}
           className="inline-flex h-10 shrink-0 items-center rounded-md bg-gradient-to-r from-brand-primary to-brand-primary-light px-4 text-sm font-semibold text-white hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
         >
-          {t("dashboard.invoiceSettings.saveChanges")}
+          {saving ? t("dashboard.invoiceSettings.saving") : t("dashboard.invoiceSettings.saveChanges")}
         </button>
       </div>
+
+      {loadError ? (
+        <div className="mx-4 mt-3 rounded-md border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900 lg:mx-6">
+          {loadError}
+        </div>
+      ) : null}
+      {saveMessage ? (
+        <div
+          className={`mx-4 mt-3 rounded-md border px-4 py-2 text-sm lg:mx-6 ${
+            saveMessage === t("dashboard.invoiceSettings.saveSuccess")
+              ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+              : "border-red-200 bg-red-50 text-red-800"
+          }`}
+        >
+          {saveMessage}
+        </div>
+      ) : null}
 
       <div className="flex flex-col lg:flex-row lg:items-start">
         {/* Preview — centered in available space */}
@@ -175,14 +292,20 @@ export function InvoiceSettingsPage() {
             showTimeOnInvoice={settings.showTimeOnInvoice}
             enableReceiverSignature={settings.enableReceiverSignature}
             signatureImageUrl={settings.signatureDataUrl}
+            organisation={organisationSnapshot ?? undefined}
           />
         </div>
 
         {/* Settings panel */}
         <div className="w-full shrink-0 border-t border-slate-200/90 bg-white lg:w-[400px] lg:shrink-0 lg:border-l lg:border-t-0">
           <div className="px-4 py-4 lg:px-5">
+            {loading ? (
+              <p className="py-8 text-center text-sm text-brand-primary-muted">
+                {t("dashboard.invoiceSettings.loading")}
+              </p>
+            ) : null}
             {/* Themes */}
-            <div className="space-y-4 border-b border-slate-200/90 pb-4">
+            <div className={`space-y-4 border-b border-slate-200/90 pb-4 ${loading ? "pointer-events-none opacity-50" : ""}`}>
               <p className="text-sm font-semibold text-brand-primary">
                 {t("dashboard.invoiceSettings.themes")}
               </p>

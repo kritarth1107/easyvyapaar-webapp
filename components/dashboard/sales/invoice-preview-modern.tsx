@@ -1,17 +1,21 @@
 "use client";
 
 import {
-  formatInvoiceDateTime,
   InvoiceAuthorSignature,
+  InvoicePreviewBillToDetails,
+  InvoicePreviewBusinessDetails,
+  InvoicePreviewGstBreakdownTable,
+  InvoicePreviewItemDetails,
+  InvoicePreviewShippingAddress,
+  InvoicePreviewSummaryRows,
   InvoiceReceiverSignature,
 } from "@/components/dashboard/sales/invoice-preview-shared";
 import { getHeaderTextColor } from "@/lib/sales/invoice-settings-config";
+import { resolveInvoicePreviewContent } from "@/lib/sales/invoice-preview-document";
 import {
   A4_MIN_HEIGHT,
   A4_WIDTH,
   fmtRupee,
-  LINES,
-  SUMMARY_ROWS,
   type InvoicePreviewProps,
 } from "@/lib/sales/invoice-preview-data";
 
@@ -26,16 +30,18 @@ const MODERN_COL = {
   amount: "11%",
 } as const;
 
-export function InvoicePreviewModern({
-  businessName,
-  accentHex,
-  showPartyBalance,
-  showPhoneOnInvoice,
-  showItemDescription,
-  showTimeOnInvoice,
-  enableReceiverSignature,
-  signatureImageUrl,
-}: InvoicePreviewProps) {
+export function InvoicePreviewModern(props: InvoicePreviewProps) {
+  const {
+    businessName,
+    accentHex,
+    showPartyBalance,
+    showPhoneOnInvoice,
+    showItemDescription,
+    enableReceiverSignature,
+    signatureImageUrl,
+    embedded = false,
+  } = props;
+  const content = resolveInvoicePreviewContent(props);
   const displayName = businessName.toUpperCase() || "MAYANK ELECTRONICS";
   const headerTextColor = getHeaderTextColor(accentHex);
 
@@ -55,10 +61,11 @@ export function InvoicePreviewModern({
     </div>
   );
 
-  return (
-    <div className="mx-auto w-fit max-w-full rounded-lg border border-slate-100 bg-white shadow-[0_2px_16px_rgba(15,23,42,0.08)]">
+  const documentNode = (
       <div
-        className="mx-auto shrink-0 font-[Arial,Helvetica,sans-serif] text-black"
+        data-invoice-document
+        data-invoice-page-size="a4"
+        className="mx-auto flex shrink-0 flex-col font-[Arial,Helvetica,sans-serif] text-black"
         style={{
           width: A4_WIDTH,
           minHeight: A4_MIN_HEIGHT,
@@ -85,17 +92,12 @@ export function InvoicePreviewModern({
             </div>
             <div className="min-w-0">
               <p style={{ fontSize: "17px", fontWeight: 700, lineHeight: 1.15 }}>{displayName}</p>
-              <p style={{ fontSize: "11px", marginTop: 6, color: "#333", lineHeight: 1.45 }}>
-                Bazarpara patna, Baikunthpur, Chhattisgarh, 497331
-                <br />
-                GSTIN: 22FGDPS5345Q1ZS
-                {showPhoneOnInvoice && (
-                  <>
-                    <br />
-                    Mobile: 9399576767
-                  </>
-                )}
-              </p>
+              <InvoicePreviewBusinessDetails
+                content={content}
+                showPhoneOnInvoice={showPhoneOnInvoice}
+                fontSize={11}
+                marginTop={6}
+              />
             </div>
           </div>
 
@@ -110,18 +112,13 @@ export function InvoicePreviewModern({
               ORIGINAL FOR RECIPIENT
             </div>
             <div className="mt-4 space-y-1 text-left">
-              {metaRow("Invoice No.", "AABBCCDD/202")}
-              {metaRow("Invoice Date", formatInvoiceDateTime(showTimeOnInvoice))}
-              {metaRow("Due Date", "16/02/2023")}
+              {metaRow("Invoice No.", content.invoiceNumber)}
+              {metaRow("Invoice Date", content.invoiceDate)}
+              {metaRow("Due Date", content.dueDate)}
             </div>
-            <p
-              className="mt-4 text-left text-slate-600"
-              style={{ fontSize: "11px", lineHeight: 1.45 }}
-            >
-              1234123 324324234,
-              <br />
-              Bengaluru,
-            </p>
+            <div className="mt-4 text-left text-slate-600">
+              <InvoicePreviewShippingAddress content={content} fontSize={11} label="" />
+            </div>
           </div>
         </div>
 
@@ -134,16 +131,7 @@ export function InvoicePreviewModern({
             BILL TO
           </div>
           <div className="px-2 py-3">
-            <p style={{ fontSize: "12px", fontWeight: 700 }}>Sample Party</p>
-            <p style={{ fontSize: "11px", marginTop: 4, color: "#333", lineHeight: 1.45 }}>
-              No F2, Outer Circle, Connaught Circus, New Delhi, DELHI, 110001
-              <br />
-              Mobile: 7400417400
-              <br />
-              GSTIN: 07ABCCH2702H4ZZ
-              <br />
-              Place of Supply: Karnataka
-            </p>
+            <InvoicePreviewBillToDetails content={content} nameFontSize={12} fontSize={11} />
           </div>
         </div>
 
@@ -182,14 +170,18 @@ export function InvoicePreviewModern({
             </tr>
           </thead>
           <tbody>
-            {LINES.map((line, idx) => (
+            {content.lines.map((line, idx) => (
               <tr key={`${line.name}-${idx}`} className="align-top">
                 <td className="px-2 py-2.5 text-center">{idx + 1}</td>
                 <td className="px-2 py-2.5">
                   <p style={{ fontWeight: 700, fontSize: "11px" }}>{line.name.toUpperCase()}</p>
-                  {showItemDescription && line.desc && (
-                    <p style={{ fontSize: "10px", color: "#666", marginTop: 2 }}>{line.desc}</p>
-                  )}
+                  <InvoicePreviewItemDetails
+                    serial={line.serial}
+                    desc={line.desc}
+                    showDescription={showItemDescription}
+                    fontSize={10}
+                    color="#666"
+                  />
                 </td>
                 <td className="px-2 py-2.5 text-center">{line.hsn}</td>
                 <td className="px-2 py-2.5 text-center">{line.qty}</td>
@@ -211,9 +203,9 @@ export function InvoicePreviewModern({
           <tfoot>
             <tr style={barStyle}>
               <td colSpan={5} className="px-2 py-2" />
-              <td className="px-2 py-2 text-right font-bold">{fmtRupee("1,051.43")}</td>
-              <td className="px-2 py-2 text-right font-bold">{fmtRupee("1,724.57")}</td>
-              <td className="px-2 py-2 text-right font-bold">{fmtRupee("9,596.5")}</td>
+              <td className="px-2 py-2 text-right font-bold">{fmtRupee(content.totalDisc)}</td>
+              <td className="px-2 py-2 text-right font-bold">{fmtRupee(content.totalTax)}</td>
+              <td className="px-2 py-2 text-right font-bold">{fmtRupee(content.totalAmount)}</td>
             </tr>
           </tfoot>
         </table>
@@ -222,43 +214,35 @@ export function InvoicePreviewModern({
         <div className="mt-6 flex gap-8">
           <div className="min-w-0 flex-1">
             <p style={{ fontSize: "11px", fontWeight: 700 }}>Notes</p>
-            <p style={{ fontSize: "11px", marginTop: 4, color: "#333" }}>Sample Note</p>
+            <p style={{ fontSize: "11px", marginTop: 4, color: "#333" }}>{content.notes}</p>
             <InvoiceReceiverSignature enabled={enableReceiverSignature} fontSize={11} />
             <p style={{ fontSize: "11px", fontWeight: 700, marginTop: 16 }}>Terms and Conditions</p>
             <p
               style={{ fontSize: "9px", marginTop: 4, lineHeight: 1.5, color: "#444" }}
               className="uppercase"
             >
-              NOTE:- IF ALL THE GOODS ARE DEFECTIVE, THE SERVICE CENTER WILL BE MADE FROM SERVICE
-              CENTER, THERE WILL BE NO RESPOSSIBILITY FOR THE STORE. ALL DISPUTES ARE SUBJECT TO
-              LOCAL JURISDICTION ONLY. E. &amp; O.E.
+              {content.terms}
             </p>
           </div>
 
           <div className="shrink-0" style={{ width: "42%" }}>
-            <div className="space-y-1">
-              {SUMMARY_ROWS.map((row) => (
-                <div
-                  key={row.label}
-                  className="flex justify-between gap-4"
-                  style={{ fontSize: "11px", fontWeight: row.bold ? 700 : 400 }}
-                >
-                  <span>{row.label}</span>
-                  <span>{fmtRupee(row.value)}</span>
-                </div>
-              ))}
+            <InvoicePreviewSummaryRows rows={content.summaryRows} fontSize={11} />
+            <div className="mt-3">
+              <InvoicePreviewGstBreakdownTable rows={content.gstRows} fontSize={10} />
+            </div>
+            <div className="mt-2 space-y-1">
               {showPartyBalance && (
                 <>
                   <div className="flex justify-between gap-4" style={{ fontSize: "11px" }}>
                     <span>Previous Balance</span>
-                    <span>{fmtRupee("-1,92,050.15")}</span>
+                    <span>{fmtRupee(content.previousBalance)}</span>
                   </div>
                   <div
                     className="flex justify-between gap-4"
                     style={{ fontSize: "11px", fontWeight: 700 }}
                   >
                     <span>Current Balance</span>
-                    <span>{fmtRupee("-1,82,453.65")}</span>
+                    <span>{fmtRupee(content.currentBalance)}</span>
                   </div>
                 </>
               )}
@@ -268,7 +252,7 @@ export function InvoicePreviewModern({
                   style={{ fontSize: "11px", fontWeight: 700 }}
                 >
                   <span>Current Balance</span>
-                  <span>{fmtRupee("9,596.5")}</span>
+                  <span>{fmtRupee(content.totalAmount)}</span>
                 </div>
               )}
             </div>
@@ -279,7 +263,7 @@ export function InvoicePreviewModern({
             >
               <span style={{ fontWeight: 700 }}>Total Amount (in words):</span>
               <br />
-              Nine Thousand Five Hundred Ninety Six Rupees and Fifty Paise
+              {content.amountInWords}
             </p>
 
             <div className="mt-8">
@@ -294,6 +278,13 @@ export function InvoicePreviewModern({
           </div>
         </div>
       </div>
+  );
+
+  if (embedded) return documentNode;
+
+  return (
+    <div className="mx-auto w-fit max-w-full rounded-lg border border-slate-100 bg-white shadow-[0_2px_16px_rgba(15,23,42,0.08)]">
+      {documentNode}
     </div>
   );
 }

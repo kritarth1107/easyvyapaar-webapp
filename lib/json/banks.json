@@ -1,0 +1,554 @@
+[
+    {
+      "bankName": "State Bank of India",
+      "mainBranchIFSC": "SBIN0000001",
+      "BankWebsite": "https://www.sbi.co.in",
+      "BankType": "Public Sector Bank"
+    },
+    {
+      "bankName": "Bank of Baroda",
+      "mainBranchIFSC": "BARB0BOMBAY",
+      "BankWebsite": "https://www.bankofbaroda.in",
+      "BankType": "Public Sector Bank"
+    },
+    {
+      "bankName": "Bank of India",
+      "mainBranchIFSC": "BKID0000001",
+      "BankWebsite": "https://www.bankofindia.co.in",
+      "BankType": "Public Sector Bank"
+    },
+    {
+      "bankName": "Bank of Maharashtra",
+      "mainBranchIFSC": "MAHB0000001",
+      "BankWebsite": "https://www.bankofmaharashtra.in",
+      "BankType": "Public Sector Bank"
+    },
+    {
+      "bankName": "Canara Bank",
+      "mainBranchIFSC": "CNRB0000001",
+      "BankWebsite": "https://www.canarabank.com",
+      "BankType": "Public Sector Bank"
+    },
+    {
+      "bankName": "Central Bank of India",
+      "mainBranchIFSC": "CBIN0280001",
+      "BankWebsite": "https://www.centralbankofindia.co.in",
+      "BankType": "Public Sector Bank"
+    },
+    {
+      "bankName": "Indian Bank",
+      "mainBranchIFSC": "IDIB000A001",
+      "BankWebsite": "https://www.indianbank.in",
+      "BankType": "Public Sector Bank"
+    },
+    {
+      "bankName": "Indian Overseas Bank",
+      "mainBranchIFSC": "IOBA0000001",
+      "BankWebsite": "https://www.iob.in",
+      "BankType": "Public Sector Bank"
+    },
+    {
+      "bankName": "Punjab and Sind Bank",
+      "mainBranchIFSC": "PSIB0000001",
+      "BankWebsite": "https://punjabandsindbank.co.in",
+      "BankType": "Public Sector Bank"
+    },
+    {
+      "bankName": "Punjab National Bank",
+      "mainBranchIFSC": "PUNB0000100",
+      "BankWebsite": "https://www.pnbindia.in",
+      "BankType": "Public Sector Bank"
+    },
+    {
+      "bankName": "UCO Bank",
+      "mainBranchIFSC": "UCBA0000001",
+      "BankWebsite": "https://www.ucobank.com",
+      "BankType": "Public Sector Bank"
+    },
+    {
+      "bankName": "Union Bank of India",
+      "mainBranchIFSC": "UBIN0531804",
+      "BankWebsite": "https://www.unionbankofindia.co.in",
+      "BankType": "Public Sector Bank"
+    },
+    {
+      "bankName": "HDFC Bank",
+      "mainBranchIFSC": "HDFC0000001",
+      "BankWebsite": "https://www.hdfcbank.com",
+      "BankType": "Private Sector Bank"
+    },
+    {
+      "bankName": "ICICI Bank",
+      "mainBranchIFSC": "ICIC0000001",
+      "BankWebsite": "https://www.icicibank.com",
+      "BankType": "Private Sector Bank"
+    },
+    {
+      "bankName": "Axis Bank",
+      "mainBranchIFSC": "UTIB0000001",
+      "BankWebsite": "https://www.axisbank.com",
+      "BankType": "Private Sector Bank"
+    },
+    {
+      "bankName": "Kotak Mahindra Bank",
+      "mainBranchIFSC": "KKBK0000001",
+      "BankWebsite": "https://www.kotak.com",
+      "BankType": "Private Sector Bank"
+    },
+    {
+      "bankName": "IndusInd Bank",
+      "mainBranchIFSC": "INDB0000001",
+      "BankWebsite": "https://www.indusind.com",
+      "BankType": "Private Sector Bank"
+    },
+    {
+      "bankName": "Yes Bank",
+      "mainBranchIFSC": "YESB0000001",
+      "BankWebsite": "https://www.yesbank.in",
+      "BankType": "Private Sector Bank"
+    },
+    {
+      "bankName": "IDFC First Bank",
+      "mainBranchIFSC": "IDFB0040101",
+      "BankWebsite": "https://www.idfcfirstbank.com",
+      "BankType": "Private Sector Bank"
+    },
+    {
+      "bankName": "IDBI Bank",
+      "mainBranchIFSC": "IBKL0000001",
+      "BankWebsite": "https://www.idbibank.in",
+      "BankType": "Private Sector Bank"
+    },
+    {
+      "bankName": "Federal Bank",
+      "mainBranchIFSC": "FDRL0001001",
+      "BankWebsite": "https://www.federalbank.co.in",
+      "BankType": "Private Sector Bank"
+    },
+    {
+      "bankName": "Bandhan Bank",
+      "mainBranchIFSC": "BDBL0001001",
+      "BankWebsite": "https://www.bandhanbank.com",
+      "BankType": "Private Sector Bank"
+    },
+    {
+      "bankName": "RBL Bank",
+      "mainBranchIFSC": "RATN0000001",
+      "BankWebsite": "https://www.rblbank.com",
+      "BankType": "Private Sector Bank"
+    },
+    {
+      "bankName": "South Indian Bank",
+      "mainBranchIFSC": "SIBL0000001",
+      "BankWebsite": "https://www.southindianbank.com",
+      "BankType": "Private Sector Bank"
+    },
+    {
+      "bankName": "Karnataka Bank",
+      "mainBranchIFSC": "KARB0000001",
+      "BankWebsite": "https://karnatakabank.com",
+      "BankType": "Private Sector Bank"
+    },
+    {
+      "bankName": "Karur Vysya Bank",
+      "mainBranchIFSC": "KVBL0001001",
+      "BankWebsite": "https://www.kvb.co.in",
+      "BankType": "Private Sector Bank"
+    },
+    {
+      "bankName": "City Union Bank",
+      "mainBranchIFSC": "CIUB0000001",
+      "BankWebsite": "https://www.cityunionbank.com",
+      "BankType": "Private Sector Bank"
+    },
+    {
+      "bankName": "Tamilnad Mercantile Bank",
+      "mainBranchIFSC": "TMBL0000001",
+      "BankWebsite": "https://www.tmbank.in",
+      "BankType": "Private Sector Bank"
+    },
+    {
+      "bankName": "CSB Bank",
+      "mainBranchIFSC": "CSBK0000001",
+      "BankWebsite": "https://www.csb.co.in",
+      "BankType": "Private Sector Bank"
+    },
+    {
+      "bankName": "DCB Bank",
+      "mainBranchIFSC": "DCBL0000001",
+      "BankWebsite": "https://www.dcbbank.com",
+      "BankType": "Private Sector Bank"
+    },
+    {
+      "bankName": "Dhanlaxmi Bank",
+      "mainBranchIFSC": "DLXB0000001",
+      "BankWebsite": "https://www.dhanbank.com",
+      "BankType": "Private Sector Bank"
+    },
+    {
+      "bankName": "Jammu & Kashmir Bank",
+      "mainBranchIFSC": "JAKA0LAHORI",
+      "BankWebsite": "https://www.jkbank.com",
+      "BankType": "Private Sector Bank"
+    },
+    {
+      "bankName": "Nainital Bank",
+      "mainBranchIFSC": "NTBL0NAI001",
+      "BankWebsite": "https://www.nainitalbank.co.in",
+      "BankType": "Private Sector Bank"
+    },
+    {
+      "bankName": "AU Small Finance Bank",
+      "mainBranchIFSC": "AUBL0002083",
+      "BankWebsite": "https://www.aubank.in",
+      "BankType": "Small Finance Bank"
+    },
+    {
+      "bankName": "Capital Small Finance Bank",
+      "mainBranchIFSC": "CLBL0000001",
+      "BankWebsite": "https://www.capitalsfb.com",
+      "BankType": "Small Finance Bank"
+    },
+    {
+      "bankName": "Equitas Small Finance Bank",
+      "mainBranchIFSC": "ESFB0001001",
+      "BankWebsite": "https://www.equitasbank.com",
+      "BankType": "Small Finance Bank"
+    },
+    {
+      "bankName": "ESAF Small Finance Bank",
+      "mainBranchIFSC": "ESMF0000001",
+      "BankWebsite": "https://www.esafbank.com",
+      "BankType": "Small Finance Bank"
+    },
+    {
+      "bankName": "Fino Small Finance Bank",
+      "mainBranchIFSC": "FINO0001001",
+      "BankWebsite": "https://www.finobank.com",
+      "BankType": "Small Finance Bank"
+    },
+    {
+      "bankName": "Jana Small Finance Bank",
+      "mainBranchIFSC": "JSFB0000001",
+      "BankWebsite": "https://www.janabank.com",
+      "BankType": "Small Finance Bank"
+    },
+    {
+      "bankName": "Shivalik Small Finance Bank",
+      "mainBranchIFSC": "SMCB0000001",
+      "BankWebsite": "https://www.shivalikbank.com",
+      "BankType": "Small Finance Bank"
+    },
+    {
+      "bankName": "Slice Small Finance Bank",
+      "mainBranchIFSC": "SLCE0000001",
+      "BankWebsite": "https://www.sliceit.com",
+      "BankType": "Small Finance Bank"
+    },
+    {
+      "bankName": "Suryoday Small Finance Bank",
+      "mainBranchIFSC": "SURY0000001",
+      "BankWebsite": "https://www.suryodaybank.com",
+      "BankType": "Small Finance Bank"
+    },
+    {
+      "bankName": "Ujjivan Small Finance Bank",
+      "mainBranchIFSC": "UJVN0000001",
+      "BankWebsite": "https://www.ujjivansfb.in",
+      "BankType": "Small Finance Bank"
+    },
+    {
+      "bankName": "Unity Small Finance Bank",
+      "mainBranchIFSC": "UNTY0000001",
+      "BankWebsite": "https://www.unitysb.com",
+      "BankType": "Small Finance Bank"
+    },
+    {
+      "bankName": "Utkarsh Small Finance Bank",
+      "mainBranchIFSC": "UTKS0000001",
+      "BankWebsite": "https://www.utkarsh.bank",
+      "BankType": "Small Finance Bank"
+    },
+    {
+      "bankName": "Airtel Payments Bank",
+      "mainBranchIFSC": "AIRP0000001",
+      "BankWebsite": "https://www.airtel.in/bank",
+      "BankType": "Payments Bank"
+    },
+    {
+      "bankName": "India Post Payments Bank",
+      "mainBranchIFSC": "IPOS0000001",
+      "BankWebsite": "https://www.ippbonline.com",
+      "BankType": "Payments Bank"
+    },
+    {
+      "bankName": "Jio Payments Bank",
+      "mainBranchIFSC": "JIOP0000001",
+      "BankWebsite": "https://www.jio.com/en-in/jio-payments-bank",
+      "BankType": "Payments Bank"
+    },
+    {
+      "bankName": "NSDL Payments Bank",
+      "mainBranchIFSC": "NSPB0000001",
+      "BankWebsite": "https://nsdlbank.com",
+      "BankType": "Payments Bank"
+    },
+    {
+      "bankName": "Andhra Pradesh Grameena Bank",
+      "mainBranchIFSC": "APGB0000001",
+      "BankWebsite": "https://www.apgb.in",
+      "BankType": "Regional Rural Bank"
+    },
+    {
+      "bankName": "Arunachal Pradesh Rural Bank",
+      "mainBranchIFSC": "APRB0000001",
+      "BankWebsite": "https://www.apruralbank.co.in",
+      "BankType": "Regional Rural Bank"
+    },
+    {
+      "bankName": "Assam Gramin Bank",
+      "mainBranchIFSC": "AGVB0000001",
+      "BankWebsite": "https://www.agvbank.co.in",
+      "BankType": "Regional Rural Bank"
+    },
+    {
+      "bankName": "Bihar Gramin Bank",
+      "mainBranchIFSC": "BGBK0000001",
+      "BankWebsite": "https://www.bihargramintank.com",
+      "BankType": "Regional Rural Bank"
+    },
+    {
+      "bankName": "Chhattisgarh Gramin Bank",
+      "mainBranchIFSC": "CGBK0000001",
+      "BankWebsite": "https://www.cg-bank.com",
+      "BankType": "Regional Rural Bank"
+    },
+    {
+      "bankName": "Gujarat Gramin Bank",
+      "mainBranchIFSC": "GUJB0000001",
+      "BankWebsite": "https://www.gujaratgraminbank.in",
+      "BankType": "Regional Rural Bank"
+    },
+    {
+      "bankName": "Haryana Gramin Bank",
+      "mainBranchIFSC": "HGBK0000001",
+      "BankWebsite": "https://www.haryanagraminbank.com",
+      "BankType": "Regional Rural Bank"
+    },
+    {
+      "bankName": "Himachal Pradesh Gramin Bank",
+      "mainBranchIFSC": "HPGB0000001",
+      "BankWebsite": "https://www.hpgb.in",
+      "BankType": "Regional Rural Bank"
+    },
+    {
+      "bankName": "Jammu and Kashmir Grameen Bank",
+      "mainBranchIFSC": "JKGB0000001",
+      "BankWebsite": "https://www.jkgb.in",
+      "BankType": "Regional Rural Bank"
+    },
+    {
+      "bankName": "Jharkhand Gramin Bank",
+      "mainBranchIFSC": "JHKG0000001",
+      "BankWebsite": "https://www.jrgbank.in",
+      "BankType": "Regional Rural Bank"
+    },
+    {
+      "bankName": "Karnataka Grameena Bank",
+      "mainBranchIFSC": "PKGB0000001",
+      "BankWebsite": "https://karnatakagrameenabank.in",
+      "BankType": "Regional Rural Bank"
+    },
+    {
+      "bankName": "Kerala Grameena Bank",
+      "mainBranchIFSC": "KLGB0000001",
+      "BankWebsite": "https://www.keralagrameenabank.in",
+      "BankType": "Regional Rural Bank"
+    },
+    {
+      "bankName": "Madhya Pradesh Gramin Bank",
+      "mainBranchIFSC": "MPGB0000001",
+      "BankWebsite": "https://www.mpgb.co.in",
+      "BankType": "Regional Rural Bank"
+    },
+    {
+      "bankName": "Maharashtra Gramin Bank",
+      "mainBranchIFSC": "MAHG0000001",
+      "BankWebsite": "https://www.mahagramin.in",
+      "BankType": "Regional Rural Bank"
+    },
+    {
+      "bankName": "Manipur Rural Bank",
+      "mainBranchIFSC": "MRBK0000001",
+      "BankWebsite": "https://www.manipurrural.bank.in",
+      "BankType": "Regional Rural Bank"
+    },
+    {
+      "bankName": "Meghalaya Rural Bank",
+      "mainBranchIFSC": "MGRB0000001",
+      "BankWebsite": "https://www.meghalayaruralbank.co.in",
+      "BankType": "Regional Rural Bank"
+    },
+    {
+      "bankName": "Mizoram Rural Bank",
+      "mainBranchIFSC": "MZRB0000001",
+      "BankWebsite": "https://www.mizoramruralbank.in",
+      "BankType": "Regional Rural Bank"
+    },
+    {
+      "bankName": "Nagaland Rural Bank",
+      "mainBranchIFSC": "NAGR0000001",
+      "BankWebsite": "https://nagalandruralbank.com",
+      "BankType": "Regional Rural Bank"
+    },
+    {
+      "bankName": "Odisha Grameen Bank",
+      "mainBranchIFSC": "ODGB0000001",
+      "BankWebsite": "https://odishabank.in",
+      "BankType": "Regional Rural Bank"
+    },
+    {
+      "bankName": "Puducherry Grama Bank",
+      "mainBranchIFSC": "PYGB0000001",
+      "BankWebsite": "https://pygb.bank.in",
+      "BankType": "Regional Rural Bank"
+    },
+    {
+      "bankName": "Punjab Gramin Bank",
+      "mainBranchIFSC": "PGBK0000001",
+      "BankWebsite": "https://www.pgb.org.in",
+      "BankType": "Regional Rural Bank"
+    },
+    {
+      "bankName": "Rajasthan Gramin Bank",
+      "mainBranchIFSC": "RBGB0000001",
+      "BankWebsite": "https://www.rgb.org.in",
+      "BankType": "Regional Rural Bank"
+    },
+    {
+      "bankName": "Tamil Nadu Grama Bank",
+      "mainBranchIFSC": "TNGB0000001",
+      "BankWebsite": "https://tngb.bank.in",
+      "BankType": "Regional Rural Bank"
+    },
+    {
+      "bankName": "Telangana Grameena Bank",
+      "mainBranchIFSC": "TGMB0000001",
+      "BankWebsite": "https://tgb.bank.in",
+      "BankType": "Regional Rural Bank"
+    },
+    {
+      "bankName": "Tripura Gramin Bank",
+      "mainBranchIFSC": "TRGB0000001",
+      "BankWebsite": "https://tripuragraminbank.in",
+      "BankType": "Regional Rural Bank"
+    },
+    {
+      "bankName": "Uttar Pradesh Gramin Bank",
+      "mainBranchIFSC": "UPGB0000001",
+      "BankWebsite": "https://upgb.bank.in",
+      "BankType": "Regional Rural Bank"
+    },
+    {
+      "bankName": "Uttarakhand Gramin Bank",
+      "mainBranchIFSC": "UTGB0000001",
+      "BankWebsite": "https://www.ukgb.org",
+      "BankType": "Regional Rural Bank"
+    },
+    {
+      "bankName": "West Bengal Gramin Bank",
+      "mainBranchIFSC": "WBGB0000001",
+      "BankWebsite": "https://wbgb.bank.in",
+      "BankType": "Regional Rural Bank"
+    },
+    {
+      "bankName": "Citibank India",
+      "mainBranchIFSC": "CITI0000001",
+      "BankWebsite": "https://www.online.citibank.co.in",
+      "BankType": "Foreign Bank"
+    },
+    {
+      "bankName": "HSBC India",
+      "mainBranchIFSC": "HSBC0400001",
+      "BankWebsite": "https://www.hsbc.co.in",
+      "BankType": "Foreign Bank"
+    },
+    {
+      "bankName": "Standard Chartered Bank India",
+      "mainBranchIFSC": "SCBL0036001",
+      "BankWebsite": "https://www.sc.com/in",
+      "BankType": "Foreign Bank"
+    },
+    {
+      "bankName": "Deutsche Bank India",
+      "mainBranchIFSC": "DEUT0784BBY",
+      "BankWebsite": "https://www.db.com/india",
+      "BankType": "Foreign Bank"
+    },
+    {
+      "bankName": "Barclays Bank India",
+      "mainBranchIFSC": "BARC0BOMBAY",
+      "BankWebsite": "https://www.barclays.in",
+      "BankType": "Foreign Bank"
+    },
+    {
+      "bankName": "DBS Bank India",
+      "mainBranchIFSC": "DBSS0IN0801",
+      "BankWebsite": "https://www.dbs.com/in",
+      "BankType": "Foreign Bank"
+    },
+    {
+      "bankName": "Bank of America India",
+      "mainBranchIFSC": "BOFA0MM0005",
+      "BankWebsite": "https://www.bofasecurities.com/en-IN",
+      "BankType": "Foreign Bank"
+    },
+    {
+      "bankName": "JPMorgan Chase Bank India",
+      "mainBranchIFSC": "CHAS0IN0001",
+      "BankWebsite": "https://www.jpmorgan.com/IN",
+      "BankType": "Foreign Bank"
+    },
+    {
+      "bankName": "BNP Paribas India",
+      "mainBranchIFSC": "BNPA0009022",
+      "BankWebsite": "https://india.bnpparibas.com",
+      "BankType": "Foreign Bank"
+    },
+    {
+      "bankName": "Societe Generale India",
+      "mainBranchIFSC": "SOGEINHYXX",
+      "BankWebsite": "https://www.societegenerale.in",
+      "BankType": "Foreign Bank"
+    },
+    {
+      "bankName": "MUFG Bank India",
+      "mainBranchIFSC": "BOTM0MUMBAI",
+      "BankWebsite": "https://www.bk.mufg.jp/global/india",
+      "BankType": "Foreign Bank"
+    },
+    {
+      "bankName": "Doha Bank India",
+      "mainBranchIFSC": "DOHB0IN0001",
+      "BankWebsite": "https://www.dohabank.co.in",
+      "BankType": "Foreign Bank"
+    },
+    {
+      "bankName": "Qatar National Bank India",
+      "mainBranchIFSC": "QNBA0IN0001",
+      "BankWebsite": "https://www.qnb.com/india",
+      "BankType": "Foreign Bank"
+    },
+    {
+      "bankName": "Coastal Local Area Bank",
+      "mainBranchIFSC": "COAS0IN0001",
+      "BankWebsite": "https://coastal.bank.in",
+      "BankType": "Local Area Bank"
+    },
+    {
+      "bankName": "Krishna Bhima Samruddhi Local Area Bank",
+      "mainBranchIFSC": "KBSX0000001",
+      "BankWebsite": "https://www.kbsbank.bank.in",
+      "BankType": "Local Area Bank"
+    }
+  ]

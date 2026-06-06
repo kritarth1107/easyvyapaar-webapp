@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import {
   buildCreateItemBackendPayload,
   extractBackendError,
-  normalizeInventoryListResponse,
+  normalizeInventoryPaginatedResponse,
   normalizeItemDetail,
 } from "@/lib/api/inventory";
 import { proxyInventoryBackend, requireOrganisationId } from "@/lib/api/inventory-proxy";
@@ -89,6 +89,16 @@ function parseCreateItemBody(body: unknown): CreateInventoryItemRequest | string
   };
 }
 
+function buildBackendListQuery(searchParams: URLSearchParams): string {
+  const params = new URLSearchParams();
+  for (const key of ["search", "category", "stockStatus", "page", "limit"] as const) {
+    const value = searchParams.get(key)?.trim();
+    if (value) params.set(key, value);
+  }
+  const qs = params.toString();
+  return qs ? `?${qs}` : "";
+}
+
 export async function GET(request: Request) {
   try {
     const organisationId = requireOrganisationId(request);
@@ -96,9 +106,12 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "organisationId is required" }, { status: 400 });
     }
 
+    const { searchParams } = new URL(request.url);
+    const listQuery = buildBackendListQuery(searchParams);
+
     const { response, body } = await proxyInventoryBackend(
       request,
-      `inventory/organisations/${encodeURIComponent(organisationId)}/items/summary`,
+      `inventory/organisations/${encodeURIComponent(organisationId)}/items/summary${listQuery}`,
       { method: "GET" },
     );
 
@@ -109,8 +122,8 @@ export async function GET(request: Request) {
       );
     }
 
-    const items = normalizeInventoryListResponse(body);
-    return NextResponse.json({ ...(body as object), data: items });
+    const data = normalizeInventoryPaginatedResponse(body);
+    return NextResponse.json({ ...(body as object), data });
   } catch (error) {
     console.error("Inventory items list error:", error);
     return NextResponse.json({ error: "Failed to load items" }, { status: 500 });

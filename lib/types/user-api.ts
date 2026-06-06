@@ -1,3 +1,4 @@
+import type { IndustryType } from "@/lib/constants/industry-types";
 import type { OrganisationType } from "@/lib/constants/organisation-types";
 
 export interface OrganisationSummary {
@@ -8,6 +9,7 @@ export interface OrganisationSummary {
   gstNumber?: string | null;
   pan?: string | null;
   organisationType?: OrganisationType | string | null;
+  industryType?: IndustryType | string | null;
 }
 
 export interface UserMeData {

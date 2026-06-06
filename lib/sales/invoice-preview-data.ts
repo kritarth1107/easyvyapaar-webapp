@@ -1,3 +1,6 @@
+import type { InvoicePreviewDocument } from "@/lib/sales/invoice-preview-document-types";
+import type { InvoiceOrganisationSnapshot } from "@/lib/sales/invoice-preview-formatters";
+
 /** @ 96dpi */
 export const A4_WIDTH = 794;
 export const A4_MIN_HEIGHT = 1123;
@@ -15,7 +18,7 @@ export const PAGE_SIZES: Record<
   a5: {
     width: A5_WIDTH,
     minHeight: A5_MIN_HEIGHT,
-    itemsBodyMinH: 100,
+    itemsBodyMinH: 48,
   },
 };
 
@@ -39,6 +42,7 @@ export const COL = {
 export type SampleLine = {
   name: string;
   desc: string;
+  serial?: string;
   hsn: string;
   qty: string;
   rate: string;
@@ -52,6 +56,7 @@ export type SampleLine = {
 export type BillbookLine = {
   name: string;
   desc: string;
+  serial?: string;
   qty: string;
   rate: string;
   disc: string;
@@ -137,22 +142,88 @@ export const LINES: SampleLine[] = [
   },
 ];
 
-export const GST_ROWS = [
-  { hsn: "2032", taxable: "1,800", rate: "5%", tax: "90" },
-  { hsn: "40511209", taxable: "291.43", rate: "5%", tax: "14.57" },
-  { hsn: "1234", taxable: "9,000", rate: "18%", tax: "1,620" },
+export type InvoiceGstRow = {
+  hsn: string;
+  taxable: string;
+  cgstRate: string;
+  cgst: string;
+  sgstRate: string;
+  sgst: string;
+  tax: string;
+};
+
+export const GST_ROWS: InvoiceGstRow[] = [
+  {
+    hsn: "2032",
+    taxable: "1,800",
+    cgstRate: "2.5%",
+    cgst: "45",
+    sgstRate: "2.5%",
+    sgst: "45",
+    tax: "90",
+  },
+  {
+    hsn: "40511209",
+    taxable: "291.43",
+    cgstRate: "2.5%",
+    cgst: "7.29",
+    sgstRate: "2.5%",
+    sgst: "7.28",
+    tax: "14.57",
+  },
+  {
+    hsn: "1234",
+    taxable: "9,000",
+    cgstRate: "9%",
+    cgst: "810",
+    sgstRate: "9%",
+    sgst: "810",
+    tax: "1,620",
+  },
 ];
 
 export const SUMMARY_ROWS = [
   { label: "Taxable Amount", value: "11,091.43", bold: false },
-  { label: "IGST @5%", value: "104.57", bold: false },
-  { label: "IGST @18%", value: "1,620", bold: false },
+  { label: "CGST (2.5%)", value: "52.57", bold: false },
+  { label: "SGST (2.5%)", value: "52.57", bold: false },
+  { label: "CGST (9%)", value: "810", bold: false },
+  { label: "SGST (9%)", value: "810", bold: false },
   { label: "Total Amount", value: "9,596.5", bold: true },
   { label: "Received Amount", value: "0", bold: false },
 ] as const;
 
 export function fmtRupee(n: string) {
   return `₹ ${n}`;
+}
+
+/** Format summary row values; preserves leading minus for discounts. */
+export function fmtSummaryValue(value: string) {
+  const trimmed = value.trim();
+  if (trimmed.startsWith("-")) return `₹ ${trimmed}`;
+  return fmtRupee(trimmed);
+}
+
+/** Back-fill CGST/SGST columns when only legacy rate/tax fields exist. */
+export function normalizeGstRow(
+  row: Partial<InvoiceGstRow> & { hsn: string; taxable: string; tax: string; rate?: string },
+): InvoiceGstRow {
+  const rateMatch = row.rate?.match(/([\d.]+)/);
+  const gstPercent = rateMatch ? Number(rateMatch[1]) : 0;
+  const halfRate = gstPercent > 0 ? `${gstPercent / 2}%` : "0%";
+  const taxNum = Number(row.tax.replace(/,/g, "")) || 0;
+  const cgst =
+    row.cgst ??
+    (taxNum > 0 ? (Math.round((taxNum / 2) * 100) / 100).toLocaleString("en-IN") : "0");
+  const sgst = row.sgst ?? cgst;
+  return {
+    hsn: row.hsn,
+    taxable: row.taxable,
+    cgstRate: row.cgstRate ?? halfRate,
+    cgst,
+    sgstRate: row.sgstRate ?? halfRate,
+    sgst,
+    tax: row.tax,
+  };
 }
 
 export type InvoicePreviewProps = {
@@ -164,4 +235,12 @@ export type InvoicePreviewProps = {
   showTimeOnInvoice: boolean;
   enableReceiverSignature: boolean;
   signatureImageUrl: string | null;
+  /** When set, theme previews render live invoice data instead of sample placeholders. */
+  document?: InvoicePreviewDocument;
+  /** Org details from business profile — used on settings preview when no live document. */
+  organisation?: InvoiceOrganisationSnapshot;
+  /** Page view: skip preview card chrome (shadow, outer border, extra padding). */
+  embedded?: boolean;
 };
+
+export type { InvoicePreviewDocument } from "@/lib/sales/invoice-preview-document-types";

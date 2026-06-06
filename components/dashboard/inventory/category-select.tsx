@@ -3,10 +3,15 @@
 import { ModernSelect } from "@/components/ui/modern-select";
 import { useTranslation } from "@/lib/localization";
 
+export type CategoryOption = {
+  categoryId: string;
+  name: string;
+};
+
 type CategorySelectProps = {
   value: string;
-  categories: string[];
-  onChange: (category: string) => void;
+  categories: CategoryOption[];
+  onChange: (categoryId: string) => void;
   onAddCategory: () => void;
 };
 
@@ -22,7 +27,7 @@ export function CategorySelect({
     <ModernSelect
       value={value}
       onChange={onChange}
-      options={categories.map((c) => ({ value: c, label: c }))}
+      options={categories.map((c) => ({ value: c.categoryId, label: c.name }))}
       placeholder={t("dashboard.inventory.createItem.categoryPlaceholder")}
       searchable
       searchPlaceholder={t("dashboard.inventory.createItem.searchCategories")}

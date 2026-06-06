@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
+import { useUserMe } from "@/components/providers/user-me-provider";
 import {
   ChartLegend,
   DonutChart,
@@ -16,6 +17,7 @@ import {
   generateAiStockInsights,
   type StockSummaryAnalytics,
 } from "@/lib/dashboard/stock-summary-analytics";
+import { useAllInventoryItems } from "@/lib/inventory/use-inventory-items";
 import { useTranslation } from "@/lib/localization";
 
 function SparkleIcon() {
@@ -215,7 +217,10 @@ function StatusTable({
 
 export function StockSummaryPage() {
   const { t } = useTranslation();
-  const analytics = useMemo(() => computeStockSummaryAnalytics(), []);
+  const { activeOrganisationId, isWorkspaceLoading } = useUserMe();
+  const { items, loading, error, reload } = useAllInventoryItems(activeOrganisationId);
+  const analytics = useMemo(() => computeStockSummaryAnalytics(items), [items]);
+  const isLoading = isWorkspaceLoading || loading;
   const [aiOpen, setAiOpen] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiInsights, setAiInsights] = useState<string[]>([]);
@@ -255,6 +260,27 @@ export function StockSummaryPage() {
 
   return (
     <div className="p-4 lg:p-6">
+      {!activeOrganisationId && !isWorkspaceLoading && (
+        <p className="mb-4 rounded-md border border-amber-200/80 bg-amber-50/60 px-4 py-3 text-sm text-amber-900">
+          {t("dashboard.inventory.noOrganisation")}
+        </p>
+      )}
+      {error && (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-md border border-red-200/80 bg-red-50/60 px-4 py-3 text-sm text-red-800">
+          <p>{t("dashboard.inventory.loadError")}</p>
+          <button
+            type="button"
+            onClick={() => void reload()}
+            className="shrink-0 rounded-md border border-red-300/80 bg-white px-3 py-1.5 text-xs font-semibold text-red-800 hover:bg-red-50"
+          >
+            {t("dashboard.serialTrackingPage.retry")}
+          </button>
+        </div>
+      )}
+      {isLoading && (
+        <p className="mb-4 text-sm text-brand-primary-muted">{t("dashboard.inventory.loading")}</p>
+      )}
+
       <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <Link

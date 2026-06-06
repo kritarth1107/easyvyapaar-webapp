@@ -6,6 +6,7 @@ export type CreateItemSection =
   | "serial"
   | "stock"
   | "pricing"
+  | "suppliers"
   | "party"
   | "custom";
 
@@ -27,9 +28,14 @@ export type CustomFieldRow = {
   value: string;
 };
 
+export type PurchaseSupplierRow = {
+  id: string;
+  partyId: string;
+};
+
 export type CreateItemFormState = {
   itemType: ItemType;
-  category: string;
+  categoryId: string;
   name: string;
   showInOnlineStore: boolean;
   salesPrice: string;
@@ -49,6 +55,7 @@ export type CreateItemFormState = {
   lowStockQty: string;
   description: string;
   partyPrices: PartyPriceRow[];
+  purchaseSuppliers: PurchaseSupplierRow[];
   customFields: CustomFieldRow[];
 };
 
@@ -124,7 +131,7 @@ export function parsePastedSerials(text: string): string[] {
 export function createInitialItemForm(): CreateItemFormState {
   return {
     itemType: "product",
-    category: "",
+    categoryId: "",
     name: "",
     showInOnlineStore: false,
     salesPrice: "",
@@ -147,6 +154,7 @@ export function createInitialItemForm(): CreateItemFormState {
       { id: "1", partyName: "", price: "" },
       { id: "2", partyName: "", price: "" },
     ],
+    purchaseSuppliers: [{ id: "1", partyId: "" }],
     customFields: [
       { id: "1", label: "", value: "" },
       { id: "2", label: "", value: "" },

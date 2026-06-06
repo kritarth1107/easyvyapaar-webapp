@@ -11,8 +11,17 @@ export type InventoryItem = {
   salePrice: number;
   purchasePrice: number;
   gstPercent: number;
+  salesTaxMode: "with_tax" | "without_tax";
   serialised: boolean;
   status: InventoryItemStatus;
+  availableSerials?: string[];
+};
+
+export type InventoryBillPick = {
+  item: InventoryItem;
+  serialNumbers?: string[];
+  supplierId?: string;
+  supplierName?: string;
 };
 
 export const MOCK_INVENTORY_ITEMS: InventoryItem[] = [
@@ -27,6 +36,7 @@ export const MOCK_INVENTORY_ITEMS: InventoryItem[] = [
     salePrice: 14999,
     purchasePrice: 13200,
     gstPercent: 18,
+    salesTaxMode: "with_tax",
     serialised: true,
     status: "in_stock",
   },
@@ -41,6 +51,7 @@ export const MOCK_INVENTORY_ITEMS: InventoryItem[] = [
     salePrice: 1999,
     purchasePrice: 1450,
     gstPercent: 18,
+    salesTaxMode: "with_tax",
     serialised: false,
     status: "low_stock",
   },
@@ -55,6 +66,7 @@ export const MOCK_INVENTORY_ITEMS: InventoryItem[] = [
     salePrice: 22990,
     purchasePrice: 20100,
     gstPercent: 18,
+    salesTaxMode: "with_tax",
     serialised: true,
     status: "low_stock",
   },
@@ -69,6 +81,7 @@ export const MOCK_INVENTORY_ITEMS: InventoryItem[] = [
     salePrice: 89,
     purchasePrice: 62,
     gstPercent: 18,
+    salesTaxMode: "with_tax",
     serialised: false,
     status: "in_stock",
   },
@@ -83,6 +96,7 @@ export const MOCK_INVENTORY_ITEMS: InventoryItem[] = [
     salePrice: 4999,
     purchasePrice: 4200,
     gstPercent: 18,
+    salesTaxMode: "with_tax",
     serialised: false,
     status: "out_of_stock",
   },
@@ -97,6 +111,7 @@ export const MOCK_INVENTORY_ITEMS: InventoryItem[] = [
     salePrice: 24999,
     purchasePrice: 22100,
     gstPercent: 18,
+    salesTaxMode: "with_tax",
     serialised: true,
     status: "in_stock",
   },

@@ -1,5 +1,11 @@
 "use client";
 
+import {
+  fmtRupee,
+  fmtSummaryValue,
+  type InvoiceGstRow,
+} from "@/lib/sales/invoice-preview-data";
+
 export const SAMPLE_INVOICE_DATE = "17/01/2023";
 export const SAMPLE_INVOICE_TIME = "02:30 PM";
 
@@ -92,6 +98,142 @@ type ReceiverSignatureProps = {
   fontSize?: number;
 };
 
+export type InvoicePreviewAddressContent = {
+  businessAddress: string;
+  businessTaxLine: string;
+  businessPhone: string;
+  partyName: string;
+  partyAddress: string;
+  partyTaxLine: string;
+  partyPhone: string;
+  placeOfSupply: string;
+  shippingAddress: string;
+};
+
+export function InvoicePreviewBusinessDetails({
+  content,
+  showPhoneOnInvoice,
+  fontSize = 11,
+  marginTop = 4,
+}: {
+  content: Pick<InvoicePreviewAddressContent, "businessAddress" | "businessTaxLine" | "businessPhone">;
+  showPhoneOnInvoice: boolean;
+  fontSize?: number;
+  marginTop?: number;
+}) {
+  const lines: string[] = [];
+  if (content.businessAddress.trim()) lines.push(content.businessAddress.trim());
+  if (content.businessTaxLine.trim()) lines.push(content.businessTaxLine.trim());
+  if (showPhoneOnInvoice && content.businessPhone.trim()) {
+    lines.push(`Mobile: ${content.businessPhone.trim()}`);
+  }
+
+  if (lines.length === 0) return null;
+
+  return (
+    <p style={{ fontSize, marginTop, lineHeight: 1.4 }}>
+      {lines.map((line, index) => (
+        <span key={`${line}-${index}`}>
+          {index > 0 ? <br /> : null}
+          {line}
+        </span>
+      ))}
+    </p>
+  );
+}
+
+export function InvoicePreviewBillToDetails({
+  content,
+  nameFontSize = 12,
+  fontSize = 11,
+}: {
+  content: Pick<
+    InvoicePreviewAddressContent,
+    "partyName" | "partyAddress" | "partyTaxLine" | "placeOfSupply" | "partyPhone"
+  >;
+  nameFontSize?: number;
+  fontSize?: number;
+}) {
+  const detailLines: string[] = [];
+  if (content.partyAddress.trim()) detailLines.push(content.partyAddress.trim());
+  if (content.partyTaxLine.trim()) detailLines.push(content.partyTaxLine.trim());
+  if (content.placeOfSupply.trim()) {
+    detailLines.push(`Place of Supply: ${content.placeOfSupply.trim()}`);
+  }
+  if (content.partyPhone.trim()) detailLines.push(`Mobile: ${content.partyPhone.trim()}`);
+
+  return (
+    <>
+      <p style={{ fontSize: nameFontSize, fontWeight: 700, marginTop: 3 }}>{content.partyName}</p>
+      {detailLines.length > 0 ? (
+        <p style={{ fontSize, marginTop: 3, lineHeight: 1.4 }}>
+          {detailLines.map((line, index) => (
+            <span key={`${line}-${index}`}>
+              {index > 0 ? <br /> : null}
+              {line}
+            </span>
+          ))}
+        </p>
+      ) : null}
+    </>
+  );
+}
+
+export function InvoicePreviewShippingAddress({
+  content,
+  fontSize = 11,
+  label = "Address:",
+}: {
+  content: Pick<InvoicePreviewAddressContent, "shippingAddress">;
+  fontSize?: number;
+  label?: string;
+}) {
+  if (!content.shippingAddress.trim()) return null;
+
+  return (
+    <>
+      <p style={{ fontSize, fontWeight: 700 }}>{label}</p>
+      <p style={{ fontSize, marginTop: 3, lineHeight: 1.4 }}>{content.shippingAddress.trim()}</p>
+    </>
+  );
+}
+
+type InvoicePreviewItemDetailsProps = {
+  serial?: string;
+  desc?: string;
+  showDescription: boolean;
+  fontSize?: number;
+  color?: string;
+  marginTop?: number;
+};
+
+export function InvoicePreviewItemDetails({
+  serial,
+  desc,
+  showDescription,
+  fontSize = 10,
+  color = "#444",
+  marginTop = 2,
+}: InvoicePreviewItemDetailsProps) {
+  const hasSerial = Boolean(serial?.trim());
+  const hasDesc = showDescription && Boolean(desc?.trim());
+
+  if (!hasSerial && !hasDesc) return null;
+
+  return (
+    <>
+      {hasSerial ? (
+        <p style={{ fontSize, color, marginTop }}>
+          <span style={{ fontWeight: 600 }}>IMEI/Serial:</span> {serial}
+        </p>
+      ) : null}
+      {hasDesc ? (
+        <p style={{ fontSize, color, marginTop: hasSerial ? 1 : marginTop }}>{desc}</p>
+      ) : null}
+    </>
+  );
+}
+
 export function InvoiceReceiverSignature({ enabled, fontSize = 10 }: ReceiverSignatureProps) {
   if (!enabled) return null;
 
@@ -107,5 +249,122 @@ export function InvoiceReceiverSignature({ enabled, fontSize = 10 }: ReceiverSig
         }}
       />
     </div>
+  );
+}
+
+type SummaryRow = { label: string; value: string; bold?: boolean };
+
+export function InvoicePreviewSummaryRows({
+  rows,
+  fontSize = 11,
+  gap = 4,
+}: {
+  rows: SummaryRow[];
+  fontSize?: number;
+  gap?: number;
+}) {
+  if (!rows.length) return null;
+
+  return (
+    <div className="space-y-1" style={{ gap }}>
+      {rows.map((row) => {
+        const isDiscount = row.label.toLowerCase().includes("discount");
+        return (
+          <div
+            key={row.label}
+            className="flex justify-between gap-4"
+            style={{ fontSize, fontWeight: row.bold ? 700 : 400 }}
+          >
+            <span>{row.label}</span>
+            <span
+              className="shrink-0 tabular-nums"
+              style={isDiscount ? { color: "#dc2626", fontWeight: 600 } : undefined}
+            >
+              {fmtSummaryValue(row.value)}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+const GST_FC = "border border-black px-[5px] py-[4px] text-[11px]";
+const GST_HC = "border border-black px-[5px] py-[4px] text-[11px] font-bold";
+
+export function InvoicePreviewGstBreakdownTable({
+  rows,
+  fontSize = 11,
+}: {
+  rows: InvoiceGstRow[];
+  fontSize?: number;
+}) {
+  if (!rows.length) return null;
+
+  const cell = { fontSize };
+
+  return (
+    <table className="w-full border-collapse border-t border-black" style={{ tableLayout: "fixed" }}>
+      <thead>
+        <tr>
+          <th className={`${GST_HC} border-l-0 border-t-0 text-left`} style={cell} rowSpan={2}>
+            HSN/SAC
+          </th>
+          <th className={`${GST_HC} border-t-0 text-right`} style={cell} rowSpan={2}>
+            Taxable Value
+          </th>
+          <th className={`${GST_HC} border-t-0 text-center`} style={cell} colSpan={2}>
+            CGST
+          </th>
+          <th className={`${GST_HC} border-t-0 text-center`} style={cell} colSpan={2}>
+            SGST
+          </th>
+          <th className={`${GST_HC} border-t-0 border-r-0 text-right`} style={cell} rowSpan={2}>
+            Total Tax
+          </th>
+        </tr>
+        <tr>
+          <th className={`${GST_HC} border-t-0 text-center`} style={cell}>
+            Rate
+          </th>
+          <th className={`${GST_HC} border-t-0 text-right`} style={cell}>
+            Amount
+          </th>
+          <th className={`${GST_HC} border-t-0 text-center`} style={cell}>
+            Rate
+          </th>
+          <th className={`${GST_HC} border-t-0 text-right`} style={cell}>
+            Amount
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row) => (
+          <tr key={`${row.hsn}-${row.cgstRate}`}>
+            <td className={`${GST_FC} border-l-0 border-t-0`} style={cell}>
+              {row.hsn}
+            </td>
+            <td className={`${GST_FC} border-t-0 text-right`} style={cell}>
+              {fmtRupee(row.taxable)}
+            </td>
+            <td className={`${GST_FC} border-t-0 text-center`} style={cell}>
+              {row.cgstRate}
+            </td>
+            <td className={`${GST_FC} border-t-0 text-right`} style={cell}>
+              {fmtRupee(row.cgst)}
+            </td>
+            <td className={`${GST_FC} border-t-0 text-center`} style={cell}>
+              {row.sgstRate}
+            </td>
+            <td className={`${GST_FC} border-t-0 text-right`} style={cell}>
+              {fmtRupee(row.sgst)}
+            </td>
+            <td className={`${GST_FC} border-t-0 border-r-0 text-right`} style={cell}>
+              {fmtRupee(row.tax)}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }

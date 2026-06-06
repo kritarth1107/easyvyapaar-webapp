@@ -1,4 +1,16 @@
-import type { InventoryItem } from "@/lib/dashboard/mock-inventory-items";
+import type { InventoryBillPick, InventoryItem } from "@/lib/dashboard/mock-inventory-items";
+import {
+  calcInvoiceLevelTotals,
+  type InvoiceDiscountTiming,
+  type GstSplitRow,
+} from "@/lib/sales/invoice-totals";
+import {
+  calcLineTaxAmounts,
+  normalizeSalesTaxMode,
+  type SalesTaxMode,
+} from "@/lib/sales/invoice-tax";
+
+export type { InvoiceDiscountTiming, GstSplitRow };
 
 export type InvoiceLineItem = {
   id: string;
@@ -11,7 +23,62 @@ export type InvoiceLineItem = {
   discount: number;
   discountType: "percent" | "amount";
   gstPercent: number;
+  salesTaxMode: SalesTaxMode;
+  availableStock: number;
+  serialised: boolean;
+  serialNumbers: string[];
+  availableSerials: string[];
+  supplierId?: string;
+  supplierName?: string;
 };
+
+export function getSerialsUsedElsewhere(
+  lineItems: InvoiceLineItem[],
+  itemId: string,
+  excludeLineId?: string,
+): Set<string> {
+  const used = new Set<string>();
+  for (const line of lineItems) {
+    if (line.itemId !== itemId || line.id === excludeLineId) continue;
+    for (const serial of line.serialNumbers) used.add(serial);
+  }
+  return used;
+}
+
+export function getFreeSerialsForLine(line: InvoiceLineItem, lineItems: InvoiceLineItem[]): string[] {
+  const usedElsewhere = getSerialsUsedElsewhere(lineItems, line.itemId, line.id);
+  return line.availableSerials.filter((serial) => !usedElsewhere.has(serial));
+}
+
+export function getLineItemQtyUsedElsewhere(
+  lineItems: InvoiceLineItem[],
+  itemId: string,
+  excludeLineId?: string,
+): number {
+  return lineItems
+    .filter((line) => line.itemId === itemId && line.id !== excludeLineId)
+    .reduce((sum, line) => sum + (line.serialised ? 1 : line.qty), 0);
+}
+
+export function getMaxQtyForLine(line: InvoiceLineItem, lineItems: InvoiceLineItem[]): number {
+  const usedElsewhere = getLineItemQtyUsedElsewhere(lineItems, line.itemId, line.id);
+  if (line.serialised) {
+    return Math.max(0, getFreeSerialsForLine(line, lineItems).length);
+  }
+  return Math.max(0, line.availableStock - usedElsewhere);
+}
+
+export function clampInvoiceLineQty(
+  line: InvoiceLineItem,
+  nextQty: number,
+  lineItems: InvoiceLineItem[],
+): number {
+  if (line.serialised) return 1;
+  const maxQty = getMaxQtyForLine(line, lineItems);
+  if (maxQty <= 0) return 0;
+  const normalized = Number.isFinite(nextQty) ? Math.floor(nextQty) : 1;
+  return Math.min(Math.max(1, normalized), maxQty);
+}
 
 export type AdditionalCharge = {
   id: string;
@@ -47,6 +114,7 @@ export type CreateInvoiceFormState = {
   additionalCharges: AdditionalCharge[];
   discountAfterTax: number;
   discountType: "percent" | "amount";
+  discountTiming: InvoiceDiscountTiming;
   autoRoundOff: boolean;
   roundOffAmount: number;
   amountReceived: number;
@@ -69,7 +137,12 @@ export type InvoiceTotals = {
   additionalChargesTotal: number;
   additionalChargesTax: number;
   taxableAmount: number;
+  taxTotal: number;
   discountAmount: number;
+  discountTiming: InvoiceDiscountTiming;
+  cgst: number;
+  sgst: number;
+  gstSplit: GstSplitRow[];
   totalBeforeRound: number;
   roundOff: number;
   totalAmount: number;
@@ -87,69 +160,52 @@ function addDays(iso: string, days: number): string {
 }
 
 export function calcLineItem(item: InvoiceLineItem): LineCalc {
-  const base = item.qty * item.pricePerItem;
-  const discountAmt =
-    item.discountType === "percent" ? base * (item.discount / 100) : item.discount;
-  const taxable = Math.max(0, base - discountAmt);
-  const tax = taxable * (item.gstPercent / 100);
-  const amount = taxable + tax;
-  return { base, discountAmt, taxable, tax, amount };
+  return calcLineTaxAmounts({
+    qty: item.qty,
+    pricePerItem: item.pricePerItem,
+    discount: item.discount,
+    discountType: item.discountType,
+    gstPercent: item.gstPercent,
+    salesTaxMode: normalizeSalesTaxMode(item.salesTaxMode),
+  });
 }
 
 export function calcInvoiceTotals(form: CreateInvoiceFormState): InvoiceTotals {
-  const lineCalcs = form.lineItems.map(calcLineItem);
-  const subtotal = lineCalcs.reduce((s, c) => s + c.taxable, 0);
-  const lineTax = lineCalcs.reduce((s, c) => s + c.tax, 0);
-
-  let additionalChargesTotal = 0;
-  let additionalChargesTax = 0;
-  for (const ch of form.additionalCharges) {
-    additionalChargesTotal += ch.amount;
-    additionalChargesTax += ch.amount * (ch.taxPercent / 100);
-  }
-
-  const taxableAmount = subtotal + additionalChargesTotal;
-  const taxTotal = lineTax + additionalChargesTax;
-  const gross = taxableAmount + taxTotal;
-
-  const discountAmount =
-    form.discountType === "percent"
-      ? gross * (form.discountAfterTax / 100)
-      : form.discountAfterTax;
-
-  const totalBeforeRound = Math.max(0, gross - discountAmount);
-  let roundOff = 0;
-  let totalAmount = totalBeforeRound;
-
-  if (form.autoRoundOff) {
-    const rounded = Math.round(totalBeforeRound);
-    roundOff = rounded - totalBeforeRound;
-    totalAmount = rounded;
-  } else if (form.roundOffAmount !== 0) {
-    roundOff = form.roundOffAmount;
-    totalAmount = totalBeforeRound + roundOff;
-  }
-
-  const received = form.fullyPaid ? totalAmount : form.amountReceived;
-  const balanceAmount = Math.max(0, totalAmount - received);
-
-  return {
-    subtotal,
-    lineTax,
-    additionalChargesTotal,
-    additionalChargesTax,
-    taxableAmount,
-    discountAmount,
-    totalBeforeRound,
-    roundOff,
-    totalAmount,
-    balanceAmount,
-  };
+  return calcInvoiceLevelTotals({
+    lineItems: form.lineItems,
+    additionalCharges: form.additionalCharges,
+    discountValue: form.discountAfterTax,
+    discountType: form.discountType,
+    discountTiming: form.discountTiming,
+    autoRoundOff: form.autoRoundOff,
+    roundOffAmount: form.roundOffAmount,
+    amountReceived: form.amountReceived,
+    fullyPaid: form.fullyPaid,
+  });
 }
 
-export function lineItemFromInventory(item: InventoryItem): InvoiceLineItem {
+type LineSupplierMeta = {
+  supplierId?: string;
+  supplierName?: string;
+};
+
+export function lineItemFromSerial(
+  item: InventoryItem,
+  lineItems: InvoiceLineItem[],
+  serialNumber: string,
+  supplier?: LineSupplierMeta,
+): InvoiceLineItem | null {
+  const serial = serialNumber.trim();
+  if (!serial) return null;
+
+  const usedSerials = getSerialsUsedElsewhere(lineItems, item.id);
+  if (usedSerials.has(serial)) return null;
+
+  const availableSerials = item.availableSerials ?? [];
+  if (!availableSerials.includes(serial)) return null;
+
   return {
-    id: `line-${item.id}-${Date.now()}`,
+    id: `line-${item.id}-${serial}-${Date.now()}`,
     itemId: item.id,
     name: item.name,
     hsn: item.hsn,
@@ -159,7 +215,69 @@ export function lineItemFromInventory(item: InventoryItem): InvoiceLineItem {
     discount: 0,
     discountType: "percent",
     gstPercent: item.gstPercent,
+    salesTaxMode: normalizeSalesTaxMode(item.salesTaxMode),
+    availableStock: item.stock,
+    serialised: true,
+    serialNumbers: [serial],
+    availableSerials,
+    ...(supplier?.supplierId ? { supplierId: supplier.supplierId } : {}),
+    ...(supplier?.supplierName ? { supplierName: supplier.supplierName } : {}),
   };
+}
+
+export function lineItemFromInventory(
+  item: InventoryItem,
+  lineItems: InvoiceLineItem[] = [],
+  supplier?: LineSupplierMeta,
+): InvoiceLineItem | null {
+  if (item.serialised) return null;
+
+  const used = getLineItemQtyUsedElsewhere(lineItems, item.id);
+  const maxQty = Math.max(0, item.stock - used);
+  if (maxQty <= 0) return null;
+
+  return {
+    id: `line-${item.id}-${Date.now()}`,
+    itemId: item.id,
+    name: item.name,
+    hsn: item.hsn,
+    qty: Math.min(1, maxQty),
+    unit: item.unit,
+    pricePerItem: item.salePrice,
+    discount: 0,
+    discountType: "percent",
+    gstPercent: item.gstPercent,
+    salesTaxMode: normalizeSalesTaxMode(item.salesTaxMode),
+    availableStock: item.stock,
+    serialised: false,
+    serialNumbers: [],
+    availableSerials: [],
+    ...(supplier?.supplierId ? { supplierId: supplier.supplierId } : {}),
+    ...(supplier?.supplierName ? { supplierName: supplier.supplierName } : {}),
+  };
+}
+
+export function mergeInventoryPickIntoLines(
+  lineItems: InvoiceLineItem[],
+  pick: InventoryBillPick,
+): InvoiceLineItem[] {
+  const supplier =
+    pick.supplierId
+      ? { supplierId: pick.supplierId, ...(pick.supplierName ? { supplierName: pick.supplierName } : {}) }
+      : undefined;
+
+  if (pick.item.serialised) {
+    let nextLines = lineItems;
+    for (const serialNumber of pick.serialNumbers ?? []) {
+      const line = lineItemFromSerial(pick.item, nextLines, serialNumber, supplier);
+      if (line) nextLines = [...nextLines, line];
+    }
+    return nextLines;
+  }
+
+  const line = lineItemFromInventory(pick.item, lineItems, supplier);
+  if (!line) return lineItems;
+  return [...lineItems, line];
 }
 
 export function createInitialInvoiceForm(): CreateInvoiceFormState {
@@ -183,6 +301,7 @@ export function createInitialInvoiceForm(): CreateInvoiceFormState {
     additionalCharges: [],
     discountAfterTax: 0,
     discountType: "percent",
+    discountTiming: "after_tax",
     autoRoundOff: false,
     roundOffAmount: 0,
     amountReceived: 0,
