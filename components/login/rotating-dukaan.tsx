@@ -2,19 +2,19 @@
 
 import { useEffect, useState } from "react";
 
-const VYAPAAR_WORDS = [
-  { lang: "en", text: "Vyapaar" },
-  { lang: "hi", text: "व्यापार" },
-  { lang: "gu", text: "વ્યાપાર" },
-  { lang: "mr", text: "व्यापार" },
-  { lang: "pa", text: "ਵਿਆਪਾਰ" },
-  { lang: "ta", text: "வியாபாரம்" },
-  { lang: "te", text: "వ్యాపారం" },
-  { lang: "ml", text: "വ്യാപാരം" },
-  { lang: "ur", text: "ویاپار" },
+const MAHAJAAN_WORDS = [
+  { lang: "en", text: "Mahajaan" },
+  { lang: "hi", text: "महाजन" },
+  { lang: "gu", text: "મહાજન" },
+  { lang: "mr", text: "महाजन" },
+  { lang: "pa", text: "ਮਹਾਜਨ" },
+  { lang: "ta", text: "மகாஜன்" },
+  { lang: "te", text: "మహాజన్" },
+  { lang: "ml", text: "മഹാജൻ" },
+  { lang: "ur", text: "مہاجن" },
 ] as const;
 
-const LANG_FONT: Record<(typeof VYAPAAR_WORDS)[number]["lang"], string> = {
+const LANG_FONT: Record<(typeof MAHAJAAN_WORDS)[number]["lang"], string> = {
   en: "var(--font-geist-sans), system-ui, sans-serif",
   hi: "var(--font-dukaan-deva), sans-serif",
   gu: "var(--font-dukaan-gu), sans-serif",
@@ -40,18 +40,18 @@ function prefersReducedMotion() {
 
 export function RotatingDukaan() {
   const [wordIndex, setWordIndex] = useState(0);
-  const [displayed, setDisplayed] = useState<string>(VYAPAAR_WORDS[0].text);
+  const [displayed, setDisplayed] = useState<string>(MAHAJAAN_WORDS[0].text);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const word = VYAPAAR_WORDS[wordIndex];
+  const word = MAHAJAAN_WORDS[wordIndex];
   const target = word.text;
 
   useEffect(() => {
     if (prefersReducedMotion()) {
       const interval = setInterval(() => {
         setWordIndex((i) => {
-          const next = (i + 1) % VYAPAAR_WORDS.length;
-          setDisplayed(VYAPAAR_WORDS[next].text);
+          const next = (i + 1) % MAHAJAAN_WORDS.length;
+          setDisplayed(MAHAJAAN_WORDS[next].text);
           return next;
         });
       }, 3000);
@@ -68,7 +68,7 @@ export function RotatingDukaan() {
     if (isDeleting) {
       if (displayed.length === 0) {
         const pause = setTimeout(() => {
-          setWordIndex((i) => (i + 1) % VYAPAAR_WORDS.length);
+          setWordIndex((i) => (i + 1) % MAHAJAAN_WORDS.length);
           setIsDeleting(false);
         }, PAUSE_BETWEEN_WORDS_MS);
         return () => clearTimeout(pause);

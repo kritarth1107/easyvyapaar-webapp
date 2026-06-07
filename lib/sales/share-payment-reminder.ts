@@ -48,7 +48,7 @@ export function buildPaymentReminderMessage(input: PaymentReminderShareInput): s
     lines.push("", `Pay via UPI: ${businessPhone}@paytm`);
   }
 
-  lines.push("", "— Sent via EasyDukaan");
+  lines.push("", "— Sent via Mahajaan");
   return lines.join("\n");
 }
 

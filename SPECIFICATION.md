@@ -1,6 +1,6 @@
-# EasyDukaan - Comprehensive Feature Specification
+# Mahajaan - Comprehensive Feature Specification
 
-**Project Name:** EasyDukaan  
+**Project Name:** Mahajaan  
 **Tagline:** Modern GST Billing, Inventory & Accounting for Indian Retail Shops  
 **Inspired by:** myBillBook.in + Vyapar + Best practices for small Indian retailers (Electronics, Mobile, Hardware, Kirana, etc.)  
 **Target Users:** Small & Medium Retail Shop Owners in India (especially electronics, appliances, mobile, and general stores)  
@@ -11,7 +11,7 @@
 
 ## 1. Vision & Objectives
 
-EasyDukaan aims to be a **complete, easy-to-use ERP + Billing system** for small Indian retail businesses. It should feel like myBillBook and Vyapar but with a cleaner, more modern interface and deeper support for serialized inventory (IMEI/Serial tracking) which is critical for electronics and mobile shops.
+Mahajaan aims to be a **complete, easy-to-use ERP + Billing system** for small Indian retail businesses. It should feel like myBillBook and Vyapar but with a cleaner, more modern interface and deeper support for serialized inventory (IMEI/Serial tracking) which is critical for electronics and mobile shops.
 
 ### Core Objectives
 - **Speed First**: Create a GST invoice in under 10–15 seconds.
@@ -356,7 +356,7 @@ interface Staff { ... }
 
 ---
 
-**This document serves as the single source of truth** for building EasyDukaan.
+**This document serves as the single source of truth** for building Mahajaan.
 
 It is intentionally very detailed so that developers, designers, and stakeholders have complete clarity on what needs to be built.
 

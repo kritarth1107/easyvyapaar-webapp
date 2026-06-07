@@ -67,7 +67,7 @@ const hi: Record<string, unknown> = {
   },
   sidebar: {
     title: "एक रिटेल ERP पर अपनी दुकान चलाने के लिए साइन अप करें",
-    featuresTitle: "EasyVyapaar के साथ आपको क्या मिलता है",
+    featuresTitle: "Mahajaan के साथ आपको क्या मिलता है",
     feature1: "इन्वेंटरी और बिलिंग एक जगह",
     feature2: "GST तैयार इनवॉइस और रिपोर्ट",
     feature3: "मल्टी-स्टोर और स्टाफ प्रबंधन",
@@ -102,7 +102,7 @@ const gu: Record<string, unknown> = {
   },
   sidebar: {
     title: "એક રિટેલ ERP પર તમારી દુકાન ચલાવવા માટે સાઇન અપ કરો",
-    featuresTitle: "EasyVyapaar સાથે તમને શું મળે છે",
+    featuresTitle: "Mahajaan સાથે તમને શું મળે છે",
     feature1: "ઇન્વેન્ટરી અને બિલિંગ એક જ જગ્યાએ",
     feature2: "GST તૈયાર ઇન્વૉઇસ અને રિપોર્ટ",
     feature3: "મલ્ટી-સ્ટોર અને સ્ટાફ મેનેજમેન્ટ",
@@ -134,7 +134,7 @@ const mr: Record<string, unknown> = {
   },
   sidebar: {
     title: "एका रिटेल ERP वर तुमची दुकान चालवण्यासाठी साइन अप करा",
-    featuresTitle: "EasyVyapaar सोबत तुम्हाला काय मिळते",
+    featuresTitle: "Mahajaan सोबत तुम्हाला काय मिळते",
     feature1: "इन्व्हेंटरी आणि बिलिंग एकाच ठिकाणी",
     feature2: "GST तयार इन्व्हॉइस आणि अहवाल",
     feature3: "मल्टी-स्टोअर आणि कर्मचारी व्यवस्थापन",
@@ -166,7 +166,7 @@ const ta: Record<string, unknown> = {
   },
   sidebar: {
     title: "ஒரு ரீடெயில் ERP-இல் உங்கள் கடையை நடத்த பதிவு செய்யுங்கள்",
-    featuresTitle: "EasyVyapaar உடன் நீங்கள் பெறுவது",
+    featuresTitle: "Mahajaan உடன் நீங்கள் பெறுவது",
     feature1: "இன்வெண்டரி மற்றும் பில்லிங் ஒரே இடத்தில்",
     feature2: "GST தயார் இன்வாய்ஸ் மற்றும் அறிக்கைகள்",
     feature3: "பல கடைகள் மற்றும் ஊழியர் மேலாண்மை",
@@ -198,7 +198,7 @@ const te: Record<string, unknown> = {
   },
   sidebar: {
     title: "ఒక రిటైల్ ERPలో మీ దుకాణాన్ని నడపడానికి సైన్ అప్ చేయండి",
-    featuresTitle: "EasyVyapaarతో మీకు లభించేవి",
+    featuresTitle: "Mahajaanతో మీకు లభించేవి",
     feature1: "ఇన్వెంటరీ మరియు బిల్లింగ్ ఒకే చోట",
     feature2: "GST సిద్ధమైన ఇన్వాయిస్లు మరియు నివేదికలు",
     feature3: "మల్టీ-స్టోర్ మరియు సిబ్బంది నిర్వహణ",
@@ -230,7 +230,7 @@ const pa: Record<string, unknown> = {
   },
   sidebar: {
     title: "ਇੱਕ ਰਿਟੇਲ ERP 'ਤੇ ਆਪਣੀ ਦੁਕਾਨ ਚਲਾਉਣ ਲਈ ਸਾਈਨ ਅੱਪ ਕਰੋ",
-    featuresTitle: "EasyVyapaar ਨਾਲ ਤੁਹਾਨੂੰ ਕੀ ਮਿਲਦਾ ਹੈ",
+    featuresTitle: "Mahajaan ਨਾਲ ਤੁਹਾਨੂੰ ਕੀ ਮਿਲਦਾ ਹੈ",
     feature1: "ਇਨਵੈਂਟਰੀ ਅਤੇ ਬਿਲਿੰਗ ਇੱਕ ਥਾਂ 'ਤੇ",
     feature2: "GST-ਤਿਆਰ ਇਨਵੌਇਸ ਅਤੇ ਰਿਪੋਰਟਾਂ",
     feature3: "ਮਲਟੀ-ਸਟੋਰ ਅਤੇ ਸਟਾਫ ਪ੍ਰਬੰਧਨ",
@@ -262,7 +262,7 @@ const ml: Record<string, unknown> = {
   },
   sidebar: {
     title: "ഒരു റീടെയിൽ ERP-ൽ നിങ്ങളുടെ കട നടത്താൻ സൈൻ അപ്പ് ചെയ്യുക",
-    featuresTitle: "EasyVyapaar ഉപയോഗിച്ച് നിങ്ങൾക്ക് ലഭിക്കുന്നത്",
+    featuresTitle: "Mahajaan ഉപയോഗിച്ച് നിങ്ങൾക്ക് ലഭിക്കുന്നത്",
     feature1: "ഇൻവെന്ററിയും ബില്ലിംഗും ഒരിടത്ത്",
     feature2: "GST തയ്യാറായ ഇൻവോയ്സുകളും റിപ്പോർട്ടുകളും",
     feature3: "മൾട്ടി-സ്റ്റോർ, സ്റ്റാഫ് മാനേജ്മെന്റ്",
@@ -297,7 +297,7 @@ const ur: Record<string, unknown> = {
   },
   sidebar: {
     title: "ایک ریٹیل ERP پر اپنی دکان چلانے کے لیے سائن اپ کریں",
-    featuresTitle: "EasyVyapaar کے ساتھ آپ کو کیا ملتا ہے",
+    featuresTitle: "Mahajaan کے ساتھ آپ کو کیا ملتا ہے",
     feature1: "انوینٹری اور بلنگ ایک جگہ",
     feature2: "GST تیار انوائس اور رپورٹس",
     feature3: "ملٹی اسٹور اور اسٹاف مینجمنٹ",
@@ -325,7 +325,7 @@ const bn: Record<string, unknown> = {
   },
   sidebar: {
     title: "একটি রিটেইল ERP-এ আপনার দোকান চালাতে সাইন আপ করুন",
-    featuresTitle: "EasyVyapaar-এর সাথে আপনি যা পাবেন",
+    featuresTitle: "Mahajaan-এর সাথে আপনি যা পাবেন",
     feature1: "ইনভেন্টরি ও বিলিং এক জায়গায়",
     feature2: "GST-প্রস্তুত ইনভয়েস ও রিপোর্ট",
     feature3: "মাল্টি-স্টোর ও স্টাফ ম্যানেজমেন্ট",
@@ -353,7 +353,7 @@ const kn: Record<string, unknown> = {
   },
   sidebar: {
     title: "ಒಂದು ರಿಟೈಲ್ ERP ನಲ್ಲಿ ನಿಮ್ಮ ಅಂಗಡಿ ನಡೆಸಲು ಸೈನ್ ಅಪ್ ಮಾಡಿ",
-    featuresTitle: "EasyVyapaar ಜೊತೆಗೆ ನೀವು ಪಡೆಯುವುದು",
+    featuresTitle: "Mahajaan ಜೊತೆಗೆ ನೀವು ಪಡೆಯುವುದು",
     feature1: "ಇನ್ವೆಂಟರಿ ಮತ್ತು ಬಿಲ್ಲಿಂಗ್ ಒಂದೇ ಸ್ಥಳದಲ್ಲಿ",
     feature2: "GST ಸಿದ್ಧ ಇನ್ವಾಯ್ಸ್ ಮತ್ತು ವರದಿಗಳು",
     feature3: "ಮಲ್ಟಿ-ಸ್ಟೋರ್ ಮತ್ತು ಸಿಬ್ಬಂದಿ ನಿರ್ವಹಣೆ",

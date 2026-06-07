@@ -40,7 +40,7 @@ export function buildQuotationShareMessage(input: QuotationShareInput): string {
     lines.push("", input.notes.trim());
   }
 
-  lines.push("", "— Sent via EasyDukaan");
+  lines.push("", "— Sent via Mahajaan");
   return lines.join("\n");
 }
 

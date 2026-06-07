@@ -8,7 +8,7 @@ import {
 export { DEFAULT_LOCALE, PREFERRED_LANGUAGE_CODES };
 export type { LocaleCode, PreferredLanguageCode };
 
-export const LOCALE_STORAGE_KEY = "easyvyapaar.locale";
+export const LOCALE_STORAGE_KEY = "mahajaan.locale";
 
 export const APP_LANGUAGES: ReadonlyArray<{
   code: LocaleCode;

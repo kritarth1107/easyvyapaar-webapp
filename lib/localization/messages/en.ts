@@ -2,7 +2,7 @@ import type { MessageTree } from "../types";
 
 export const enMessages: MessageTree = {
   common: {
-    brandName: "EasyVyapaar",
+    brandName: "Mahajaan",
     retailErp: "Retail ERP",
     networkError: "Network error. Please try again.",
     pleaseWait: "Please wait…",
@@ -1938,7 +1938,7 @@ export const enMessages: MessageTree = {
   },
   sidebar: {
     title: "Sign up to run your dukaan on one retail ERP",
-    featuresTitle: "What you get with EasyVyapaar",
+    featuresTitle: "What you get with Mahajaan",
     feature1: "Inventory & billing in one place",
     feature2: "GST-ready invoices & reports",
     feature3: "Multi-store & staff management",

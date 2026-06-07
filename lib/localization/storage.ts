@@ -7,6 +7,7 @@ export function readStoredLocale(): LocaleCode {
   try {
     const stored =
       localStorage.getItem(LOCALE_STORAGE_KEY) ??
+      localStorage.getItem("easyvyapaar.locale") ??
       localStorage.getItem("easydukaan.locale");
     if (stored && isLocaleCode(stored)) return stored;
   } catch {
