@@ -202,6 +202,17 @@ export const enMessages: MessageTree = {
     accountBusinessSettings: "Business settings",
     accountLanguage: "Language",
     accountLogout: "Log out",
+    mobileGate: {
+      badge: "Mobile & tablet",
+      title: "Download the Mahajaan app",
+      subtitle:
+        "You're on a phone or tablet. The web dashboard is built for larger screens — please use our mobile app on this device.",
+      desktopOnly: "Web access is only available on a desktop or laptop.",
+      appBuilding: "Our mobile app is under development",
+      appLaunch: "Android and iOS apps will both be available once we launch.",
+      android: "Android app",
+      ios: "iOS app",
+    },
     languageModalApply: "Apply language",
     switchingLanguage: "Updating language",
     switchingLanguageHint: "Preparing your dashboard in your chosen language…",

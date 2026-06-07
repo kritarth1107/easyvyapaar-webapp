@@ -8,13 +8,16 @@ import {
   setSidebarCollapsedPreference,
 } from "@/lib/dashboard/sidebar-preference";
 import { UserMeProvider } from "@/components/providers/user-me-provider";
+import { useIsMobileOrTablet } from "@/lib/hooks/use-is-mobile-or-tablet";
 import { BusinessSwitchModal } from "./business-switch";
 import { DashboardSidebar } from "./dashboard-sidebar";
 import { DashboardTopbar } from "./dashboard-topbar";
+import { MobileWebGate } from "./mobile-web-gate";
 import { ShopSwitchOverlay } from "./shop-switch-overlay";
 
 type DashboardShellProps = {
   children: React.ReactNode;
+  hasSession?: boolean;
 };
 
 function isTypingTarget(target: EventTarget | null): boolean {
@@ -23,8 +26,9 @@ function isTypingTarget(target: EventTarget | null): boolean {
   return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || target.isContentEditable;
 }
 
-export function DashboardShell({ children }: DashboardShellProps) {
+export function DashboardShell({ children, hasSession = false }: DashboardShellProps) {
   const router = useRouter();
+  const isMobileOrTablet = useIsMobileOrTablet();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [businessSwitchOpen, setBusinessSwitchOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -54,6 +58,14 @@ export function DashboardShell({ children }: DashboardShellProps) {
   }, []);
 
   const openBusinessSwitch = () => setBusinessSwitchOpen(true);
+
+  if (isMobileOrTablet === null) {
+    return <div className="min-h-screen bg-brand-surface" aria-busy="true" />;
+  }
+
+  if (isMobileOrTablet) {
+    return <MobileWebGate hasSession={hasSession} />;
+  }
 
   return (
     <UserMeProvider>

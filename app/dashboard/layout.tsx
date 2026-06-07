@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { DashboardShell } from "@/components/dashboard";
+import { hasSessionCookie, SESSION_COOKIE_NAME } from "@/lib/auth/session";
 import { SITE_NAME } from "@/lib/seo/site-metadata";
 
 export const metadata: Metadata = {
@@ -8,10 +10,13 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return <DashboardShell>{children}</DashboardShell>;
+  const cookieStore = await cookies();
+  const hasSession = hasSessionCookie(cookieStore.get(SESSION_COOKIE_NAME)?.value);
+
+  return <DashboardShell hasSession={hasSession}>{children}</DashboardShell>;
 }

@@ -218,6 +218,16 @@ export type MessageTree = {
     accountBusinessSettings: string;
     accountLanguage: string;
     accountLogout: string;
+    mobileGate: {
+      badge: string;
+      title: string;
+      subtitle: string;
+      desktopOnly: string;
+      appBuilding: string;
+      appLaunch: string;
+      android: string;
+      ios: string;
+    };
     languageModalApply: string;
     switchingLanguage: string;
     switchingLanguageHint: string;
