@@ -2,29 +2,17 @@
 
 import { useEffect, useState } from "react";
 
-const MAHAJAAN_WORDS = [
-  { lang: "en", text: "Mahajaan" },
-  { lang: "hi", text: "महाजन" },
-  { lang: "gu", text: "મહાજન" },
-  { lang: "mr", text: "महाजन" },
-  { lang: "pa", text: "ਮਹਾਜਨ" },
-  { lang: "ta", text: "மகாஜன்" },
-  { lang: "te", text: "మహాజన్" },
-  { lang: "ml", text: "മഹാജൻ" },
-  { lang: "ur", text: "مہاجن" },
+/** Words that complete: "Run your entire ___ from one dashboard" */
+const HERO_ROTATING_WORDS = [
+  "Shop",
+  "Business",
+  "Vyapaar",
+  "Store",
+  "Retail",
+  "Trade",
+  "Kirana",
+  "Outlet",
 ] as const;
-
-const LANG_FONT: Record<(typeof MAHAJAAN_WORDS)[number]["lang"], string> = {
-  en: "var(--font-geist-sans), system-ui, sans-serif",
-  hi: "var(--font-dukaan-deva), sans-serif",
-  gu: "var(--font-dukaan-gu), sans-serif",
-  mr: "var(--font-dukaan-deva), sans-serif",
-  pa: "var(--font-dukaan-pa), sans-serif",
-  ta: "var(--font-dukaan-ta), sans-serif",
-  te: "var(--font-dukaan-te), sans-serif",
-  ml: "var(--font-dukaan-ml), sans-serif",
-  ur: "var(--font-dukaan-ur), sans-serif",
-};
 
 const TYPE_MS = 90;
 const DELETE_MS = 55;
@@ -40,18 +28,17 @@ function prefersReducedMotion() {
 
 export function RotatingDukaan() {
   const [wordIndex, setWordIndex] = useState(0);
-  const [displayed, setDisplayed] = useState<string>(MAHAJAAN_WORDS[0].text);
+  const [displayed, setDisplayed] = useState<string>(HERO_ROTATING_WORDS[0]);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const word = MAHAJAAN_WORDS[wordIndex];
-  const target = word.text;
+  const target = HERO_ROTATING_WORDS[wordIndex];
 
   useEffect(() => {
     if (prefersReducedMotion()) {
       const interval = setInterval(() => {
         setWordIndex((i) => {
-          const next = (i + 1) % MAHAJAAN_WORDS.length;
-          setDisplayed(MAHAJAAN_WORDS[next].text);
+          const next = (i + 1) % HERO_ROTATING_WORDS.length;
+          setDisplayed(HERO_ROTATING_WORDS[next]);
           return next;
         });
       }, 3000);
@@ -68,7 +55,7 @@ export function RotatingDukaan() {
     if (isDeleting) {
       if (displayed.length === 0) {
         const pause = setTimeout(() => {
-          setWordIndex((i) => (i + 1) % MAHAJAAN_WORDS.length);
+          setWordIndex((i) => (i + 1) % HERO_ROTATING_WORDS.length);
           setIsDeleting(false);
         }, PAUSE_BETWEEN_WORDS_MS);
         return () => clearTimeout(pause);
@@ -91,11 +78,7 @@ export function RotatingDukaan() {
 
   return (
     <span className="vyapaar-word-slot" aria-live="polite" aria-atomic="true">
-      <span
-        className="dukaan-word font-bold"
-        style={{ fontFamily: LANG_FONT[word.lang] }}
-        lang={word.lang}
-      >
+      <span className="dukaan-word font-bold">
         {displayed}
         <span className="dukaan-type-cursor" aria-hidden>
           |

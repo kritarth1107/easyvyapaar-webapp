@@ -219,7 +219,7 @@ body {
 .vyapaar-word-slot {
   display: inline-flex;
   height: 1.15em;
-  min-width: 3.5em;
+  min-width: 6.5ch;
   align-items: center;
   justify-content: flex-start;
   vertical-align: middle;
@@ -229,7 +229,7 @@ body {
 .dukaan-word {
   display: inline-flex;
   align-items: center;
-  min-width: 3.25em;
+  min-width: 6ch;
   font-size: 1.2em;
   line-height: 1;
   color: var(--brand-orange-1);
