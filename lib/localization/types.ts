@@ -222,11 +222,11 @@ export type MessageTree = {
       badge: string;
       title: string;
       subtitle: string;
-      desktopOnly: string;
-      appBuilding: string;
-      appLaunch: string;
-      android: string;
-      ios: string;
+      comingSoon: string;
+      downloadHeading: string;
+      featureBilling: string;
+      featureStock: string;
+      featureReports: string;
     };
     languageModalApply: string;
     switchingLanguage: string;
