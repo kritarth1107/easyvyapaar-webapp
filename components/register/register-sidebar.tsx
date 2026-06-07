@@ -30,19 +30,14 @@ export function RegisterSidebar() {
   return (
     <aside className="hidden w-[30%] min-w-[300px] max-w-[440px] flex-col justify-start bg-brand-surface px-12 py-12 lg:flex lg:px-16 xl:px-20 2xl:px-24">
       <div className="w-full">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-10 shrink-0 items-center justify-center rounded-xs">
-            <Image
-              src={BRAND_LOGO}
-              alt={t("common.brandName")}
-              width={100}
-              height={40}
-              className="h-8 w-auto object-contain"
-              priority
-            />
-          </div>
-          <span className="text-xl font-bold text-brand-primary">{t("common.brandName")}</span>
-        </div>
+        <Image
+          src={BRAND_LOGO}
+          alt={t("common.brandName")}
+          width={220}
+          height={42}
+          className="h-10 w-auto object-contain"
+          priority
+        />
 
         <h2 className="mt-10 text-2xl font-bold leading-snug text-brand-primary">
           {t("sidebar.title")}

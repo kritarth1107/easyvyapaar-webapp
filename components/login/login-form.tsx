@@ -219,16 +219,15 @@ export function LoginForm() {
       />
     <div className="flex min-h-screen w-full flex-col items-center justify-center border-l border-slate-200/80 bg-white px-8 py-10 sm:px-12 lg:w-[38%] lg:px-14 xl:px-20 2xl:px-24">
       <div className="w-full max-w-sm">
-        <div className="mb-8 flex items-center gap-2.5 lg:hidden">
+        <div className="mb-8 lg:hidden">
           <Image
             src={BRAND_LOGO}
             alt={t("common.brandName")}
-            width={96}
-            height={40}
-            className="h-9 w-auto object-contain"
+            width={200}
+            height={38}
+            className="h-10 w-auto object-contain"
             priority
           />
-          <span className="text-lg font-semibold text-brand-primary">{t("common.brandName")}</span>
         </div>
 
         <p className="text-xs font-bold uppercase tracking-widest text-brand-orange-2">

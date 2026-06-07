@@ -504,16 +504,15 @@ export function RegisterForm({ initialMobile = "" }: RegisterFormProps) {
       />
     <div className="flex min-h-screen flex-1 flex-col justify-start bg-white px-8 py-10 sm:px-12 lg:px-16 xl:px-24 2xl:px-28">
       <div className="w-full max-w-lg overflow-visible">
-        <div className="mb-8 flex items-center gap-2.5 lg:hidden">
+        <div className="mb-8 lg:hidden">
           <Image
             src={BRAND_LOGO}
             alt={t("common.brandName")}
-            width={96}
-            height={40}
-            className="h-9 w-auto object-contain"
+            width={200}
+            height={38}
+            className="h-10 w-auto object-contain"
             priority
           />
-          <span className="text-lg font-semibold text-brand-primary">{t("common.brandName")}</span>
         </div>
 
         <h1 className="text-2xl font-bold text-brand-primary xl:text-3xl">
