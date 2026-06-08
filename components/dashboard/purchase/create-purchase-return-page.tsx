@@ -82,7 +82,7 @@ export function CreatePurchaseReturnPage() {
     <div className="p-4 lg:p-6">
       <Link href="/dashboard/purchases/purchase-returns" className="text-sm font-semibold text-brand-orange-2 hover:underline">← {t("dashboard.purchases.backToReturns")}</Link>
       <h2 className="mt-2 text-xl font-bold">{t("dashboard.purchases.createReturnTitle")}</h2>
-      <div className="mt-4 space-y-4 rounded-md border bg-white p-4">
+      <div className="mt-4 space-y-4 rounded-xl border border-slate-200/90 bg-white shadow-sm p-4">
         <ModernSelect value={billId} onChange={setBillId} options={[{ value: "", label: t("dashboard.purchases.create.selectBill") }, ...bills.map((b) => ({ value: b.purchaseBillId, label: `${b.displayNumber} — ${b.partyName}` }))]} />
         <input type="date" value={returnDate} onChange={(e) => setReturnDate(e.target.value)} className={inputClass} />
         <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder={t("dashboard.purchases.create.reason")} className={inputClass} />

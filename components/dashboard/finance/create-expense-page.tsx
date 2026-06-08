@@ -57,7 +57,7 @@ export function CreateExpensePage() {
     <div className="p-4 lg:p-6">
       <Link href="/dashboard/finance/expenses" className="text-sm font-semibold text-brand-orange-2 hover:underline">← {t("dashboard.expenses.backToList")}</Link>
       <h2 className="mt-2 text-xl font-bold">{t("dashboard.expenses.createTitle")}</h2>
-      <div className="mt-4 max-w-lg space-y-4 rounded-md border bg-white p-4">
+      <div className="mt-4 max-w-lg space-y-4 rounded-xl border border-slate-200/90 bg-white shadow-sm p-4">
         <ModernSelect value={categoryId} onChange={setCategoryId} options={[{ value: "", label: t("dashboard.expenses.create.selectCategory") }, ...categories.map((c) => ({ value: c.categoryId, label: c.name }))]} />
         <input type="date" value={expenseDate} onChange={(e) => setExpenseDate(e.target.value)} className={inputClass} />
         <input type="number" min={0} value={amount} onChange={(e) => setAmount(e.target.value)} placeholder={t("dashboard.expenses.create.amount")} className={inputClass} />

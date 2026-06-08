@@ -70,7 +70,7 @@ export function CashBankPage() {
           ))}
         </div>
       )}
-      <div className="overflow-hidden rounded-md border bg-white">
+      <div className="overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-sm">
         <div className="border-b px-4 py-3"><p className="text-sm font-semibold text-brand-primary">{t("dashboard.cashBank.recentTransactions")}</p></div>
         <table className={tableClass}>
           <thead>

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useUserMe } from "@/components/providers/user-me-provider";
 import { ModernSelect } from "@/components/ui/modern-select";
-import { formatDate, inputClass } from "@/lib/dashboard/page-utils";
+import { formatDate, formPanelClass, inputClass, tablePanelClass } from "@/lib/dashboard/page-utils";
 import { fetchAttendance, fetchStaffList, markAttendance } from "@/lib/staff/staff-api-client";
 import type { AttendanceRecord, AttendanceStatus } from "@/lib/types/staff-api";
 import { useTranslation } from "@/lib/localization";
@@ -36,9 +36,10 @@ export function AttendancePage() {
     try {
       const data = await fetchAttendance(orgId, { fromDate: attendanceDate, toDate: attendanceDate, limit: 100, page: 1 });
       setRecords(data.items);
+      setError(null);
     } catch (err) {
       setRecords([]);
-      setError(err instanceof Error ? err.message : t("dashboard.staff.attendance.empty"));
+      setError(err instanceof Error ? err.message : t("dashboard.staff.attendance.loadError"));
     } finally {
       setLoading(false);
     }
@@ -65,13 +66,16 @@ export function AttendancePage() {
         <div><p className="text-sm text-brand-primary-muted">{t("dashboard.staff.attendance.subtitle")}</p><h2 className="text-xl font-bold">{t("dashboard.staff.attendance.title")}</h2></div>
         <Link href="/dashboard/staff-payroll/attendance/report" className="text-sm font-semibold text-brand-orange-2 hover:underline">{t("dashboard.staff.attendance.viewReport")}</Link>
       </div>
-      <div className="mb-6 max-w-lg space-y-3 rounded-md border bg-white p-4">
+      {error ? (
+        <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">{error}</p>
+      ) : null}
+      <div className={`mb-6 max-w-lg space-y-3 ${formPanelClass}`}>
         <input type="date" value={attendanceDate} onChange={(e) => setAttendanceDate(e.target.value)} className={inputClass} />
         <ModernSelect value={staffId} onChange={setStaffId} options={staffOptions} />
         <ModernSelect value={status} onChange={(v) => setStatus(v as AttendanceStatus)} options={[{ value: "present", label: t("dashboard.staff.attendance.present") }, { value: "absent", label: t("dashboard.staff.attendance.absent") }, { value: "half_day", label: t("dashboard.staff.attendance.halfDay") }, { value: "leave", label: t("dashboard.staff.attendance.leave") }]} />
         <button type="button" disabled={saving} onClick={() => void handleMark()} className="w-full rounded-md bg-brand-primary py-2.5 text-sm font-semibold text-white">{saving ? t("dashboard.staff.attendance.saving") : t("dashboard.staff.attendance.mark")}</button>
       </div>
-      <div className="overflow-hidden rounded-md border bg-white">
+      <div className={tablePanelClass}>
         <table className="w-full text-sm">
           <thead><tr className="border-b bg-brand-surface/50 text-[11px] uppercase"><th className="px-4 py-3">{t("dashboard.staff.colName")}</th><th className="px-4 py-3">{t("dashboard.staff.attendance.colDate")}</th><th className="px-4 py-3">{t("dashboard.staff.attendance.colStatus")}</th></tr></thead>
           <tbody>

@@ -75,13 +75,13 @@ export function CreatePurchaseOrderPage() {
     <div className="p-4 lg:p-6">
       <Link href="/dashboard/purchases/purchase-orders" className="text-sm font-semibold text-brand-orange-2 hover:underline">← {t("dashboard.purchases.backToOrders")}</Link>
       <h2 className="mt-2 text-xl font-bold">{t("dashboard.purchases.createOrderTitle")}</h2>
-      <div className="mt-4 grid gap-4 rounded-md border bg-white p-4 lg:grid-cols-2">
+      <div className="mt-4 grid gap-4 rounded-xl border border-slate-200/90 bg-white shadow-sm p-4 lg:grid-cols-2">
         <ModernSelect value={partyId} onChange={setPartyId} options={[{ value: "", label: t("dashboard.purchases.create.selectSupplier") }, ...suppliers.map((s) => ({ value: s.partyId, label: s.name }))]} />
         <input type="date" value={orderDate} onChange={(e) => setOrderDate(e.target.value)} className={inputClass} />
         <button type="button" onClick={() => setAddItemsOpen(true)} className="text-sm font-semibold text-brand-orange-2">+ {t("dashboard.purchases.create.addItems")}</button>
       </div>
       {lines.length > 0 && (
-        <div className="mt-4 overflow-hidden rounded-md border bg-white">
+        <div className="mt-4 overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-sm">
           <table className="w-full text-sm"><tbody>{lines.map((line) => (<tr key={line.key} className="border-b"><td className="px-4 py-2">{line.name}</td><td className="px-4 py-2 text-right">{formatInr(line.qty * line.pricePerItem)}</td></tr>))}</tbody></table>
           <p className="px-4 py-3 text-right font-bold">{formatInr(total)}</p>
         </div>

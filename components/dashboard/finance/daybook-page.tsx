@@ -55,7 +55,7 @@ export function DaybookPage() {
         <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className={`${inputClass} w-auto`} />
         <div className="w-44"><ModernSelect value={entryType} onChange={setEntryType} options={[{ value: "all", label: t("dashboard.daybook.allTypes") }, { value: "sale", label: t("dashboard.daybook.typeSale") }, { value: "purchase", label: t("dashboard.daybook.typePurchase") }, { value: "payment_in", label: t("dashboard.daybook.typePaymentIn") }, { value: "payment_out", label: t("dashboard.daybook.typePaymentOut") }, { value: "expense", label: t("dashboard.daybook.typeExpense") }]} /></div>
       </div>
-      <div className="overflow-hidden rounded-md border bg-white">
+      <div className="overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-sm">
         <table className="w-full text-sm">
           <thead><tr className="border-b bg-brand-surface/50 text-[11px] uppercase"><th className="px-4 py-3">{t("dashboard.daybook.colDate")}</th><th className="px-4 py-3">{t("dashboard.daybook.colReference")}</th><th className="px-4 py-3">{t("dashboard.daybook.colParty")}</th><th className="px-4 py-3 text-right">{t("dashboard.daybook.colDebit")}</th><th className="px-4 py-3 text-right">{t("dashboard.daybook.colCredit")}</th><th className="px-4 py-3 text-right">{t("dashboard.daybook.colBalance")}</th></tr></thead>
           <tbody>

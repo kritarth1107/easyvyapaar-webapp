@@ -174,7 +174,7 @@ export function ModernSelect({
               ? "border-brand-orange-1/50 ring-2 ring-brand-orange-1/15"
               : "hover:border-slate-300"
         } ${!disabled || hasSelection ? "text-brand-primary" : ""}`
-    : `flex h-10 w-full items-center justify-between gap-2 rounded-md border bg-white px-3 text-left text-sm transition-all ${
+    : `flex h-10 w-full items-center justify-between gap-2 rounded-md border border-slate-200/90 bg-white px-3 text-left text-sm transition-all ${
         disabled
           ? hasSelection
             ? "cursor-not-allowed border-slate-200/70 bg-slate-50 text-brand-primary"

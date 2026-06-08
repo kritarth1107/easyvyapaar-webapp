@@ -1,6 +1,54 @@
 export type StaffStatus = "active" | "inactive";
+export type StaffIdType = "aadhaar" | "pan";
 export type AttendanceStatus = "present" | "absent" | "half_day" | "leave";
-export type PayrollStatus = "draft" | "generated" | "paid";
+export type PayrollStatus = "draft" | "generated" | "processed" | "paid" | "cancelled";
+export type AdjustmentType = "bonus" | "advance" | "reimbursement" | "other";
+export type AdjustmentTreatment = "add_extra" | "deduct_next_month";
+export type AdjustmentStatus = "pending" | "applied" | "cancelled";
+
+export type StaffBankAccount = {
+  accountHolderName?: string;
+  bankName?: string;
+  accountNumber?: string;
+  ifscCode?: string;
+};
+
+export type PayrollSalarySegment = {
+  fromDate: string;
+  toDate: string;
+  monthlySalary: number;
+  perDaySalary: number;
+  calendarDays: number;
+  payableDays: number;
+  amount: number;
+};
+
+export type PayrollProration = {
+  payPeriodFrom: string;
+  payPeriodTo: string;
+  fullMonthlySalary: number;
+  monthlyWorkingDays: number;
+  paidLeaveAllowed: number;
+  paidLeaveAllowedForPeriod: number;
+  joiningDate: string;
+  daysInPeriod: number;
+  eligibleDays: number;
+  presentDays: number;
+  halfDays: number;
+  leaveDays: number;
+  absentDays: number;
+  holidayDays: number;
+  paidLeaveUsed: number;
+  unpaidLeaveDays: number;
+  assumedPresentDays: number;
+  attendanceMarkedDays: number;
+  unmarkedDays: number;
+  attendanceMismatch: boolean;
+  payableDays: number;
+  perDaySalary: number;
+  proratedSalary: number;
+  salarySegments: PayrollSalarySegment[];
+};
 
 export type StaffSummary = {
   staffId: string;
@@ -8,7 +56,10 @@ export type StaffSummary = {
   phone?: string;
   email?: string;
   role?: string;
+  department?: string;
   monthlySalary: number;
+  monthlyWorkingDays?: number;
+  paidLeaveAllowed?: number;
   status: StaffStatus;
   joinDate?: string;
 };
@@ -16,6 +67,10 @@ export type StaffSummary = {
 export type StaffDetail = StaffSummary & {
   organisationId: string;
   address?: string;
+  pan?: string;
+  idType?: StaffIdType;
+  idNumber?: string;
+  bankAccount?: StaffBankAccount;
   notes?: string;
   createdByUserId: string;
   updatedByUserId?: string;
@@ -44,15 +99,94 @@ export type AttendanceReportEntry = {
   totalDays: number;
 };
 
+export type PayrollAdjustmentLine = {
+  adjustmentId?: string;
+  label: string;
+  amount: number;
+  treatment: string;
+};
+
 export type PayrollSummary = {
   payrollId: string;
   staffId: string;
   staffName: string;
   month: string;
   baseSalary: number;
+  allowances: number;
   deductions: number;
   netPay: number;
+  adjustmentBreakdown?: PayrollAdjustmentLine[];
+  proration?: PayrollProration;
+  notes?: string;
   status: PayrollStatus;
+};
+
+export type PayrollMonthSummary = {
+  month: string;
+  staffCount: number;
+  totalNet: number;
+  totalBasic: number;
+  paidCount: number;
+  processedCount: number;
+  lastUpdatedAt?: string;
+};
+
+export type PayrollMonthDetail = {
+  month: string;
+  summary: PayrollMonthSummary;
+  employees: PayrollSummary[];
+};
+
+export type SalaryHistoryEntry = {
+  historyId: string;
+  staffId: string;
+  previousSalary: number;
+  newSalary: number;
+  effectiveDate: string;
+  reason?: string;
+  changedByUserId: string;
+  createdAt: string;
+};
+
+export type StaffAdjustment = {
+  adjustmentId: string;
+  staffId: string;
+  staffName: string;
+  type: AdjustmentType;
+  amount: number;
+  treatment: AdjustmentTreatment;
+  sourceMonth: string;
+  applyMonth: string;
+  paymentDate: string;
+  notes?: string;
+  status: AdjustmentStatus;
+  appliedPayrollId?: string;
+  createdAt: string;
+};
+
+export type PayrollPreviewEntry = {
+  staffId: string;
+  staffName: string;
+  basicSalary: number;
+  autoAllowances: number;
+  autoDeductions: number;
+  allowances: number;
+  deductions: number;
+  netPay: number;
+  adjustmentBreakdown: PayrollAdjustmentLine[];
+  proration?: PayrollProration;
+  attendanceMismatch?: boolean;
+  existingPayrollId?: string;
+  existingStatus?: PayrollStatus;
+  editable: boolean;
+  notes?: string;
+};
+
+export type PayrollPreviewResponse = {
+  month: string;
+  toDate: string;
+  fromDate?: string;
+  items: PayrollPreviewEntry[];
 };
 
 export type PayrollDetail = PayrollSummary & {
@@ -114,9 +248,16 @@ export type CreateStaffRequest = {
   phone?: string;
   email?: string;
   role?: string;
+  department?: string;
   monthlySalary: number;
+  monthlyWorkingDays?: number;
+  paidLeaveAllowed?: number;
   joinDate?: string;
   address?: string;
+  pan?: string;
+  idType?: StaffIdType;
+  idNumber?: string;
+  bankAccount?: StaffBankAccount;
   notes?: string;
   status?: StaffStatus;
 };
@@ -132,7 +273,42 @@ export type MarkAttendanceRequest = {
   notes?: string;
 };
 
+export type ChangeSalaryRequest = {
+  newSalary: number;
+  effectiveDate: string;
+  reason?: string;
+};
+
+export type CreateStaffAdjustmentRequest = {
+  amount: number;
+  type?: AdjustmentType;
+  treatment: AdjustmentTreatment;
+  paymentDate: string;
+  notes?: string;
+};
+
+export type PayrollGenerateEntry = {
+  staffId: string;
+  basicSalary?: number;
+  allowances?: number;
+  deductions?: number;
+  notes?: string;
+  attendanceOverride?: boolean;
+};
+
 export type GeneratePayrollRequest = {
-  month: string;
+  toDate: string;
+  fromDate?: string;
+  month?: string;
   staffIds?: string[];
+  staffFromDates?: Record<string, string>;
+  entries?: PayrollGenerateEntry[];
+};
+
+export type PreviewPayrollRequest = {
+  toDate: string;
+  fromDate?: string;
+  month?: string;
+  staffIds?: string[];
+  staffFromDates?: Record<string, string>;
 };

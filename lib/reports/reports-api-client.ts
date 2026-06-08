@@ -1,4 +1,4 @@
-import { extractBackendError, normalizeReportData } from "@/lib/api/reports";
+import { extractBackendError, extractReportFromResponse } from "@/lib/api/reports";
 import type { PartyStatementParams, ReportData, ReportFetchParams, ReportSlug } from "@/lib/types/reports-api";
 
 async function parseJsonResponse(res: Response): Promise<unknown> {
@@ -38,7 +38,7 @@ export async function fetchReport(
   );
   const body = await parseJsonResponse(res);
   if (!res.ok) throw new Error(extractBackendError(body) ?? "Failed to load report");
-  return normalizeReportData(body, reportType);
+  return extractReportFromResponse(body, reportType);
 }
 
 export async function fetchPartyStatement(
@@ -53,7 +53,7 @@ export async function fetchPartyStatement(
   );
   const body = await parseJsonResponse(res);
   if (!res.ok) throw new Error(extractBackendError(body) ?? "Failed to load party statement");
-  return normalizeReportData(body, "party-outstanding");
+  return extractReportFromResponse(body, "party-outstanding");
 }
 
 export const REPORT_SLUGS: ReportSlug[] = [

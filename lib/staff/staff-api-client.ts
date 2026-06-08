@@ -4,20 +4,38 @@ import {
   normalizeAttendanceReportResponse,
   normalizePayrollDetailResponse,
   normalizePayrollListResponse,
+  normalizePayrollMonthDetailResponse,
+  normalizePayrollMonthSummariesResponse,
+  normalizePayrollPreviewResponse,
+  normalizeSalaryHistoryResponse,
+  normalizeStaffAdjustmentsResponse,
   normalizeStaffDetailResponse,
   normalizeStaffListResponse,
+  normalizeSalaryHistoryEntry,
+  normalizeStaffAdjustment,
+  toBackendCreateStaffBody,
+  toBackendMarkAttendanceBody,
+  toBackendUpdateStaffBody,
 } from "@/lib/api/staff";
 import type {
   AttendanceListParams,
   AttendanceListResponse,
   AttendanceReportParams,
   AttendanceReportResponse,
+  ChangeSalaryRequest,
+  CreateStaffAdjustmentRequest,
   CreateStaffRequest,
   GeneratePayrollRequest,
   MarkAttendanceRequest,
   PayrollDetail,
   PayrollListParams,
   PayrollListResponse,
+  PayrollMonthDetail,
+  PayrollMonthSummary,
+  PayrollPreviewResponse,
+  PreviewPayrollRequest,
+  SalaryHistoryEntry,
+  StaffAdjustment,
   StaffDetail,
   StaffListParams,
   StaffListResponse,
@@ -76,7 +94,7 @@ export async function createStaff(organisationId: string, payload: CreateStaffRe
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(toBackendCreateStaffBody(payload)),
     },
   );
   const body = await parseJsonResponse(res);
@@ -96,7 +114,7 @@ export async function updateStaff(
     {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(toBackendUpdateStaffBody(payload)),
     },
   );
   const body = await parseJsonResponse(res);
@@ -133,7 +151,7 @@ export async function markAttendance(
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(toBackendMarkAttendanceBody(payload)),
     },
   );
   const body = await parseJsonResponse(res);
@@ -169,6 +187,117 @@ export async function fetchPayrollList(
   const body = await parseJsonResponse(res);
   if (!res.ok) throw new Error(extractBackendError(body) ?? "Failed to load payroll");
   return normalizePayrollListResponse(body);
+}
+
+export async function changeStaffSalary(
+  organisationId: string,
+  staffId: string,
+  payload: ChangeSalaryRequest,
+): Promise<SalaryHistoryEntry> {
+  const res = await fetch(
+    `/api/staff/staff/${encodeURIComponent(staffId)}/salary-change?organisationId=${encodeURIComponent(organisationId)}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    },
+  );
+  const body = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(extractBackendError(body) ?? "Failed to change salary");
+  const entry = normalizeSalaryHistoryEntry(body);
+  if (!entry) throw new Error("Failed to change salary");
+  return entry;
+}
+
+export async function fetchSalaryHistory(
+  organisationId: string,
+  staffId: string,
+): Promise<SalaryHistoryEntry[]> {
+  const res = await fetch(
+    `/api/staff/staff/${encodeURIComponent(staffId)}/salary-history?organisationId=${encodeURIComponent(organisationId)}`,
+  );
+  const body = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(extractBackendError(body) ?? "Failed to load salary history");
+  const items = normalizeSalaryHistoryResponse(body);
+  if (items.length > 0) return items;
+  const root = typeof body === "object" && body !== null ? (body as Record<string, unknown>) : null;
+  const data = root?.data;
+  if (Array.isArray(data)) return data as SalaryHistoryEntry[];
+  return items;
+}
+
+export async function fetchStaffAdjustments(
+  organisationId: string,
+  staffId: string,
+): Promise<StaffAdjustment[]> {
+  const res = await fetch(
+    `/api/staff/staff/${encodeURIComponent(staffId)}/adjustments?organisationId=${encodeURIComponent(organisationId)}`,
+  );
+  const body = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(extractBackendError(body) ?? "Failed to load adjustments");
+  return normalizeStaffAdjustmentsResponse(body);
+}
+
+export async function createStaffAdjustment(
+  organisationId: string,
+  staffId: string,
+  payload: CreateStaffAdjustmentRequest,
+): Promise<StaffAdjustment> {
+  const res = await fetch(
+    `/api/staff/staff/${encodeURIComponent(staffId)}/adjustments?organisationId=${encodeURIComponent(organisationId)}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    },
+  );
+  const body = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(extractBackendError(body) ?? "Failed to record payment");
+  const row = normalizeStaffAdjustment(body);
+  if (!row) throw new Error("Failed to record payment");
+  return row;
+}
+
+export async function fetchPayrollMonthSummaries(organisationId: string): Promise<PayrollMonthSummary[]> {
+  const res = await fetch(
+    `/api/staff/payroll/month-summaries?organisationId=${encodeURIComponent(organisationId)}`,
+  );
+  const body = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(extractBackendError(body) ?? "Failed to load payroll months");
+  return normalizePayrollMonthSummariesResponse(body);
+}
+
+export async function fetchPayrollMonthDetail(
+  organisationId: string,
+  month: string,
+): Promise<PayrollMonthDetail> {
+  const res = await fetch(
+    `/api/staff/payroll/month-detail?organisationId=${encodeURIComponent(organisationId)}&month=${encodeURIComponent(month)}`,
+  );
+  const body = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(extractBackendError(body) ?? "Failed to load payroll detail");
+  const detail = normalizePayrollMonthDetailResponse(body);
+  if (!detail) throw new Error("Failed to load payroll detail");
+  return detail;
+}
+
+export async function previewPayroll(
+  organisationId: string,
+  payload: PreviewPayrollRequest,
+): Promise<PayrollPreviewResponse> {
+  const res = await fetch(
+    `/api/staff/payroll/preview?organisationId=${encodeURIComponent(organisationId)}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    },
+  );
+  const body = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(extractBackendError(body) ?? "Failed to preview payroll");
+  const preview = normalizePayrollPreviewResponse(body);
+  if (!preview) throw new Error("Failed to preview payroll");
+  return preview;
 }
 
 export async function generatePayroll(

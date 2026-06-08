@@ -80,7 +80,7 @@ export function PurchaseOrderViewPage() {
           <button type="button" disabled={actionLoading} onClick={() => void handleConvert()} className="rounded-md border border-brand-primary px-4 py-2 text-sm font-semibold text-brand-primary">{t("dashboard.purchases.convertToBill")}</button>
         )}
       </div>
-      <div className="mt-6 overflow-hidden rounded-md border bg-white">
+      <div className="mt-6 overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-sm">
         <table className="w-full text-sm">
           <thead><tr className="border-b bg-brand-surface/50 text-[11px] uppercase"><th className="px-4 py-3 text-left">{t("dashboard.purchases.create.colItem")}</th><th className="px-4 py-3 text-right">{t("dashboard.purchases.create.colQty")}</th><th className="px-4 py-3 text-right">{t("dashboard.purchases.create.colAmount")}</th></tr></thead>
           <tbody>{order.lineItems.map((line) => (<tr key={line.lineId} className="border-b"><td className="px-4 py-3">{line.name}</td><td className="px-4 py-3 text-right">{line.qty}</td><td className="px-4 py-3 text-right">{formatInr(line.amount)}</td></tr>))}</tbody>

@@ -59,7 +59,7 @@ function KpiTile({
             : "border-slate-200/90";
 
   return (
-    <div className={`rounded-md border bg-white px-3.5 py-3 ${border}`}>
+    <div className={`rounded-md border bg-white px-3.5 py-3 ${border} shadow-sm`}>
       <p className="text-[11px] font-semibold uppercase tracking-wide text-brand-primary-muted">
         {label}
       </p>

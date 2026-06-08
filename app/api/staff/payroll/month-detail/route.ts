@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { extractBackendError, normalizeAttendanceReportResponse } from "@/lib/api/staff";
+import { extractBackendError, normalizePayrollMonthDetailResponse } from "@/lib/api/staff";
 import { proxyStaffBackend, requireOrganisationId } from "@/lib/api/staff-proxy";
 
 export async function GET(request: Request) {
@@ -11,25 +11,27 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const month = searchParams.get("month")?.trim();
-    const qs = month ? `?month=${encodeURIComponent(month)}` : "";
+    if (!month) {
+      return NextResponse.json({ error: "month is required" }, { status: 400 });
+    }
 
     const { response, body } = await proxyStaffBackend(
       request,
-      `staff/organisations/${encodeURIComponent(organisationId)}/attendance/monthly-report${qs}`,
+      `staff/organisations/${encodeURIComponent(organisationId)}/payroll/month-detail?month=${encodeURIComponent(month)}`,
       { method: "GET" },
     );
 
     if (!response.ok) {
       return NextResponse.json(
-        { error: extractBackendError(body) ?? "Failed to load attendance report" },
+        { error: extractBackendError(body) ?? "Failed to load payroll detail" },
         { status: response.status },
       );
     }
 
-    const data = normalizeAttendanceReportResponse(body);
+    const data = normalizePayrollMonthDetailResponse(body);
     return NextResponse.json({ ...(body as object), data });
   } catch (error) {
-    console.error("Attendance report error:", error);
-    return NextResponse.json({ error: "Failed to load attendance report" }, { status: 500 });
+    console.error("Payroll month detail error:", error);
+    return NextResponse.json({ error: "Failed to load payroll detail" }, { status: 500 });
   }
 }

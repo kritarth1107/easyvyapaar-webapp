@@ -1,3 +1,6 @@
+import type { BalanceSheetReport } from "@/lib/reports/balance-sheet-types";
+import type { ProfitLossReport } from "@/lib/reports/profit-loss-types";
+
 export type ReportSlug =
   | "gstr1"
   | "gstr2"
@@ -31,11 +34,65 @@ export type ReportColumn = {
 
 export type ReportRow = Record<string, string | number | null | undefined>;
 
+export type ReportMetric = {
+  label: string;
+  value: string | number;
+  format?: "currency" | "number" | "text" | "date";
+  tone?: "default" | "positive" | "negative" | "warning";
+};
+
+export type ReportChartBar = {
+  label: string;
+  value: number;
+  color?: string;
+};
+
+export type ReportChart = {
+  type: "bar" | "stacked";
+  title: string;
+  bars: ReportChartBar[];
+  format?: "currency" | "number";
+};
+
+export type ReportTable = {
+  id: string;
+  title: string;
+  columns: ReportColumn[];
+  rows: ReportRow[];
+  footer?: Record<string, string | number>;
+};
+
+export type ReportSection =
+  | { type: "metrics"; title?: string; metrics: ReportMetric[] }
+  | { type: "table"; table: ReportTable }
+  | { type: "chart"; chart: ReportChart }
+  | { type: "info"; title?: string; items: { label: string; value: string }[] }
+  | {
+      type: "comparison";
+      title?: string;
+      left: { label: string; items: ReportMetric[] };
+      right: { label: string; items: ReportMetric[] };
+    };
+
+export type ReportPagination = {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+};
+
 export type ReportData = {
   reportType: ReportSlug;
   title: string;
   fromDate?: string;
   toDate?: string;
+  asOfDate?: string;
+  financialYear?: string;
+  sections: ReportSection[];
+  pagination?: ReportPagination;
+  profitLoss?: ProfitLossReport;
+  balanceSheet?: BalanceSheetReport;
+  /** Primary table for export / legacy */
   columns: ReportColumn[];
   rows: ReportRow[];
   summary?: Record<string, string | number>;

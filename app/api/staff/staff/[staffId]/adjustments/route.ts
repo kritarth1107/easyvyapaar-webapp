@@ -1,59 +1,54 @@
 import { NextResponse } from "next/server";
 import {
   extractBackendError,
-  normalizePayrollDetailResponse,
-  normalizePayrollListResponse,
+  normalizeStaffAdjustment,
+  normalizeStaffAdjustmentsResponse,
 } from "@/lib/api/staff";
 import { proxyStaffBackend, requireOrganisationId } from "@/lib/api/staff-proxy";
 
-function buildBackendListQuery(searchParams: URLSearchParams): string {
-  const params = new URLSearchParams();
-  for (const key of ["month", "status", "staffId", "page", "limit"] as const) {
-    const value = searchParams.get(key)?.trim();
-    if (value) params.set(key, value);
-  }
-  const qs = params.toString();
-  return qs ? `?${qs}` : "";
-}
+type RouteContext = { params: Promise<{ staffId: string }> };
 
-export async function GET(request: Request) {
+export async function GET(request: Request, context: RouteContext) {
   try {
     const organisationId = requireOrganisationId(request);
     if (!organisationId) {
       return NextResponse.json({ error: "organisationId is required" }, { status: 400 });
     }
 
+    const { staffId } = await context.params;
     const { searchParams } = new URL(request.url);
-    const listQuery = buildBackendListQuery(searchParams);
+    const status = searchParams.get("status")?.trim();
+    const qs = status ? `?status=${encodeURIComponent(status)}` : "";
 
     const { response, body } = await proxyStaffBackend(
       request,
-      `staff/organisations/${encodeURIComponent(organisationId)}/payroll${listQuery}`,
+      `staff/organisations/${encodeURIComponent(organisationId)}/staff/${encodeURIComponent(staffId)}/adjustments${qs}`,
       { method: "GET" },
     );
 
     if (!response.ok) {
       return NextResponse.json(
-        { error: extractBackendError(body) ?? "Failed to load payroll" },
+        { error: extractBackendError(body) ?? "Failed to load adjustments" },
         { status: response.status },
       );
     }
 
-    const data = normalizePayrollListResponse(body);
+    const data = normalizeStaffAdjustmentsResponse(body);
     return NextResponse.json({ ...(body as object), data });
   } catch (error) {
-    console.error("Payroll list error:", error);
-    return NextResponse.json({ error: "Failed to load payroll" }, { status: 500 });
+    console.error("Adjustments list error:", error);
+    return NextResponse.json({ error: "Failed to load adjustments" }, { status: 500 });
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: Request, context: RouteContext) {
   try {
     const organisationId = requireOrganisationId(request);
     if (!organisationId) {
       return NextResponse.json({ error: "organisationId is required" }, { status: 400 });
     }
 
+    const { staffId } = await context.params;
     let payload: unknown;
     try {
       payload = await request.json();
@@ -63,7 +58,7 @@ export async function POST(request: Request) {
 
     const { response, body } = await proxyStaffBackend(
       request,
-      `staff/organisations/${encodeURIComponent(organisationId)}/payroll/generate`,
+      `staff/organisations/${encodeURIComponent(organisationId)}/staff/${encodeURIComponent(staffId)}/adjustments`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -73,15 +68,15 @@ export async function POST(request: Request) {
 
     if (!response.ok) {
       return NextResponse.json(
-        { error: extractBackendError(body) ?? "Failed to generate payroll" },
+        { error: extractBackendError(body) ?? "Failed to record payment" },
         { status: response.status },
       );
     }
 
-    const data = normalizePayrollListResponse(body);
+    const data = normalizeStaffAdjustment(body);
     return NextResponse.json({ ...(body as object), data }, { status: response.status });
   } catch (error) {
-    console.error("Payroll generate error:", error);
-    return NextResponse.json({ error: "Failed to generate payroll" }, { status: 500 });
+    console.error("Adjustment create error:", error);
+    return NextResponse.json({ error: "Failed to record payment" }, { status: 500 });
   }
 }
