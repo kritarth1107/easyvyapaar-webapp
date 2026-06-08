@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   DASHBOARD_NOTIFICATIONS,
   type NotificationType,
-} from "@/lib/dashboard/mock-notifications";
+} from "@/lib/dashboard/notification-feed";
 import { useTranslation } from "@/lib/localization";
 
 function BellIcon() {

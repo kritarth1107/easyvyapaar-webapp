@@ -11,6 +11,7 @@ export type DashboardNotification = {
   href?: string;
 };
 
+/** Static activity feed until a notifications API is available. */
 export const DASHBOARD_NOTIFICATIONS: DashboardNotification[] = [
   {
     id: "low-stock",
@@ -26,7 +27,7 @@ export const DASHBOARD_NOTIFICATIONS: DashboardNotification[] = [
     titleKey: "dashboard.notificationFeed.overdueTitle",
     messageKey: "dashboard.notificationFeed.overdueMessage",
     timeKey: "dashboard.notificationFeed.overdueTime",
-    href: "/dashboard/outstanding",
+    href: "/dashboard/parties/outstanding",
   },
   {
     id: "gst",
@@ -34,7 +35,7 @@ export const DASHBOARD_NOTIFICATIONS: DashboardNotification[] = [
     titleKey: "dashboard.notificationFeed.gstTitle",
     messageKey: "dashboard.notificationFeed.gstMessage",
     timeKey: "dashboard.notificationFeed.gstTime",
-    href: "/dashboard/gst-reports",
+    href: "/dashboard/reports/gst-reports",
   },
   {
     id: "payment",

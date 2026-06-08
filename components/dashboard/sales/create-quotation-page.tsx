@@ -10,7 +10,7 @@ import {
   PartySelectModal,
   type SelectedInvoiceParty,
 } from "@/components/dashboard/sales/party-select-modal";
-import type { InventoryBillPick } from "@/lib/dashboard/mock-inventory-items";
+import type { InventoryBillPick } from "@/lib/types/inventory-ui";
 import { fetchBusinessProfile } from "@/lib/business/business-profile-api-client";
 import { fetchPartyDetail } from "@/lib/parties/parties-api-client";
 import {

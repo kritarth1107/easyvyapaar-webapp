@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUserMe } from "@/components/providers/user-me-provider";
-import type { SalesInvoiceStatus } from "@/lib/dashboard/mock-sales-invoices";
+import type { SalesInvoiceStatus } from "@/lib/types/sales-api";
 import { ModernSelect } from "@/components/ui/modern-select";
 import { fetchSalesInvoices } from "@/lib/sales/sales-api-client";
 import type { SalesInvoiceSummary } from "@/lib/types/sales-api";

@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AdjustSerialStockModal } from "@/components/dashboard/inventory/adjust-serial-stock-modal";
 import { AdjustStockModal } from "@/components/dashboard/inventory/adjust-stock-modal";
 import { useUserMe } from "@/components/providers/user-me-provider";
-import type { InventoryItemStatus } from "@/lib/dashboard/mock-inventory-items";
+import type { InventoryItemStatus } from "@/lib/types/inventory-ui";
 import {
   fetchInventoryItemDetail,
   fetchStockAdjustments,

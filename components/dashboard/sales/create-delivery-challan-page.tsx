@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { AddItemsToBillModal } from "@/components/dashboard/sales/add-items-to-bill-modal";
 import { PartySelectModal, type SelectedInvoiceParty } from "@/components/dashboard/sales/party-select-modal";
 import { useUserMe } from "@/components/providers/user-me-provider";
-import type { InventoryBillPick } from "@/lib/dashboard/mock-inventory-items";
+import type { InventoryBillPick } from "@/lib/types/inventory-ui";
 import {
   createDeliveryChallan,
   fetchNextDeliveryChallanNumber,

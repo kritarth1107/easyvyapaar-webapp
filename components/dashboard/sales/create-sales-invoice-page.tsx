@@ -12,8 +12,8 @@ import {
   type SelectedInvoiceParty,
 } from "@/components/dashboard/sales/party-select-modal";
 import { ModernSelect } from "@/components/ui/modern-select";
-import type { InventoryBillPick } from "@/lib/dashboard/mock-inventory-items";
-import { WALK_IN_PARTY_ID } from "@/lib/dashboard/mock-parties";
+import type { InventoryBillPick } from "@/lib/types/inventory-ui";
+import { WALK_IN_PARTY_ID } from "@/lib/parties/constants";
 import { fetchOrganisationBankAccounts } from "@/lib/organisations/organisation-bank-api-client";
 import { fetchBusinessProfile } from "@/lib/business/business-profile-api-client";
 import { fetchPartyDetail } from "@/lib/parties/parties-api-client";

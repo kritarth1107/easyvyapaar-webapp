@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { InventoryItem } from "@/lib/dashboard/mock-inventory-items";
+import type { InventoryItem } from "@/lib/types/inventory-ui";
 import {
   fetchAllInventoryItems,
   fetchInventoryItems,

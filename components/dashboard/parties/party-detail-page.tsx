@@ -10,7 +10,7 @@ import {
   TrendLineChart,
 } from "@/components/dashboard/inventory/stock-summary-charts";
 import { useUserMe } from "@/components/providers/user-me-provider";
-import { formatPartyBalance } from "@/lib/dashboard/mock-parties";
+import { formatPartyBalance } from "@/lib/parties/format-party-balance";
 import {
   buildActivityTrend,
   buildBalanceSlices,
@@ -286,16 +286,14 @@ export function PartyDetailPage({ partyId }: PartyDetailPageProps) {
           >
             {t("dashboard.partyDetail.edit")}
           </Link>
-          <button
-            type="button"
-            onClick={() => window.alert(t("dashboard.partyDetail.deleteComingSoon"))}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-red-200/80 bg-red-50/50 text-red-600 hover:bg-red-50"
-            aria-label={t("dashboard.partyDetail.delete")}
-          >
-            <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" aria-hidden>
-              <path d="M5 6h10M8 6V4.5A1.5 1.5 0 0 1 9.5 3h1A1.5 1.5 0 0 1 12 4.5V6m2 0v9.5a1.5 1.5 0 0 1-1.5 1.5h-5A1.5 1.5 0 0 1 6 15.5V6h8Z" stroke="currentColor" strokeWidth="1.35" strokeLinejoin="round" />
-            </svg>
-          </button>
+          {party.currentBalance !== 0 && (
+            <Link
+              href={`/dashboard/finance/payments/new?partyId=${encodeURIComponent(party.partyId)}&type=${party.currentBalance > 0 ? "payment_in" : "payment_out"}`}
+              className="inline-flex h-10 items-center gap-2 rounded-md border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50"
+            >
+              {t("dashboard.partiesPage.recordPayment")}
+            </Link>
+          )}
         </div>
       </div>
 

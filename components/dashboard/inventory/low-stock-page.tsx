@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useUserMe } from "@/components/providers/user-me-provider";
 import {
@@ -225,8 +226,10 @@ export function LowStockPage() {
   const hasAlerts =
     analytics.totals.lowStockCount > 0 || analytics.totals.outOfStockCount > 0;
 
+  const router = useRouter();
+
   const handleReorder = () => {
-    window.alert("Purchase order flow coming soon.");
+    router.push("/dashboard/purchases/purchase-orders/new");
   };
 
   return (

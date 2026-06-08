@@ -1,10 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { PartiesPageView } from "@/lib/dashboard/mock-parties";
+import type { PartiesPageView } from "@/lib/types/parties-api";
 import { fetchParties, fetchPartiesSummary } from "@/lib/parties/parties-api-client";
 import type { PartyDashboardSummary, PartyListParams, PartySummary } from "@/lib/types/parties-api";
-import type { PartyType } from "@/lib/dashboard/mock-parties";
+import type { PartyType } from "@/lib/types/parties-api";
 
 type UsePartiesOptions = {
   view: PartiesPageView;

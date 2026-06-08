@@ -233,6 +233,18 @@ export type MessageTree = {
     switchingLanguageHint: string;
     comingSoon: string;
     comingSoonHint: string;
+    deferred: {
+      godownsTitle: string;
+      godownsDesc: string;
+      printSettingsTitle: string;
+      printSettingsDesc: string;
+      settingsTitle: string;
+      settingsDesc: string;
+      aiChatTitle: string;
+      aiChatDesc: string;
+      whatsappTitle: string;
+      whatsappDesc: string;
+    };
     inventory: {
       subtitle: string;
       totalItems: string;
@@ -694,7 +706,6 @@ export type MessageTree = {
       recordPayment: string;
       noResults: string;
       noResultsHint: string;
-      demoNote: string;
     };
     partyDetail: {
       loading: string;
@@ -784,7 +795,7 @@ export type MessageTree = {
       saving: string;
       saveError: string;
       noOrganisation: string;
-      gstinComingSoon: string;
+      gstLookupError: string;
       sections: {
         classification: string;
         general: string;

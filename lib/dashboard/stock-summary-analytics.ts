@@ -1,8 +1,4 @@
-import {
-  MOCK_INVENTORY_ITEMS,
-  type InventoryItem,
-  type InventoryItemStatus,
-} from "@/lib/dashboard/mock-inventory-items";
+import type { InventoryItem, InventoryItemStatus } from "@/lib/types/inventory-ui";
 
 export type NamedSlice = {
   id: string;
@@ -150,7 +146,7 @@ function seededTrend(totalUnits: number, totalValue: number) {
 }
 
 export function computeStockSummaryAnalytics(
-  items: InventoryItem[] = MOCK_INVENTORY_ITEMS
+  items: InventoryItem[]
 ): StockSummaryAnalytics {
   const itemMetrics = items.map(toMetric);
   const totalUnits = items.reduce((s, i) => s + i.stock, 0);

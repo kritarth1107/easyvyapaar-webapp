@@ -4,7 +4,7 @@ import { normalizeSalesTaxMode } from "@/lib/sales/invoice-tax";
 import type { StoredSalesInvoiceSettings } from "@/lib/sales/invoice-settings-config";
 import type { CreateSalesInvoiceRequest } from "@/lib/types/sales-api";
 import type { OrganisationBankAccount } from "@/lib/types/organisation-bank-api";
-import { WALK_IN_PARTY_ID } from "@/lib/dashboard/mock-parties";
+import { WALK_IN_PARTY_ID } from "@/lib/parties/constants";
 
 export function mapCreateInvoiceFormToRequest(
   form: CreateInvoiceFormState,

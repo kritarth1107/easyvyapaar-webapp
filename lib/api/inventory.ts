@@ -1,4 +1,4 @@
-import type { InventoryItem } from "@/lib/dashboard/mock-inventory-items";
+import type { InventoryItem } from "@/lib/types/inventory-ui";
 import { GST_RATE_OPTIONS } from "@/lib/inventory/create-item-form";
 import type {
   CreateInventoryItemRequest,
@@ -64,6 +64,8 @@ export function mapSummaryToTableItem(summary: InventoryItemSummary): InventoryI
     salesTaxMode: summary.salesTaxMode,
     serialised: summary.serialised,
     status: summary.status,
+    ...(summary.lowStockWarning !== undefined && { lowStockWarning: summary.lowStockWarning }),
+    ...(summary.lowStockQty !== undefined && { lowStockQty: summary.lowStockQty }),
     ...(summary.availableSerialNumbers?.length
       ? { availableSerials: summary.availableSerialNumbers }
       : {}),
@@ -104,6 +106,8 @@ export function normalizeItemSummary(raw: unknown): InventoryItemSummary | null 
       pickString(row.salesTaxMode) === "without_tax" ? "without_tax" : "with_tax",
     serialised: Boolean(row.serialised),
     status,
+    ...(row.lowStockWarning !== undefined && { lowStockWarning: Boolean(row.lowStockWarning) }),
+    ...(pickNumber(row.lowStockQty) !== undefined && { lowStockQty: pickNumber(row.lowStockQty) }),
     ...(Array.isArray(row.availableSerialNumbers)
       ? {
           availableSerialNumbers: row.availableSerialNumbers

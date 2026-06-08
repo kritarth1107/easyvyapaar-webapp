@@ -1,4 +1,4 @@
-import type { InventoryItemStatus } from "@/lib/dashboard/mock-inventory-items";
+import type { InventoryItemStatus } from "@/lib/types/inventory-ui";
 import type { InventoryItemDetail } from "@/lib/types/inventory-api";
 
 export function computeDetailStockStatus(

@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ModernSelect } from "@/components/ui/modern-select";
 import { PartyBankAccountsSection } from "@/components/dashboard/parties/party-bank-accounts-section";
 import { useUserMe } from "@/components/providers/user-me-provider";
-import type { PartyType } from "@/lib/dashboard/mock-parties";
+import type { PartyType } from "@/lib/types/parties-api";
 import { getBankSelectOptions } from "@/lib/parties/bank-catalog";
 import {
   createPartyCustomFieldRow,

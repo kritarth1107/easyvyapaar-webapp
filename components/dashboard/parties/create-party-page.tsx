@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { lookupGstin } from "@/lib/gst/lookup-gst";
 import { ModernSelect } from "@/components/ui/modern-select";
-import type { PartyType } from "@/lib/dashboard/mock-parties";
+import type { PartyType } from "@/lib/types/parties-api";
 import { PartyBankAccountsSection } from "@/components/dashboard/parties/party-bank-accounts-section";
 import {
   createInitialPartyForm,
@@ -92,6 +93,7 @@ export function CreatePartyPage() {
   const [form, setForm] = useState<CreatePartyFormState>(createInitialPartyForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const [gstLoading, setGstLoading] = useState(false);
 
   const categoryOptions = useMemo(() => getPartyCategoryOptions(), []);
   const bankOptions = useMemo(() => getBankSelectOptions(), []);
@@ -130,6 +132,26 @@ export function CreatePartyPage() {
     if (!form.name.trim()) next.name = t("dashboard.createParty.validationName");
     setErrors(next);
     return Object.keys(next).length === 0;
+  };
+
+  const handleGstLookup = async () => {
+    if (!form.gstin.trim()) return;
+    setGstLoading(true);
+    try {
+      const data = await lookupGstin(form.gstin);
+      const pan = extractPanFromGstin(data.gstin);
+      patch({
+        gstin: data.gstin,
+        ...(pan ? { pan } : {}),
+        ...(data.tradeName || data.legalName
+          ? { name: (data.tradeName ?? data.legalName ?? form.name).trim() }
+          : {}),
+      });
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : t("dashboard.createParty.gstLookupError"));
+    } finally {
+      setGstLoading(false);
+    }
   };
 
   const handleSave = async (saveAndNew: boolean) => {
@@ -333,10 +355,11 @@ export function CreatePartyPage() {
                 />
                 <button
                   type="button"
-                  onClick={() => window.alert(t("dashboard.createParty.gstinComingSoon"))}
-                  className="h-10 shrink-0 rounded-md border border-brand-primary/20 bg-brand-primary/[0.04] px-3 text-xs font-semibold text-brand-primary hover:bg-brand-primary/[0.08]"
+                  onClick={() => void handleGstLookup()}
+                  disabled={gstLoading || !form.gstin.trim()}
+                  className="h-10 shrink-0 rounded-md border border-brand-primary/20 bg-brand-primary/[0.04] px-3 text-xs font-semibold text-brand-primary hover:bg-brand-primary/[0.08] disabled:opacity-60"
                 >
-                  {t("dashboard.createParty.getDetails")}
+                  {gstLoading ? t("common.pleaseWait") : t("dashboard.createParty.getDetails")}
                 </button>
               </div>
               <p className="mt-1 text-[11px] text-brand-primary-muted">{t("dashboard.createParty.gstinNote")}</p>

@@ -1,8 +1,4 @@
-import {
-  MOCK_INVENTORY_ITEMS,
-  type InventoryItem,
-  type InventoryItemStatus,
-} from "@/lib/dashboard/mock-inventory-items";
+import type { InventoryItem } from "@/lib/types/inventory-ui";
 
 export type AlertPriority = "critical" | "warning" | "watch";
 
@@ -37,15 +33,10 @@ export type LowStockAnalytics = {
 
 const CHART_COLORS = ["#F63E16", "#FF6B35", "#F59E0B", "#031F49", "#3B82F6", "#8B5CF6"];
 
-/** Mock reorder thresholds until item master API provides them. */
-const REORDER_LEVELS: Record<string, number> = {
-  "2": 15,
-  "3": 12,
-  "5": 8,
-};
-
 function defaultReorderLevel(item: InventoryItem): number {
-  if (REORDER_LEVELS[item.id] != null) return REORDER_LEVELS[item.id];
+  if (item.lowStockWarning && item.lowStockQty != null && item.lowStockQty > 0) {
+    return item.lowStockQty;
+  }
   if (item.status === "out_of_stock") return 10;
   return Math.max(item.stock + 7, 10);
 }
@@ -63,9 +54,7 @@ function seededDays(id: string): number {
   return 1 + (h % 14);
 }
 
-export function computeLowStockAnalytics(
-  items: InventoryItem[] = MOCK_INVENTORY_ITEMS
-): LowStockAnalytics {
+export function computeLowStockAnalytics(items: InventoryItem[]): LowStockAnalytics {
   const lowStockItems: LowStockAlertRow[] = items
     .filter((i) => i.status === "low_stock")
     .map((item) => {

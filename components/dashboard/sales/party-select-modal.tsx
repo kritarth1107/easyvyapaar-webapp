@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { WALK_IN_PARTY_ID } from "@/lib/dashboard/mock-parties";
+import { WALK_IN_PARTY_ID } from "@/lib/parties/constants";
 import { PARTY_CATEGORIES } from "@/lib/parties/party-categories";
 import { createParty, fetchParties } from "@/lib/parties/parties-api-client";
 import { formatInr } from "@/lib/sales/create-invoice-form";

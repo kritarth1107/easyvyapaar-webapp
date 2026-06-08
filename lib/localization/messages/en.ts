@@ -219,6 +219,18 @@ export const enMessages: MessageTree = {
     comingSoon: "Coming soon",
     comingSoonHint:
       "This module is planned in the product specification. The shell navigation is ready.",
+    deferred: {
+      godownsTitle: "Godowns & warehouses",
+      godownsDesc: "Multi-godown stock tracking is on our roadmap. For now, manage stock from Items and Stock Summary.",
+      printSettingsTitle: "Print settings",
+      printSettingsDesc: "Thermal printer and invoice print layouts will be configurable here soon.",
+      settingsTitle: "App settings",
+      settingsDesc: "Additional shop preferences and integrations will appear here in a future update.",
+      aiChatTitle: "AI assistant",
+      aiChatDesc: "Your AI business partner for insights and quick answers — launching soon.",
+      whatsappTitle: "WhatsApp integration",
+      whatsappDesc: "Send invoices and payment reminders on WhatsApp — coming in a future release.",
+    },
     inventory: {
       subtitle: "Manage items, stock levels, HSN and pricing for your shop",
       totalItems: "Total items",
@@ -643,7 +655,6 @@ export const enMessages: MessageTree = {
         outstanding: "Outstanding",
       },
       createParty: "Create Party",
-      createComingSoon: "Party creation will be available when the backend is connected.",
       kpiTotal: "Total parties",
       kpiCustomers: "Customers",
       kpiSuppliers: "Suppliers",
@@ -685,7 +696,6 @@ export const enMessages: MessageTree = {
       recordPayment: "Record payment",
       noResults: "No parties match your filters",
       noResultsHint: "Try a different search or clear filters.",
-      demoNote: "Sample data for design preview — backend integration coming soon.",
     },
     partyDetail: {
       loading: "Loading party…",
@@ -775,7 +785,7 @@ export const enMessages: MessageTree = {
       saving: "Saving…",
       saveError: "Failed to save party. Please try again.",
       noOrganisation: "Select an organisation before creating a party.",
-      gstinComingSoon: "GSTIN lookup will be available when the backend is connected.",
+      gstLookupError: "Could not fetch details for this GSTIN. Check the number and try again.",
       sections: {
         classification: "Party type & category",
         general: "General details",

@@ -10,7 +10,7 @@ import {
   normalizeStockAdjustmentListResponse,
   normalizeStockAdjustmentResult,
 } from "@/lib/api/inventory";
-import type { InventoryItem } from "@/lib/dashboard/mock-inventory-items";
+import type { InventoryItem } from "@/lib/types/inventory-ui";
 import type {
   CreateInventoryItemRequest,
   CreateStockAdjustmentRequest,

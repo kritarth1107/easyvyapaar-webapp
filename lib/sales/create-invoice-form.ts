@@ -1,4 +1,4 @@
-import type { InventoryBillPick, InventoryItem } from "@/lib/dashboard/mock-inventory-items";
+import type { InventoryBillPick, InventoryItem } from "@/lib/types/inventory-ui";
 import {
   calcInvoiceLevelTotals,
   type InvoiceDiscountTiming,

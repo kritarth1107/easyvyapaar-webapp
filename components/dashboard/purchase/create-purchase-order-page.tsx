@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useUserMe } from "@/components/providers/user-me-provider";
 import { AddItemsToBillModal } from "@/components/dashboard/sales/add-items-to-bill-modal";
 import { ModernSelect } from "@/components/ui/modern-select";
-import type { InventoryBillPick } from "@/lib/dashboard/mock-inventory-items";
+import type { InventoryBillPick } from "@/lib/types/inventory-ui";
 import { inputClass, inputSmClass, formatInr } from "@/lib/dashboard/page-utils";
 import { createPurchaseOrder, fetchNextPurchaseOrderNumber } from "@/lib/purchase/purchases-api-client";
 import { fetchParties } from "@/lib/parties/parties-api-client";

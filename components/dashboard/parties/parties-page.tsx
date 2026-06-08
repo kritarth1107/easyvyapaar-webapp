@@ -4,12 +4,9 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { PartiesSubnav } from "@/components/dashboard/parties/parties-subnav";
 import { useUserMe } from "@/components/providers/user-me-provider";
-import {
-  formatPartyBalance,
-  type PartiesPageView,
-  type Party,
-  type PartyType,
-} from "@/lib/dashboard/mock-parties";
+import { formatPartyBalance } from "@/lib/parties/format-party-balance";
+import type { PartiesPageView, PartyType } from "@/lib/types/parties-api";
+import type { Party } from "@/lib/types/party-ui";
 import { mapPartySummaryToParty } from "@/lib/parties/map-party-summary";
 import { fetchParties } from "@/lib/parties/parties-api-client";
 import { useParties } from "@/lib/parties/use-parties";
@@ -613,13 +610,12 @@ function PartyRow({
             {viewLabel}
           </Link>
           {party.balance !== 0 && (
-            <button
-              type="button"
-              onClick={() => window.alert("Payment recording coming soon.")}
+            <Link
+              href={`/dashboard/finance/payments/new?partyId=${encodeURIComponent(party.id)}&type=${party.balance > 0 ? "payment_in" : "payment_out"}`}
               className="text-xs font-semibold text-brand-primary-muted hover:text-brand-primary hover:underline"
             >
               {recordLabel}
-            </button>
+            </Link>
           )}
         </div>
       </td>

@@ -7,7 +7,7 @@ import { useUserMe } from "@/components/providers/user-me-provider";
 import {
   type InventoryItem,
   type InventoryItemStatus,
-} from "@/lib/dashboard/mock-inventory-items";
+} from "@/lib/types/inventory-ui";
 import { fetchInventoryCategories, fetchInventoryStockStats } from "@/lib/inventory/inventory-api-client";
 import { useInventoryItems } from "@/lib/inventory/use-inventory-items";
 import type { InventoryStockStats } from "@/lib/types/inventory-api";

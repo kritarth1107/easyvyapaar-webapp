@@ -1,4 +1,6 @@
-import type { PartyType } from "@/lib/dashboard/mock-parties";
+export type PartyType = "customer" | "supplier" | "both";
+
+export type PartiesPageView = "all" | "customers" | "suppliers" | "outstanding";
 
 export type PaginationMeta = {
   page: number;

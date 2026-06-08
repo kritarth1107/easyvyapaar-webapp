@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useUserMe } from "@/components/providers/user-me-provider";
 import { ModernSelect } from "@/components/ui/modern-select";
 import {
@@ -44,7 +44,11 @@ type FormState = {
 export function CreatePaymentPage() {
   const { t } = useTranslation();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { activeOrganisationId } = useUserMe();
+  const initialPartyId = searchParams.get("partyId")?.trim() ?? "";
+  const initialPaymentType =
+    searchParams.get("type") === "payment_out" ? "payment_out" : "payment_in";
 
   const [partySearch, setPartySearch] = useState("");
   const [partyOptions, setPartyOptions] = useState<PartySummary[]>([]);
@@ -102,8 +106,8 @@ export function CreatePaymentPage() {
   );
 
   useEffect(() => {
-    if (orgId) void initForm("payment_in");
-  }, [orgId, initForm]);
+    if (orgId) void initForm(initialPaymentType);
+  }, [orgId, initForm, initialPaymentType]);
 
   const changePaymentType = useCallback(
     async (paymentType: FinancePaymentType) => {
@@ -141,6 +145,11 @@ export function CreatePaymentPage() {
     },
     [orgId, form, t],
   );
+
+  useEffect(() => {
+    if (!orgId || !initialPartyId || !form) return;
+    void selectParty(initialPartyId);
+  }, [orgId, initialPartyId, form, selectParty]);
 
   const handleSave = async () => {
     if (!orgId || !form || !selectedParty) return;

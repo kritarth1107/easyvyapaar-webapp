@@ -1,4 +1,4 @@
-import type { InventoryBillPick } from "@/lib/dashboard/mock-inventory-items";
+import type { InventoryBillPick } from "@/lib/types/inventory-ui";
 import type {
   CreateDeliveryChallanRequest,
   DeliveryChallanStatus,

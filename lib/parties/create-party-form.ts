@@ -1,4 +1,4 @@
-import type { PartyType } from "@/lib/dashboard/mock-parties";
+import type { PartyType } from "@/lib/types/parties-api";
 import { type PartyCustomFieldRow } from "@/lib/parties/party-custom-field-types";
 
 export type OpeningBalanceType = "to_collect" | "to_pay";

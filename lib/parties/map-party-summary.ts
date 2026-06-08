@@ -1,4 +1,4 @@
-import type { Party } from "@/lib/dashboard/mock-parties";
+import type { Party } from "@/lib/types/party-ui";
 import type { PartySummary } from "@/lib/types/parties-api";
 
 export function mapPartySummaryToParty(summary: PartySummary): Party {

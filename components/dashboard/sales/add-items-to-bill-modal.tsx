@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { ModernSelect } from "@/components/ui/modern-select";
-import type { InventoryBillPick, InventoryItem } from "@/lib/dashboard/mock-inventory-items";
+import type { InventoryBillPick, InventoryItem } from "@/lib/types/inventory-ui";
 import { fetchInventoryItems } from "@/lib/inventory/inventory-api-client";
 import { fetchParties } from "@/lib/parties/parties-api-client";
 import { formatInr } from "@/lib/sales/create-invoice-form";

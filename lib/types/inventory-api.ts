@@ -40,6 +40,8 @@ export type InventoryItemSummary = {
   salesTaxMode: "with_tax" | "without_tax";
   serialised: boolean;
   status: InventoryItemStockStatus;
+  lowStockWarning?: boolean;
+  lowStockQty?: number;
   availableSerialNumbers?: string[];
 };
 
