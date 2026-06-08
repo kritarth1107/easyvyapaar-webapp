@@ -2,10 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   getGroupActive,
-  isNavActive,
   useDashboardNav,
   type DashboardNavGroup,
   type DashboardNavLink,
@@ -36,7 +35,7 @@ function Chevron({ open }: { open: boolean }) {
 
 function NavItemLink({
   item,
-  pathname,
+  activeHref,
   nested,
   collapsed,
   onNavigate,
@@ -44,14 +43,14 @@ function NavItemLink({
   aiBadgeLabel,
 }: {
   item: DashboardNavLink;
-  pathname: string;
+  activeHref: string | null;
   nested?: boolean;
   collapsed?: boolean;
   onNavigate?: () => void;
   liveLabel?: string;
   aiBadgeLabel?: string;
 }) {
-  const active = isNavActive(pathname, item.href);
+  const active = activeHref === item.href;
   const iconId = item.icon ?? "document";
 
   if (item.accent === "ai") {
@@ -189,7 +188,7 @@ function NavItemLink({
 
 function NavGroupSection({
   group,
-  pathname,
+  activeHref,
   open,
   collapsed,
   flyoutOpen,
@@ -198,7 +197,7 @@ function NavGroupSection({
   onNavigate,
 }: {
   group: DashboardNavGroup;
-  pathname: string;
+  activeHref: string | null;
   open: boolean;
   collapsed?: boolean;
   flyoutOpen?: boolean;
@@ -206,7 +205,7 @@ function NavGroupSection({
   onFlyoutToggle?: () => void;
   onNavigate?: () => void;
 }) {
-  const groupActive = getGroupActive(pathname, group);
+  const groupActive = group.items.some((item) => item.href === activeHref);
 
   if (collapsed) {
     return (
@@ -247,7 +246,7 @@ function NavGroupSection({
               <NavItemLink
                 key={item.id}
                 item={item}
-                pathname={pathname}
+                activeHref={activeHref}
                 nested
                 onNavigate={() => {
                   onNavigate?.();
@@ -290,7 +289,7 @@ function NavGroupSection({
         <div className="overflow-hidden">
           <div className="relative ml-6 mr-2 border-l border-slate-200/90 py-1 pl-2">
             {group.items.map((item) => (
-              <NavItemLink key={item.id} item={item} pathname={pathname} nested onNavigate={onNavigate} />
+              <NavItemLink key={item.id} item={item} activeHref={activeHref} nested onNavigate={onNavigate} />
             ))}
           </div>
         </div>
@@ -310,11 +309,17 @@ function SidebarPanel({
 }) {
   const pathname = usePathname();
   const { t } = useTranslation();
-  const { top, groups, bottom, settingsGroup } = useDashboardNav();
+  const { top, groups, bottom, settingsGroup, getActiveNavHref } = useDashboardNav();
+  const activeHref = getActiveNavHref(pathname);
+
+  const allGroups = useMemo(
+    () => (settingsGroup ? [...groups, settingsGroup] : groups),
+    [groups, settingsGroup],
+  );
 
   const getInitialOpenGroups = (path: string) => {
     const open: Record<string, boolean> = {};
-    for (const group of [...groups, settingsGroup]) {
+    for (const group of allGroups) {
       open[group.id] = group.defaultOpen === true || getGroupActive(path, group);
     }
     return open;
@@ -341,14 +346,14 @@ function SidebarPanel({
   useEffect(() => {
     setOpenGroups((prev) => {
       const next = { ...prev };
-      for (const group of [...groups, settingsGroup]) {
+      for (const group of allGroups) {
         if (getGroupActive(pathname, group)) {
           next[group.id] = true;
         }
       }
       return next;
     });
-  }, [pathname, groups, settingsGroup]);
+  }, [pathname, allGroups]);
 
   const toggleGroup = (id: string) => {
     setOpenGroups((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -377,7 +382,7 @@ function SidebarPanel({
             <div key={item.id} className={!collapsed && item.accent === "ai" ? "mt-3" : undefined}>
               <NavItemLink
                 item={item}
-                pathname={pathname}
+                activeHref={activeHref}
                 collapsed={collapsed}
                 onNavigate={onClose}
                 aiBadgeLabel={
@@ -398,7 +403,7 @@ function SidebarPanel({
           <NavGroupSection
             key={group.id}
             group={group}
-            pathname={pathname}
+            activeHref={activeHref}
             collapsed={collapsed}
             open={openGroups[group.id] ?? false}
             flyoutOpen={flyoutGroupId === group.id}
@@ -418,24 +423,26 @@ function SidebarPanel({
           <NavItemLink
             key={item.id}
             item={item}
-            pathname={pathname}
+            activeHref={activeHref}
             collapsed={collapsed}
             onNavigate={onClose}
           />
         ))}
 
-        <NavGroupSection
-          group={settingsGroup}
-          pathname={pathname}
-          collapsed={collapsed}
-          open={openGroups[settingsGroup.id] ?? false}
-          flyoutOpen={flyoutGroupId === settingsGroup.id}
-          onToggle={() => toggleGroup(settingsGroup.id)}
-          onFlyoutToggle={() =>
-            setFlyoutGroupId((prev) => (prev === settingsGroup.id ? null : settingsGroup.id))
-          }
-          onNavigate={onClose}
-        />
+        {settingsGroup ? (
+          <NavGroupSection
+            group={settingsGroup}
+            activeHref={activeHref}
+            collapsed={collapsed}
+            open={openGroups[settingsGroup.id] ?? false}
+            flyoutOpen={flyoutGroupId === settingsGroup.id}
+            onToggle={() => toggleGroup(settingsGroup.id)}
+            onFlyoutToggle={() =>
+              setFlyoutGroupId((prev) => (prev === settingsGroup.id ? null : settingsGroup.id))
+            }
+            onNavigate={onClose}
+          />
+        ) : null}
       </nav>
 
       {!collapsed && (

@@ -12,6 +12,7 @@ import {
   getDashboardSectionSlug,
   getGroupActive,
   isNavActive,
+  resolveActiveNavHref,
 } from "./navigation-utils";
 import { enMessages } from "@/lib/localization/messages/en";
 
@@ -73,11 +74,14 @@ export function getAllDashboardSectionSlugs(): string[] {
 }
 
 export function getDashboardPageTitle(pathname: string): string {
-  const link = flattenDashboardNavLinks()
-    .filter((item) => isNavActive(pathname, item.href))
-    .sort((a, b) => b.href.length - a.href.length)[0];
+  const links = flattenDashboardNavLinks();
+  const activeHref = resolveActiveNavHref(
+    pathname,
+    links.map((item) => item.href),
+  );
+  const link = activeHref ? links.find((item) => item.href === activeHref) : undefined;
   if (link) return link.label;
   return labelFromKey("home", "item");
 }
 
-export { getDashboardSectionSlug, getGroupActive, isNavActive };
+export { getDashboardSectionSlug, getGroupActive, isNavActive, resolveActiveNavHref };

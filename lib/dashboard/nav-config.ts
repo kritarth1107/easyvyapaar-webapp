@@ -125,6 +125,7 @@ export const DASHBOARD_SETTINGS_GROUP: NavGroupConfig = {
     },
     { id: "invoice-themes", href: "/dashboard/sales/invoices/settings", icon: "document" },
     { id: "print-settings", href: "/dashboard/settings/print-settings", icon: "settings" },
-    { id: "settings", href: "/dashboard/settings/settings", icon: "settings" },
+    { id: "team", href: "/dashboard/settings/team", icon: "users" },
+    { id: "settings", href: "/dashboard/settings", icon: "settings" },
   ],
 };

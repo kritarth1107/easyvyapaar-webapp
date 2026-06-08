@@ -46,6 +46,7 @@ const NAV_ITEM_KEYS: Record<string, TranslationKey> = {
   "business-bank-accounts": "dashboard.nav.businessBankAccounts",
   "invoice-themes": "dashboard.nav.invoiceThemes",
   "print-settings": "dashboard.nav.printSettings",
+  team: "dashboard.nav.team",
   settings: "dashboard.nav.appSettings",
 };
 

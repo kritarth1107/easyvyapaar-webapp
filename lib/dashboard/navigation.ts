@@ -19,6 +19,7 @@ export {
   getDashboardSectionSlug,
   getGroupActive,
   isNavActive,
+  resolveActiveNavHref,
 } from "./navigation-legacy";
 
 export { useDashboardNav } from "./use-dashboard-nav";

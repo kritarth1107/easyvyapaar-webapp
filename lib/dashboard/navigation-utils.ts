@@ -10,6 +10,15 @@ export function isNavActive(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+/** Pick the single best-matching href (longest prefix wins). Avoids parent+child both showing active. */
+export function resolveActiveNavHref(pathname: string, hrefs: readonly string[]): string | null {
+  const match = hrefs
+    .filter((href) => isNavActive(pathname, href))
+    .sort((a, b) => b.length - a.length)[0];
+  return match ?? null;
+}
+
 export function getGroupActive(pathname: string, group: DashboardNavGroup): boolean {
-  return group.items.some((item) => isNavActive(pathname, item.href));
+  const hrefs = group.items.map((item) => item.href);
+  return resolveActiveNavHref(pathname, hrefs) !== null;
 }

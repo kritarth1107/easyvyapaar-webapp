@@ -7,7 +7,9 @@ import {
   getSidebarCollapsedPreference,
   setSidebarCollapsedPreference,
 } from "@/lib/dashboard/sidebar-preference";
+import { OrganisationPermissionsProvider } from "@/components/providers/organisation-permissions-provider";
 import { UserMeProvider } from "@/components/providers/user-me-provider";
+import { PendingInvitesBanner } from "@/components/dashboard/pending-invites-banner";
 import { useIsMobileOrTablet } from "@/lib/hooks/use-is-mobile-or-tablet";
 import { BusinessSwitchModal } from "./business-switch";
 import { DashboardSidebar } from "./dashboard-sidebar";
@@ -72,43 +74,51 @@ export function DashboardShell({ children, hasSession = false }: DashboardShellP
   if (isPosFullscreen) {
     return (
       <UserMeProvider>
-        <BusinessSwitchModal
-          open={businessSwitchOpen}
-          onClose={() => setBusinessSwitchOpen(false)}
-        />
-        <ShopSwitchOverlay />
-        <div className="h-screen overflow-hidden">{children}</div>
+        <OrganisationPermissionsProvider>
+          <BusinessSwitchModal
+            open={businessSwitchOpen}
+            onClose={() => setBusinessSwitchOpen(false)}
+          />
+          <ShopSwitchOverlay />
+          <div className="h-screen overflow-hidden">{children}</div>
+        </OrganisationPermissionsProvider>
       </UserMeProvider>
     );
   }
 
   return (
     <UserMeProvider>
-      <BusinessSwitchModal
-        open={businessSwitchOpen}
-        onClose={() => setBusinessSwitchOpen(false)}
-      />
-      <div className="flex h-screen min-h-screen overflow-hidden bg-brand-surface">
-        <DashboardSidebar
-          collapsed={sidebarCollapsed}
-          mobileOpen={mobileNavOpen}
-          onClose={() => setMobileNavOpen(false)}
-          onOpenBusinessSwitch={openBusinessSwitch}
+      <OrganisationPermissionsProvider>
+        <BusinessSwitchModal
+          open={businessSwitchOpen}
+          onClose={() => setBusinessSwitchOpen(false)}
         />
-
-        <div className="relative flex min-w-0 flex-1 flex-col">
-          <ShopSwitchOverlay />
-          <DashboardTopbar
-            onMenuClick={() => setMobileNavOpen(true)}
+        <div className="flex h-screen min-h-screen overflow-hidden bg-brand-surface">
+          <DashboardSidebar
+            collapsed={sidebarCollapsed}
+            mobileOpen={mobileNavOpen}
+            onClose={() => setMobileNavOpen(false)}
             onOpenBusinessSwitch={openBusinessSwitch}
-            sidebarCollapsed={sidebarCollapsed}
-            onToggleSidebar={toggleSidebarCollapsed}
           />
-          <main ref={mainScrollRef} className="dashboard-content scrollbar-brand flex-1 overflow-y-auto text-brand-primary">
-            {children}
-          </main>
+
+          <div className="relative flex min-w-0 flex-1 flex-col">
+            <ShopSwitchOverlay />
+            <DashboardTopbar
+              onMenuClick={() => setMobileNavOpen(true)}
+              onOpenBusinessSwitch={openBusinessSwitch}
+              sidebarCollapsed={sidebarCollapsed}
+              onToggleSidebar={toggleSidebarCollapsed}
+            />
+            <main
+              ref={mainScrollRef}
+              className="dashboard-content scrollbar-brand flex-1 overflow-y-auto text-brand-primary"
+            >
+              <PendingInvitesBanner />
+              {children}
+            </main>
+          </div>
         </div>
-      </div>
+      </OrganisationPermissionsProvider>
     </UserMeProvider>
   );
 }

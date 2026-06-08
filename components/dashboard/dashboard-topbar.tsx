@@ -87,8 +87,8 @@ export function DashboardTopbar({
   const pageTitle = getPageTitle(pathname);
   const inventoryCrumb = getInventoryBreadcrumb(pathname);
   const salesCrumb = getSalesBreadcrumb(pathname);
-  const salesInvoiceActive = isNavActive(pathname, salesInvoice.href);
-  const posActive = isNavActive(pathname, pos.href);
+  const salesInvoiceActive = salesInvoice ? isNavActive(pathname, salesInvoice.href) : false;
+  const posActive = pos ? isNavActive(pathname, pos.href) : false;
   const { t } = useTranslation();
   const { user } = useUserMe();
   const canOpenBusinessModal = (user?.organisations.length ?? 0) >= 1;
@@ -183,6 +183,7 @@ export function DashboardTopbar({
 
       {/* Right — Sales Invoice, POS, alerts, user */}
       <div className="ml-auto flex shrink-0 items-center gap-2">
+        {salesInvoice ? (
         <Link
           href={salesInvoice.href}
           className={`inline-flex h-10 items-center gap-2 rounded-xl bg-gradient-to-r from-brand-primary to-brand-primary-light px-3 text-sm font-semibold text-white shadow-[0_2px_10px_-4px_rgba(3,31,73,0.45)] transition-all hover:brightness-105 sm:px-4 ${
@@ -194,7 +195,9 @@ export function DashboardTopbar({
           </span>
           <span className="hidden sm:inline">{salesInvoice.label}</span>
         </Link>
+        ) : null}
 
+        {pos ? (
         <Link
           href={pos.href}
           className={`inline-flex h-10 items-center gap-2 rounded-xl bg-gradient-to-r from-brand-orange-2 to-brand-orange-1 px-3 text-sm font-semibold text-white shadow-[0_2px_10px_-4px_rgba(246,62,22,0.45)] transition-all hover:brightness-105 sm:px-4 ${
@@ -209,6 +212,7 @@ export function DashboardTopbar({
             {t("dashboard.posLive")}
           </span>
         </Link>
+        ) : null}
 
         <NotificationsPopover />
 
