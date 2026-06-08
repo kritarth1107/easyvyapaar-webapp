@@ -47,3 +47,57 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Failed to load profile" }, { status: 500 });
   }
 }
+
+export async function PATCH(request: Request) {
+  try {
+    const apiBaseUrl = getApiBaseUrl();
+    if (!apiBaseUrl) {
+      return NextResponse.json(
+        { error: "Authentication service is not configured" },
+        { status: 500 },
+      );
+    }
+
+    const { searchParams } = new URL(request.url);
+    const organisationId = searchParams.get("organisationId")?.trim() || undefined;
+
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    }
+
+    const headers = getHeadersFromRequest(request);
+    const backendUrl = new URL("user/me", apiBaseUrl);
+    if (organisationId) {
+      backendUrl.searchParams.set("organisationId", organisationId);
+    }
+
+    let backendResponse: Response;
+    try {
+      backendResponse = await fetch(backendUrl.toString(), {
+        method: "PATCH",
+        headers: {
+          ...headers,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+        cache: "no-store",
+      });
+    } catch (error) {
+      console.error("Update me backend request failed:", error);
+      return NextResponse.json(
+        { error: "Unable to reach authentication service" },
+        { status: 502 },
+      );
+    }
+
+    const responseBody = await parseBackendBody(backendResponse);
+    const normalized = normalizeUserMeResponse(responseBody, organisationId);
+    return NextResponse.json(normalized, { status: backendResponse.status });
+  } catch (error) {
+    console.error("Update me error:", error);
+    return NextResponse.json({ error: "Failed to update profile" }, { status: 500 });
+  }
+}

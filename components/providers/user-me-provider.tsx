@@ -32,7 +32,7 @@ type UserMeContextValue = {
   isSwitchingShop: boolean;
   isWorkspaceLoading: boolean;
   error: string | null;
-  refresh: () => Promise<void>;
+  refresh: (organisationId?: string | null, options?: { silent?: boolean }) => Promise<void>;
   setActiveOrganisation: (organisationId: string) => void;
   switchActiveOrganisation: (organisationId: string) => Promise<void>;
 };
