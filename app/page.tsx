@@ -47,6 +47,21 @@ export default function Home() {
           </Link>
         </div>
       </main>
+
+      <footer className="relative border-t border-white/10 px-6 py-6 text-center text-xs text-white/50">
+        <nav className="flex flex-wrap items-center justify-center gap-4">
+          <Link href="/legal/privacy-policy" className="hover:text-white/80">
+            Privacy Policy
+          </Link>
+          <Link href="/legal/terms-of-service" className="hover:text-white/80">
+            Terms of Service
+          </Link>
+          <Link href="/legal/data-deletion-instructions" className="hover:text-white/80">
+            Data Deletion
+          </Link>
+        </nav>
+        <p className="mt-3">© {new Date().getFullYear()} ZEROKNOW TECHNOLOGIES PRIVATE LIMITED</p>
+      </footer>
     </div>
   );
 }
