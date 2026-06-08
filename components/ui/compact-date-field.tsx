@@ -26,7 +26,7 @@ export function CompactDateField({ value, onChange, label, className = "" }: Com
           {label}
         </span>
       ) : null}
-      <span className="relative inline-flex h-9 w-[10.75rem] items-center gap-2 rounded-lg border border-slate-200/90 bg-white px-2.5 text-sm text-brand-primary shadow-sm">
+      <span className="relative inline-flex h-9 w-[10.75rem] items-center gap-2 rounded-sm border border-slate-200/90 bg-white px-2.5 text-sm text-brand-primary shadow-sm">
         <span className="pointer-events-none flex-1 truncate tabular-nums">{formatDateIndian(value)}</span>
         <CalendarIcon />
         <input

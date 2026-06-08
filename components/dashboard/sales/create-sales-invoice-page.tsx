@@ -70,11 +70,11 @@ function formatMessage(template: string, params?: Record<string, string | number
 }
 
 const inputSmClass =
-  "h-9 w-full rounded-md border border-slate-200/90 bg-white px-2.5 text-sm text-brand-primary outline-none focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
+  "h-9 w-full rounded-sm border border-slate-200/90 bg-white px-2.5 text-sm text-brand-primary outline-none focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
 const textareaClass =
-  "w-full rounded-md border border-slate-200/90 bg-white px-3 py-2 text-sm text-brand-primary outline-none placeholder:text-brand-primary-muted/60 focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
+  "w-full rounded-sm border border-slate-200/90 bg-white px-3 py-2 text-sm text-brand-primary outline-none placeholder:text-brand-primary-muted/60 focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
 const inputGroupClass =
-  "flex h-9 overflow-hidden rounded-md border border-slate-200/90 bg-white focus-within:border-brand-orange-1/50 focus-within:ring-2 focus-within:ring-brand-orange-1/15";
+  "flex h-9 overflow-hidden rounded-sm border border-slate-200/90 bg-white focus-within:border-brand-orange-1/50 focus-within:ring-2 focus-within:ring-brand-orange-1/15";
 const inputGroupInnerClass =
   "h-full min-w-0 flex-1 border-0 bg-transparent px-2.5 text-sm text-brand-primary outline-none tabular-nums placeholder:text-brand-primary-muted/60";
 
@@ -584,7 +584,7 @@ export function CreateSalesInvoicePage() {
         <div className="flex min-w-0 items-center gap-3">
           <Link
             href="/dashboard/sales/invoices"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-slate-200/90 text-brand-primary transition-colors hover:bg-slate-50"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm border border-slate-200/90 text-brand-primary transition-colors hover:bg-slate-50"
             aria-label={t("common.back")}
           >
             <BackIcon />
@@ -598,14 +598,14 @@ export function CreateSalesInvoicePage() {
             type="button"
             disabled={form.lineItems.length === 0}
             onClick={openDraftPreview}
-            className="hidden h-10 items-center rounded-md border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 sm:inline-flex"
+            className="hidden h-10 items-center rounded-sm border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 sm:inline-flex"
           >
             {t("dashboard.salesInvoices.create.previewInvoice")}
           </button>
           <button
             type="button"
             onClick={() => setSettingsOpen(true)}
-            className="relative inline-flex h-10 items-center gap-2 rounded-md border border-slate-200/90 bg-white px-3 text-sm font-semibold text-brand-primary hover:bg-slate-50"
+            className="relative inline-flex h-10 items-center gap-2 rounded-sm border border-slate-200/90 bg-white px-3 text-sm font-semibold text-brand-primary hover:bg-slate-50"
           >
             <SettingsIcon />
             <span className="hidden sm:inline">{t("dashboard.salesInvoices.create.settings")}</span>
@@ -615,7 +615,7 @@ export function CreateSalesInvoicePage() {
             type="button"
             disabled={!canSave}
             onClick={() => void validateAndSave(true)}
-            className="hidden h-10 items-center rounded-md border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 sm:inline-flex"
+            className="hidden h-10 items-center rounded-sm border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 sm:inline-flex"
           >
             {t("dashboard.salesInvoices.create.saveAndNew")}
           </button>
@@ -631,7 +631,7 @@ export function CreateSalesInvoicePage() {
       </div>
 
       {error && (
-        <div className="mx-4 mt-3 rounded-md border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-800 lg:mx-6">
+        <div className="mx-4 mt-3 rounded-sm border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-800 lg:mx-6">
           {error}
         </div>
       )}
@@ -806,7 +806,7 @@ export function CreateSalesInvoicePage() {
                         </button>
                         <button
                           type="button"
-                          className="inline-flex h-10 shrink-0 items-center gap-2 rounded-md border border-slate-200/90 bg-white px-4 text-sm font-medium text-brand-primary hover:bg-slate-50"
+                          className="inline-flex h-10 shrink-0 items-center gap-2 rounded-sm border border-slate-200/90 bg-white px-4 text-sm font-medium text-brand-primary hover:bg-slate-50"
                         >
                           <BarcodeIcon />
                           {t("dashboard.salesInvoices.create.scanBarcode")}
@@ -1049,7 +1049,7 @@ export function CreateSalesInvoicePage() {
           </div>
 
           <div className="min-w-0">
-            <div className="overflow-hidden rounded-md border border-slate-200/90 bg-white">
+            <div className="overflow-hidden rounded-sm border border-slate-200/90 bg-white">
               <div className="px-4 pt-3">
                 {form.additionalCharges.length === 0 ? (
                   <button
@@ -1309,7 +1309,7 @@ export function CreateSalesInvoicePage() {
           <button
             type="button"
             onClick={() => setPreviewOpen(false)}
-            className="inline-flex h-10 items-center rounded-md border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50"
+            className="inline-flex h-10 items-center rounded-sm border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50"
           >
             {t("common.close")}
           </button>

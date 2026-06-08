@@ -60,7 +60,7 @@ export function ExpensesPage() {
         <StatCard label={t("dashboard.expenses.totalCount")} value={String(summary.totalCount)} />
       </div>
       <div className="overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-sm">
-        <div className="border-b p-4"><input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("dashboard.expenses.searchPlaceholder")} className="h-10 w-full rounded-md border px-3 text-sm" /></div>
+        <div className="border-b p-4"><input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("dashboard.expenses.searchPlaceholder")} className="h-10 w-full rounded-sm border px-3 text-sm" /></div>
         <table className="w-full text-sm">
           <thead><tr className="border-b bg-brand-surface/50 text-[11px] uppercase"><th className="px-4 py-3">{t("dashboard.expenses.colVoucher")}</th><th className="px-4 py-3">{t("dashboard.expenses.colDate")}</th><th className="px-4 py-3">{t("dashboard.expenses.colCategory")}</th><th className="px-4 py-3">{t("dashboard.expenses.colDescription")}</th><th className="px-4 py-3 text-right">{t("dashboard.expenses.colAmount")}</th></tr></thead>
           <tbody>

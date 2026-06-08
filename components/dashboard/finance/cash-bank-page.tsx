@@ -62,7 +62,7 @@ export function CashBankPage() {
       {summary && summary.accounts.length > 0 && (
         <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {summary.accounts.map((account) => (
-            <div key={account.accountId} className="rounded-md border border-slate-200/90 bg-white p-4">
+            <div key={account.accountId} className="rounded-sm border border-slate-200/90 bg-white p-4">
               <p className="text-[11px] font-semibold uppercase text-brand-primary-muted">{account.accountType === "cash" ? t("dashboard.cashBank.cash") : t("dashboard.cashBank.bank")}</p>
               <p className="mt-1 font-semibold text-brand-primary">{account.name}</p>
               <p className="mt-2 text-lg font-bold tabular-nums">{formatInr(account.balance)}</p>

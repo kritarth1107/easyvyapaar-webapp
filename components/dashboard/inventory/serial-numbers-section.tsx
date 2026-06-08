@@ -12,7 +12,7 @@ import { UnitSelect } from "@/components/dashboard/inventory/unit-select";
 import { useTranslation } from "@/lib/localization";
 
 const inputClass =
-  "h-10 w-full rounded-md border border-slate-200/90 bg-white px-3 text-sm text-brand-primary outline-none transition-all placeholder:text-brand-primary-muted/60 focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
+  "h-10 w-full rounded-sm border border-slate-200/90 bg-white px-3 text-sm text-brand-primary outline-none transition-all placeholder:text-brand-primary-muted/60 focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
 
 type SerialNumbersSectionProps = {
   form: CreateItemFormState;
@@ -163,7 +163,7 @@ export function SerialNumbersSection({
           </p>
           <button
             type="button"
-            className="inline-flex h-9 items-center gap-2 rounded-md border border-slate-200/90 bg-white px-3 text-xs font-semibold text-brand-primary transition-colors hover:border-brand-orange-1/40 hover:bg-brand-surface-warm"
+            className="inline-flex h-9 items-center gap-2 rounded-sm border border-slate-200/90 bg-white px-3 text-xs font-semibold text-brand-primary transition-colors hover:border-brand-orange-1/40 hover:bg-brand-surface-warm"
             onClick={() => {
               /* Scanner integration — placeholder */
               const firstEmpty = form.serialNumbers.find((r) => !r.serialNumber.trim());

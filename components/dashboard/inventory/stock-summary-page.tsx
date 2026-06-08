@@ -80,7 +80,7 @@ function SectionCard({
 }) {
   return (
     <section
-      className={`rounded-md border border-slate-200/90 bg-white p-4 lg:p-5 ${className}`}
+      className={`rounded-sm border border-slate-200/90 bg-white p-4 lg:p-5 ${className}`}
     >
       <h3 className="text-sm font-bold text-brand-primary">{title}</h3>
       <div className="mt-4">{children}</div>
@@ -266,7 +266,7 @@ export function StockSummaryPage() {
         </p>
       )}
       {error && (
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-md border border-red-200/80 bg-red-50/60 px-4 py-3 text-sm text-red-800">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-sm border border-red-200/80 bg-red-50/60 px-4 py-3 text-sm text-red-800">
           <p>{t("dashboard.inventory.loadError")}</p>
           <button
             type="button"

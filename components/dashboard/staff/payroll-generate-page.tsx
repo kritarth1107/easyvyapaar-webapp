@@ -202,7 +202,7 @@ export function PayrollGeneratePage() {
             type="button"
             disabled={loading}
             onClick={() => void loadPreview()}
-            className="h-10 rounded-md border border-slate-200/90 px-4 text-sm font-semibold text-brand-primary"
+            className="h-10 rounded-sm border border-slate-200/90 px-4 text-sm font-semibold text-brand-primary"
           >
             {t("dashboard.staff.payroll.refreshPreview")}
           </button>
@@ -210,7 +210,7 @@ export function PayrollGeneratePage() {
       </div>
 
       {error ? (
-        <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="mb-4 rounded-sm border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </div>
       ) : null}
@@ -314,7 +314,7 @@ export function PayrollGeneratePage() {
                         </label>
                         <button
                           type="button"
-                          className="h-10 rounded-md border border-slate-200/90 px-3 text-sm font-semibold text-brand-primary"
+                          className="h-10 rounded-sm border border-slate-200/90 px-3 text-sm font-semibold text-brand-primary"
                           onClick={() =>
                             void reloadWithCustomFrom(
                               row.staffId,
@@ -429,7 +429,7 @@ export function PayrollGeneratePage() {
         <div className="flex gap-2">
           <Link
             href="/dashboard/staff-payroll/payroll"
-            className="rounded-md border border-slate-200/90 px-4 py-2 text-sm font-semibold text-brand-primary"
+            className="rounded-sm border border-slate-200/90 px-4 py-2 text-sm font-semibold text-brand-primary"
           >
             {t("common.cancel")}
           </Link>

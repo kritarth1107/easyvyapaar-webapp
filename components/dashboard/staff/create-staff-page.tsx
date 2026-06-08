@@ -18,10 +18,10 @@ import { createStaff } from "@/lib/staff/staff-api-client";
 import { useTranslation } from "@/lib/localization";
 
 const inputClass =
-  "h-10 w-full rounded-md border border-slate-200/90 bg-white px-3 text-sm text-brand-primary outline-none transition-all placeholder:text-brand-primary-muted/60 focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
+  "h-10 w-full rounded-sm border border-slate-200/90 bg-white px-3 text-sm text-brand-primary outline-none transition-all placeholder:text-brand-primary-muted/60 focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
 
 const textareaClass =
-  "w-full rounded-md border border-slate-200/90 bg-white px-3 py-2.5 text-sm text-brand-primary outline-none transition-all placeholder:text-brand-primary-muted/60 focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
+  "w-full rounded-sm border border-slate-200/90 bg-white px-3 py-2.5 text-sm text-brand-primary outline-none transition-all placeholder:text-brand-primary-muted/60 focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
 
 function FieldLabel({ children, required }: { children: React.ReactNode; required?: boolean }) {
   return (
@@ -132,7 +132,7 @@ export function CreateStaffPage() {
 
       <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 lg:px-6">
         {error ? (
-          <div className="mb-4 rounded-md border border-red-200/90 bg-red-50 px-4 py-3 text-sm text-red-900">
+          <div className="mb-4 rounded-sm border border-red-200/90 bg-red-50 px-4 py-3 text-sm text-red-900">
             {error}
           </div>
         ) : null}

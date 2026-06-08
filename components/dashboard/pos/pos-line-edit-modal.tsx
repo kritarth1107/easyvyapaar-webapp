@@ -17,7 +17,7 @@ type PosLineEditModalProps = {
 };
 
 const inputClass =
-  "h-11 w-full rounded-md border border-slate-200/90 bg-white px-3 text-base text-brand-primary outline-none focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
+  "h-11 w-full rounded-sm border border-slate-200/90 bg-white px-3 text-base text-brand-primary outline-none focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
 
 export function PosLineEditModal({
   open,
@@ -68,7 +68,7 @@ export function PosLineEditModal({
       <button
         type="button"
         onClick={handleSave}
-        className="flex h-11 w-full items-center justify-center rounded-lg bg-brand-orange-1 text-sm font-bold text-white hover:bg-brand-orange-1/90"
+        className="flex h-11 w-full items-center justify-center rounded-sm bg-brand-orange-1 text-sm font-bold text-white hover:bg-brand-orange-1/90"
       >
         {t("common.save")}
         <ShortcutBadge keys="F7" />
@@ -76,7 +76,7 @@ export function PosLineEditModal({
       <button
         type="button"
         onClick={onClose}
-        className="flex h-11 w-full items-center justify-center rounded-lg border border-slate-200/90 text-sm font-semibold text-brand-primary hover:bg-slate-50"
+        className="flex h-11 w-full items-center justify-center rounded-sm border border-slate-200/90 text-sm font-semibold text-brand-primary hover:bg-slate-50"
       >
         {t("common.cancel")}
         <ShortcutBadge keys="ESC" />

@@ -160,7 +160,7 @@ export function ProfitLossReportView({ report }: { report: ProfitLossReport }) {
         <button
           type="button"
           onClick={() => exportProfitLossCsv(report)}
-          className="h-9 rounded-lg border border-slate-200/90 px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50"
+          className="h-9 rounded-sm border border-slate-200/90 px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50"
         >
           {t("dashboard.reports.profitLoss.exportCsv")}
         </button>

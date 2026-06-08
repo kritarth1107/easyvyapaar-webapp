@@ -26,7 +26,7 @@ export function DeferredFeaturePage({
         <p className="mt-2 text-sm leading-relaxed text-slate-600">{t(descriptionKey)}</p>
         <Link
           href={backHref}
-          className="mt-6 inline-flex h-10 items-center justify-center rounded-lg bg-brand-primary px-5 text-sm font-semibold text-white hover:opacity-95"
+          className="mt-6 inline-flex h-10 items-center justify-center rounded-sm bg-brand-primary px-5 text-sm font-semibold text-white hover:opacity-95"
         >
           {t("common.back")}
         </Link>

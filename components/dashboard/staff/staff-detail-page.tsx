@@ -40,7 +40,7 @@ import type {
 import { useTranslation } from "@/lib/localization";
 
 const textareaClass =
-  "w-full rounded-md border border-slate-200/90 bg-white px-3 py-2.5 text-sm text-brand-primary outline-none transition-all placeholder:text-brand-primary-muted/60 focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
+  "w-full rounded-sm border border-slate-200/90 bg-white px-3 py-2.5 text-sm text-brand-primary outline-none transition-all placeholder:text-brand-primary-muted/60 focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
 
 function FieldLabel({ children, required }: { children: React.ReactNode; required?: boolean }) {
   return (
@@ -409,7 +409,7 @@ export function StaffDetailPage() {
               setNewSalary("");
               setSalaryModalOpen(true);
             }}
-            className="rounded-md border border-slate-200/90 px-4 py-2 text-sm font-semibold text-brand-primary hover:bg-slate-50"
+            className="rounded-sm border border-slate-200/90 px-4 py-2 text-sm font-semibold text-brand-primary hover:bg-slate-50"
           >
             {t("dashboard.staff.view.changeSalary")}
           </button>
@@ -456,7 +456,7 @@ export function StaffDetailPage() {
           <button
             type="button"
             onClick={() => setPaymentModalOpen(true)}
-            className="rounded-md border border-slate-200/90 px-4 py-2 text-sm font-semibold text-brand-primary hover:bg-slate-50"
+            className="rounded-sm border border-slate-200/90 px-4 py-2 text-sm font-semibold text-brand-primary hover:bg-slate-50"
           >
             {t("dashboard.staff.view.addPayment")}
           </button>

@@ -107,7 +107,7 @@ function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-md border border-slate-200/90 bg-white p-4 lg:p-5">
+    <section className="rounded-sm border border-slate-200/90 bg-white p-4 lg:p-5">
       <h2 className="text-sm font-bold text-brand-primary">{title}</h2>
       <div className="mt-4">{children}</div>
     </section>
@@ -215,11 +215,11 @@ export function InventoryItemDetailPage({ itemId }: InventoryItemDetailPageProps
       {loading || isWorkspaceLoading ? (
         <p className="text-sm text-brand-primary-muted">{t("dashboard.inventory.loading")}</p>
       ) : error ? (
-        <div className="rounded-md border border-red-200/80 bg-red-50/60 px-4 py-8 text-center">
+        <div className="rounded-sm border border-red-200/80 bg-red-50/60 px-4 py-8 text-center">
           <p className="text-sm font-medium text-red-800">{error}</p>
           <Link
             href="/dashboard/inventory/items"
-            className="mt-4 inline-flex h-10 items-center rounded-md border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50"
+            className="mt-4 inline-flex h-10 items-center rounded-sm border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50"
           >
             {t("dashboard.inventory.itemDetail.backToItems")}
           </Link>
@@ -279,7 +279,7 @@ export function InventoryItemDetailPage({ itemId }: InventoryItemDetailPageProps
               {item.serialised && (
                 <Link
                   href="/dashboard/inventory/serial-tracking"
-                  className="inline-flex h-10 items-center rounded-md border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50"
+                  className="inline-flex h-10 items-center rounded-sm border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50"
                 >
                   {t("dashboard.inventory.serialTracking")}
                 </Link>

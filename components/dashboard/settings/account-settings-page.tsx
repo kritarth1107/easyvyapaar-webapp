@@ -21,7 +21,7 @@ import {
 import { normalizeIndianMobileInput } from "@/lib/validators/indian-mobile";
 
 const inputClass =
-  "h-10 w-full rounded-md border border-slate-200/90 bg-white px-3 text-sm text-brand-primary outline-none transition-all placeholder:text-brand-primary-muted/60 focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
+  "h-10 w-full rounded-sm border border-slate-200/90 bg-white px-3 text-sm text-brand-primary outline-none transition-all placeholder:text-brand-primary-muted/60 focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
 
 const MOCK_MOBILE_CHANGE_OTP = "654321";
 
@@ -337,7 +337,7 @@ export function AccountSettingsPage() {
                   type="button"
                   disabled={mobileSaving}
                   onClick={() => void handleRequestMobileOtp()}
-                  className="h-10 rounded-md bg-brand-orange-1 px-4 text-sm font-semibold text-white hover:bg-brand-orange-1/90 disabled:opacity-50"
+                  className="h-10 rounded-sm bg-brand-orange-1 px-4 text-sm font-semibold text-white hover:bg-brand-orange-1/90 disabled:opacity-50"
                 >
                   {mobileSaving ? t("common.pleaseWait") : t("dashboard.userSettings.sendOtp")}
                 </button>
@@ -350,14 +350,14 @@ export function AccountSettingsPage() {
                     type="button"
                     disabled={mobileSaving}
                     onClick={() => void handleVerifyMobileOtp()}
-                    className="h-10 rounded-md bg-brand-orange-1 px-4 text-sm font-semibold text-white hover:bg-brand-orange-1/90 disabled:opacity-50"
+                    className="h-10 rounded-sm bg-brand-orange-1 px-4 text-sm font-semibold text-white hover:bg-brand-orange-1/90 disabled:opacity-50"
                   >
                     {mobileSaving ? t("common.pleaseWait") : t("dashboard.userSettings.verifyOtp")}
                   </button>
                   <button
                     type="button"
                     onClick={resetMobileFlow}
-                    className="h-10 rounded-md border border-slate-200/90 px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50"
+                    className="h-10 rounded-sm border border-slate-200/90 px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50"
                   >
                     {t("common.cancel")}
                   </button>
@@ -380,7 +380,7 @@ export function AccountSettingsPage() {
             type="button"
             disabled={profileSaving || !name.trim()}
             onClick={() => void handleSaveProfile()}
-            className="h-10 rounded-md bg-brand-orange-1 px-5 text-sm font-semibold text-white hover:bg-brand-orange-1/90 disabled:opacity-50"
+            className="h-10 rounded-sm bg-brand-orange-1 px-5 text-sm font-semibold text-white hover:bg-brand-orange-1/90 disabled:opacity-50"
           >
             {profileSaving ? t("common.pleaseWait") : t("common.save")}
           </button>
@@ -448,7 +448,7 @@ export function AccountSettingsPage() {
                   type="button"
                   disabled={!membership.canLeave || leavingOrgId === membership.orgId}
                   onClick={() => void handleLeaveOrganisation(membership.orgId, membership.name)}
-                  className="h-9 shrink-0 rounded-md border border-red-200 px-4 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="h-9 shrink-0 rounded-sm border border-red-200 px-4 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   {leavingOrgId === membership.orgId
                     ? t("common.pleaseWait")

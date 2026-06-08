@@ -10,7 +10,7 @@ import {
 import { useTranslation } from "@/lib/localization";
 
 const inputClass =
-  "h-10 w-full rounded-md border border-slate-200/90 bg-white px-3 text-sm text-brand-primary outline-none transition-all placeholder:text-brand-primary-muted/60 focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
+  "h-10 w-full rounded-sm border border-slate-200/90 bg-white px-3 text-sm text-brand-primary outline-none transition-all placeholder:text-brand-primary-muted/60 focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return <label className="mb-1.5 block text-sm font-medium text-brand-primary">{children}</label>;

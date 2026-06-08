@@ -89,7 +89,7 @@ export function BankAccountModal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-md border border-slate-200/90 bg-white shadow-xl"
+        className="w-full max-w-md rounded-sm border border-slate-200/90 bg-white shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
@@ -171,7 +171,7 @@ export function BankAccountModal({
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-10 items-center rounded-md border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50"
+            className="inline-flex h-10 items-center rounded-sm border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50"
           >
             {t("common.cancel")}
           </button>

@@ -92,7 +92,7 @@ function SectionCard({
   className?: string;
 }) {
   return (
-    <section className={`rounded-md border border-slate-200/90 bg-white p-4 lg:p-5 ${className}`}>
+    <section className={`rounded-sm border border-slate-200/90 bg-white p-4 lg:p-5 ${className}`}>
       <div className="mb-4 flex items-center justify-between gap-3 border-b border-slate-100 pb-3">
         <div className="flex items-center gap-2">
           {icon}
@@ -218,7 +218,7 @@ export function PartyDetailPage({ partyId }: PartyDetailPageProps) {
   if (error || !party) {
     return (
       <div className="p-6">
-        <p className="rounded-md border border-red-200/80 bg-red-50/60 px-4 py-3 text-sm text-red-800">
+        <p className="rounded-sm border border-red-200/80 bg-red-50/60 px-4 py-3 text-sm text-red-800">
           {error ?? t("dashboard.partyDetail.notFound")}
         </p>
         <Link
@@ -241,7 +241,7 @@ export function PartyDetailPage({ partyId }: PartyDetailPageProps) {
         <div className="flex items-start gap-3">
           <Link
             href="/dashboard/parties/all-parties"
-            className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-slate-200/90 bg-white text-brand-primary hover:bg-slate-50"
+            className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-sm border border-slate-200/90 bg-white text-brand-primary hover:bg-slate-50"
             aria-label={t("dashboard.partyDetail.backToParties")}
           >
             <BackIcon />
@@ -282,14 +282,14 @@ export function PartyDetailPage({ partyId }: PartyDetailPageProps) {
           </Link>
           <Link
             href={`/dashboard/parties/${encodeURIComponent(party.partyId)}/edit`}
-            className="inline-flex h-10 items-center gap-2 rounded-md border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50"
+            className="inline-flex h-10 items-center gap-2 rounded-sm border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50"
           >
             {t("dashboard.partyDetail.edit")}
           </Link>
           {party.currentBalance !== 0 && (
             <Link
               href={`/dashboard/finance/payments/new?partyId=${encodeURIComponent(party.partyId)}&type=${party.currentBalance > 0 ? "payment_in" : "payment_out"}`}
-              className="inline-flex h-10 items-center gap-2 rounded-md border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50"
+              className="inline-flex h-10 items-center gap-2 rounded-sm border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50"
             >
               {t("dashboard.partiesPage.recordPayment")}
             </Link>
@@ -597,14 +597,14 @@ function PartyTransactionsTab({
       {loading ? (
         <p className="text-sm text-brand-primary-muted">{t("dashboard.partyDetail.ledgerLoading")}</p>
       ) : error ? (
-        <p className="rounded-md border border-red-200/80 bg-red-50/60 px-4 py-3 text-sm text-red-800">{error}</p>
+        <p className="rounded-sm border border-red-200/80 bg-red-50/60 px-4 py-3 text-sm text-red-800">{error}</p>
       ) : !ledger || ledger.entries.length === 0 ? (
         <EmptyState
           title={t("dashboard.partyDetail.noTransactions")}
           hint={t("dashboard.partyDetail.noTransactionsHint")}
         />
       ) : (
-        <div className="overflow-hidden rounded-md border border-slate-200/90 bg-white">
+        <div className="overflow-hidden rounded-sm border border-slate-200/90 bg-white">
           <div className="overflow-x-auto scrollbar-brand">
             <table className="w-full min-w-[760px] text-left text-sm">
               <thead>
@@ -674,7 +674,7 @@ function PartyLedgerTab({
         {loading ? (
           <p className="text-sm text-brand-primary-muted">{t("dashboard.partyDetail.ledgerLoading")}</p>
         ) : error ? (
-          <p className="rounded-md border border-red-200/80 bg-red-50/60 px-4 py-3 text-sm text-red-800">{error}</p>
+          <p className="rounded-sm border border-red-200/80 bg-red-50/60 px-4 py-3 text-sm text-red-800">{error}</p>
         ) : !ledger ? (
           <EmptyState
             title={t("dashboard.partyDetail.noTransactions")}

@@ -134,7 +134,7 @@ function CompactStatCard({
     : "bg-brand-orange-1/10 text-brand-orange-2";
 
   return (
-    <div className="relative rounded-md border border-slate-200/90 bg-white px-4 py-3.5 shadow-sm">
+    <div className="relative rounded-sm border border-slate-200/90 bg-white px-4 py-3.5 shadow-sm">
       <div className="flex items-start justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
           <span
@@ -255,7 +255,7 @@ export function InventoryPage() {
       )}
 
       {error && (
-        <p className="mb-4 rounded-md border border-red-200/80 bg-red-50/60 px-4 py-3 text-sm text-red-800">
+        <p className="mb-4 rounded-sm border border-red-200/80 bg-red-50/60 px-4 py-3 text-sm text-red-800">
           {t("dashboard.inventory.loadError")}
         </p>
       )}
@@ -276,7 +276,7 @@ export function InventoryPage() {
         />
       </div>
 
-      <div className="overflow-hidden rounded-md border border-slate-200/90 bg-white">
+      <div className="overflow-hidden rounded-sm border border-slate-200/90 bg-white">
         <div className="flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-center">
           <label className="relative min-w-0 flex-1">
             <span className="sr-only">{t("dashboard.inventory.searchPlaceholder")}</span>
@@ -285,7 +285,7 @@ export function InventoryPage() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t("dashboard.inventory.searchPlaceholder")}
-              className="h-10 w-full rounded-md border border-slate-200/90 bg-slate-50/80 pl-3 pr-3 text-sm text-brand-primary outline-none transition-all placeholder:text-brand-primary-muted/70 focus:border-brand-primary/25 focus:bg-white focus:ring-2 focus:ring-brand-primary/[0.08]"
+              className="h-10 w-full rounded-sm border border-slate-200/90 bg-slate-50/80 pl-3 pr-3 text-sm text-brand-primary outline-none transition-all placeholder:text-brand-primary-muted/70 focus:border-brand-primary/25 focus:bg-white focus:ring-2 focus:ring-brand-primary/[0.08]"
             />
           </label>
           <div className="w-full min-w-[180px] shrink-0 sm:w-[200px]">
@@ -352,7 +352,7 @@ export function InventoryPage() {
                 type="button"
                 disabled={pagination.page <= 1 || isLoading}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className="h-8 rounded-md border border-slate-200/90 px-3 text-xs font-semibold text-brand-primary disabled:opacity-50"
+                className="h-8 rounded-sm border border-slate-200/90 px-3 text-xs font-semibold text-brand-primary disabled:opacity-50"
               >
                 Previous
               </button>
@@ -360,7 +360,7 @@ export function InventoryPage() {
                 type="button"
                 disabled={pagination.page >= pagination.totalPages || isLoading}
                 onClick={() => setPage((p) => p + 1)}
-                className="h-8 rounded-md border border-slate-200/90 px-3 text-xs font-semibold text-brand-primary disabled:opacity-50"
+                className="h-8 rounded-sm border border-slate-200/90 px-3 text-xs font-semibold text-brand-primary disabled:opacity-50"
               >
                 Next
               </button>

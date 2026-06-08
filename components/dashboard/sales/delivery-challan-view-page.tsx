@@ -154,7 +154,7 @@ export function DeliveryChallanViewPage({ deliveryChallanId }: { deliveryChallan
               type="button"
               disabled={updating}
               onClick={() => void changeStatus("cancel")}
-              className="h-9 rounded-md border border-red-200 px-4 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60"
+              className="h-9 rounded-sm border border-red-200 px-4 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60"
             >
               {t("dashboard.deliveryChallans.view.cancel")}
             </button>
@@ -163,11 +163,11 @@ export function DeliveryChallanViewPage({ deliveryChallanId }: { deliveryChallan
       </div>
 
       {error ? (
-        <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+        <div className="mb-4 rounded-sm border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
       ) : null}
 
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-        <section className="rounded-md border border-slate-200/90 bg-white p-4">
+        <section className="rounded-sm border border-slate-200/90 bg-white p-4">
           <h3 className="text-sm font-semibold text-brand-primary">{t("dashboard.deliveryChallans.view.items")}</h3>
           <div className="mt-4 overflow-x-auto">
             <table className="w-full min-w-[560px] text-left text-sm">
@@ -199,7 +199,7 @@ export function DeliveryChallanViewPage({ deliveryChallanId }: { deliveryChallan
         </section>
 
         <aside className="space-y-4">
-          <section className="rounded-md border border-slate-200/90 bg-white p-4 text-sm">
+          <section className="rounded-sm border border-slate-200/90 bg-white p-4 text-sm">
             <h3 className="font-semibold text-brand-primary">{t("dashboard.deliveryChallans.view.details")}</h3>
             <dl className="mt-3 space-y-2">
               <div>

@@ -126,14 +126,14 @@ export function InvoiceSignatureDrawModal({
           <button
             type="button"
             onClick={clearCanvas}
-            className="rounded-md border border-slate-200/90 px-3 py-2 text-sm font-medium text-brand-primary-mid hover:bg-slate-50"
+            className="rounded-sm border border-slate-200/90 px-3 py-2 text-sm font-medium text-brand-primary-mid hover:bg-slate-50"
           >
             Clear
           </button>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md border border-slate-200/90 px-3 py-2 text-sm font-medium text-brand-primary-mid hover:bg-slate-50"
+            className="rounded-sm border border-slate-200/90 px-3 py-2 text-sm font-medium text-brand-primary-mid hover:bg-slate-50"
           >
             Cancel
           </button>

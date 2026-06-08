@@ -172,7 +172,7 @@ export function CreditNotesPage() {
         />
       </div>
 
-      <div className="overflow-hidden rounded-md border border-slate-200/90 bg-white">
+      <div className="overflow-hidden rounded-sm border border-slate-200/90 bg-white">
         <div className="flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-center">
           <label className="relative min-w-0 flex-1">
             <span className="sr-only">{t("dashboard.creditNotes.searchPlaceholder")}</span>
@@ -181,7 +181,7 @@ export function CreditNotesPage() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t("dashboard.creditNotes.searchPlaceholder")}
-              className="h-10 w-full rounded-md border border-slate-200/90 bg-slate-50/80 px-3 text-sm text-brand-primary outline-none transition-all placeholder:text-brand-primary-muted/70 focus:border-brand-primary/25 focus:bg-white focus:ring-2 focus:ring-brand-primary/[0.08]"
+              className="h-10 w-full rounded-sm border border-slate-200/90 bg-slate-50/80 px-3 text-sm text-brand-primary outline-none transition-all placeholder:text-brand-primary-muted/70 focus:border-brand-primary/25 focus:bg-white focus:ring-2 focus:ring-brand-primary/[0.08]"
             />
           </label>
           <div className="w-full min-w-[140px] shrink-0 sm:w-[160px]">

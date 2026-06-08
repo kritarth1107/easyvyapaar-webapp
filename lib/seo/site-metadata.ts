@@ -25,18 +25,28 @@ type PageMetadataInput = {
   path: `/${string}`;
   keywords?: string[];
   robots?: Metadata["robots"];
+  /** When true, merges DEFAULT_KEYWORDS (marketing pages pass full lists). */
+  mergeDefaultKeywords?: boolean;
 };
 
 /** Builds consistent, share-friendly metadata for auth and marketing pages. */
 export function buildPageMetadata(input: PageMetadataInput): Metadata {
   const url = `${getSiteUrl()}${input.path}`;
   const title = input.title.includes(SITE_NAME) ? input.title : `${input.title} | ${SITE_NAME}`;
-  const keywords = [...new Set([...(input.keywords ?? []), ...DEFAULT_KEYWORDS])];
+  const pageKeywords = input.keywords ?? [];
+  const keywords =
+    input.mergeDefaultKeywords === false
+      ? [...new Set(pageKeywords)]
+      : [...new Set([...pageKeywords, ...DEFAULT_KEYWORDS])];
 
   return {
     title,
     description: input.description,
     keywords,
+    applicationName: SITE_NAME,
+    authors: [{ name: SITE_NAME, url: getSiteUrl() }],
+    creator: SITE_NAME,
+    publisher: SITE_NAME,
     alternates: {
       canonical: url,
     },
@@ -60,12 +70,19 @@ export function buildPageMetadata(input: PageMetadataInput): Metadata {
       description: input.description,
     },
     twitter: {
-      card: "summary",
+      card: "summary_large_image",
       title,
       description: input.description,
     },
     category: "business",
   };
+}
+
+/** Marketing landing pages — rich SEO with 100+ keywords, no auth defaults mixed in. */
+export function buildMarketingMetadata(
+  input: Omit<PageMetadataInput, "mergeDefaultKeywords"> & { keywords: string[] },
+): Metadata {
+  return buildPageMetadata({ ...input, mergeDefaultKeywords: false });
 }
 
 export const loginPageMetadata = buildPageMetadata({

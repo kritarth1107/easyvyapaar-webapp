@@ -165,7 +165,7 @@ export function ModernSelect({
       ? `flex h-full min-h-9 min-w-[72px] items-center justify-between gap-1 border-l border-slate-200/90 bg-slate-50/80 px-2.5 text-xs font-semibold transition-colors ${
           disabled ? "cursor-not-allowed opacity-60" : "hover:bg-slate-100/90"
         } ${open ? "bg-white text-brand-primary" : "text-brand-primary"}`
-      : `flex h-9 w-full items-center justify-between gap-1 rounded-md border border-slate-200/90 bg-white px-2.5 text-xs font-semibold transition-colors ${
+      : `flex h-9 w-full items-center justify-between gap-1 rounded-sm border border-slate-200/90 bg-white px-2.5 text-xs font-semibold transition-colors ${
           disabled
             ? hasSelection
               ? "cursor-not-allowed border-slate-200/70 bg-slate-50 text-brand-primary"
@@ -174,7 +174,7 @@ export function ModernSelect({
               ? "border-brand-orange-1/50 ring-2 ring-brand-orange-1/15"
               : "hover:border-slate-300"
         } ${!disabled || hasSelection ? "text-brand-primary" : ""}`
-    : `flex h-10 w-full items-center justify-between gap-2 rounded-md border border-slate-200/90 bg-white px-3 text-left text-sm transition-all ${
+    : `flex h-10 w-full items-center justify-between gap-2 rounded-sm border border-slate-200/90 bg-white px-3 text-left text-sm transition-all ${
         disabled
           ? hasSelection
             ? "cursor-not-allowed border-slate-200/70 bg-slate-50 text-brand-primary"
@@ -216,7 +216,7 @@ export function ModernSelect({
               width: menuStyle.width,
               zIndex: 130,
             }}
-            className="overflow-hidden rounded-md border border-slate-200/90 bg-white shadow-[0_12px_32px_-8px_rgba(3,31,73,0.2)]"
+            className="overflow-hidden rounded-sm border border-slate-200/90 bg-white shadow-[0_12px_32px_-8px_rgba(3,31,73,0.2)]"
             role="listbox"
           >
             {searchable && (

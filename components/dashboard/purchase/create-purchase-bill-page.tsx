@@ -117,7 +117,7 @@ export function CreatePurchaseBillPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-        <div className="space-y-4 rounded-md border border-slate-200/90 bg-white p-4">
+        <div className="space-y-4 rounded-sm border border-slate-200/90 bg-white p-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label className="mb-1 block text-xs font-semibold uppercase text-brand-primary-muted">
@@ -241,7 +241,7 @@ export function CreatePurchaseBillPage() {
         </div>
 
         <div className="space-y-4">
-          <div className="rounded-md border border-slate-200/90 bg-white p-4">
+          <div className="rounded-sm border border-slate-200/90 bg-white p-4">
             <p className="text-sm font-semibold text-brand-primary">{t("dashboard.purchases.create.payment")}</p>
             <div className="mt-3 space-y-3">
               <ModernSelect

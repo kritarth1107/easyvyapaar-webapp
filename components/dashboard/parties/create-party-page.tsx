@@ -29,13 +29,13 @@ import { useUserMe } from "@/components/providers/user-me-provider";
 import { useTranslation } from "@/lib/localization";
 
 const inputClass =
-  "h-10 w-full rounded-md border border-slate-200/90 bg-white px-3 text-sm text-brand-primary outline-none transition-all placeholder:text-brand-primary-muted/60 focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
+  "h-10 w-full rounded-sm border border-slate-200/90 bg-white px-3 text-sm text-brand-primary outline-none transition-all placeholder:text-brand-primary-muted/60 focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
 
 const textareaClass =
-  "w-full rounded-md border border-slate-200/90 bg-white px-3 py-2.5 text-sm text-brand-primary outline-none transition-all placeholder:text-brand-primary-muted/60 focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
+  "w-full rounded-sm border border-slate-200/90 bg-white px-3 py-2.5 text-sm text-brand-primary outline-none transition-all placeholder:text-brand-primary-muted/60 focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
 
 const inputGroupClass =
-  "flex h-10 overflow-hidden rounded-md border border-slate-200/90 bg-white focus-within:border-brand-orange-1/50 focus-within:ring-2 focus-within:ring-brand-orange-1/15";
+  "flex h-10 overflow-hidden rounded-sm border border-slate-200/90 bg-white focus-within:border-brand-orange-1/50 focus-within:ring-2 focus-within:ring-brand-orange-1/15";
 
 const inputGroupInnerClass =
   "h-full min-w-0 flex-1 border-0 bg-transparent px-2.5 text-sm text-brand-primary outline-none tabular-nums placeholder:text-brand-primary-muted/60";
@@ -64,7 +64,7 @@ function SectionCard({
   className?: string;
 }) {
   return (
-    <section className={`rounded-md border border-slate-200/90 bg-white p-4 lg:p-5 ${className}`}>
+    <section className={`rounded-sm border border-slate-200/90 bg-white p-4 lg:p-5 ${className}`}>
       <h2 className="border-b border-slate-100 pb-3 text-sm font-bold text-brand-primary">{title}</h2>
       <div className="mt-4">{children}</div>
     </section>
@@ -213,7 +213,7 @@ export function CreatePartyPage() {
         <div className="flex items-center gap-3">
           <Link
             href="/dashboard/parties/all-parties"
-            className="flex h-10 w-10 items-center justify-center rounded-md border border-slate-200/90 bg-white text-brand-primary hover:bg-slate-50"
+            className="flex h-10 w-10 items-center justify-center rounded-sm border border-slate-200/90 bg-white text-brand-primary hover:bg-slate-50"
             aria-label={t("dashboard.createParty.back")}
           >
             <BackIcon />
@@ -227,7 +227,7 @@ export function CreatePartyPage() {
             type="button"
             disabled={saving}
             onClick={() => void handleSave(true)}
-            className="inline-flex h-10 items-center rounded-md border border-brand-primary/25 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-brand-primary/[0.04] disabled:opacity-60"
+            className="inline-flex h-10 items-center rounded-sm border border-brand-primary/25 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-brand-primary/[0.04] disabled:opacity-60"
           >
             {t("dashboard.createParty.saveAndNew")}
           </button>

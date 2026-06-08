@@ -83,7 +83,7 @@ export function PendingInvitesBanner() {
                 type="button"
                 disabled={actingId === invite.organisationId}
                 onClick={() => void handleDecline(invite)}
-                className="h-9 rounded-lg border border-slate-200 px-3 text-sm font-medium text-brand-primary-muted transition-colors hover:bg-slate-50 disabled:opacity-60"
+                className="h-9 rounded-sm border border-slate-200 px-3 text-sm font-medium text-brand-primary-muted transition-colors hover:bg-slate-50 disabled:opacity-60"
               >
                 {t("dashboard.teamSettings.declineInvite")}
               </button>
@@ -91,7 +91,7 @@ export function PendingInvitesBanner() {
                 type="button"
                 disabled={actingId === invite.organisationId}
                 onClick={() => void handleAccept(invite)}
-                className="h-9 rounded-lg bg-brand-primary px-3 text-sm font-semibold text-white transition-colors hover:brightness-105 disabled:opacity-60"
+                className="h-9 rounded-sm bg-brand-primary px-3 text-sm font-semibold text-white transition-colors hover:brightness-105 disabled:opacity-60"
               >
                 {actingId === invite.organisationId
                   ? t("common.pleaseWait")

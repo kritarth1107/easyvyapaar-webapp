@@ -161,7 +161,7 @@ export function UserAccountMenu({ onOpenSwitchBusiness }: UserAccountMenuProps) 
         aria-haspopup="menu"
         aria-label={t("dashboard.accountMenu")}
       >
-        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-primary text-xs font-bold text-white">
+        <span className="flex h-8 w-8 items-center justify-center rounded-sm bg-brand-primary text-xs font-bold text-white">
           {userInitials}
         </span>
         <span className="hidden max-w-[120px] truncate text-left md:block">
@@ -188,7 +188,7 @@ export function UserAccountMenu({ onOpenSwitchBusiness }: UserAccountMenuProps) 
               {user?.email ? ` · ${user.email}` : ""}
             </p>
             {activeOrganisation && (
-              <p className="mt-2 truncate rounded-lg bg-brand-primary/[0.06] px-2 py-1 text-[11px] font-medium text-brand-primary">
+              <p className="mt-2 truncate rounded-sm bg-brand-primary/[0.06] px-2 py-1 text-[11px] font-medium text-brand-primary">
                 {activeOrganisation.name}
               </p>
             )}

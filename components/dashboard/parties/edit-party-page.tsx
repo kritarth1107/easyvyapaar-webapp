@@ -30,10 +30,10 @@ import { fetchPartyDetail, updateParty } from "@/lib/parties/parties-api-client"
 import { useTranslation } from "@/lib/localization";
 
 const inputClass =
-  "h-10 w-full rounded-md border border-slate-200/90 bg-white px-3 text-sm text-brand-primary outline-none transition-all placeholder:text-brand-primary-muted/60 focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
+  "h-10 w-full rounded-sm border border-slate-200/90 bg-white px-3 text-sm text-brand-primary outline-none transition-all placeholder:text-brand-primary-muted/60 focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
 
 const textareaClass =
-  "w-full rounded-md border border-slate-200/90 bg-white px-3 py-2.5 text-sm text-brand-primary outline-none transition-all placeholder:text-brand-primary-muted/60 focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
+  "w-full rounded-sm border border-slate-200/90 bg-white px-3 py-2.5 text-sm text-brand-primary outline-none transition-all placeholder:text-brand-primary-muted/60 focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
 
 const readOnlyClass =
   "flex h-10 w-full items-center rounded-md border border-slate-200/90 bg-slate-50/80 px-3 text-sm text-brand-primary-muted";
@@ -62,7 +62,7 @@ function SectionCard({
   className?: string;
 }) {
   return (
-    <section className={`rounded-md border border-slate-200/90 bg-white p-4 lg:p-5 ${className}`}>
+    <section className={`rounded-sm border border-slate-200/90 bg-white p-4 lg:p-5 ${className}`}>
       <h2 className="border-b border-slate-100 pb-3 text-sm font-bold text-brand-primary">{title}</h2>
       <div className="mt-4">{children}</div>
     </section>
@@ -258,7 +258,7 @@ export function EditPartyPage() {
         <div className="flex items-center gap-3">
           <Link
             href={`/dashboard/parties/${encodeURIComponent(partyId)}`}
-            className="flex h-10 w-10 items-center justify-center rounded-md border border-slate-200/90 bg-white text-brand-primary hover:bg-slate-50"
+            className="flex h-10 w-10 items-center justify-center rounded-sm border border-slate-200/90 bg-white text-brand-primary hover:bg-slate-50"
             aria-label={t("dashboard.editParty.back")}
           >
             <BackIcon />

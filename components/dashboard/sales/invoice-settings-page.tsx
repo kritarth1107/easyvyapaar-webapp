@@ -29,7 +29,7 @@ import {
 import { useTranslation } from "@/lib/localization";
 
 const inputClass =
-  "h-9 w-full rounded-md border border-slate-200/90 bg-white px-2.5 text-sm text-brand-primary outline-none focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
+  "h-9 w-full rounded-sm border border-slate-200/90 bg-white px-2.5 text-sm text-brand-primary outline-none focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
 
 function Chevron({ open }: { open: boolean }) {
   return (
@@ -572,7 +572,7 @@ export function InvoiceSettingsPage() {
                 onChange={(e) => patch({ termsText: e.target.value })}
                 placeholder={t("dashboard.invoiceSettings.termsPlaceholder")}
                 rows={3}
-                className="mt-2 w-full rounded-md border border-slate-200/90 px-3 py-2 text-sm text-brand-primary outline-none focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15"
+                className="mt-2 w-full rounded-sm border border-slate-200/90 px-3 py-2 text-sm text-brand-primary outline-none focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15"
               />
               <button
                 type="button"

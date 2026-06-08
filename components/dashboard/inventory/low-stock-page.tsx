@@ -240,7 +240,7 @@ export function LowStockPage() {
         </p>
       )}
       {error && (
-        <p className="mb-4 rounded-md border border-red-200/80 bg-red-50/60 px-4 py-3 text-sm text-red-800">
+        <p className="mb-4 rounded-sm border border-red-200/80 bg-red-50/60 px-4 py-3 text-sm text-red-800">
           {t("dashboard.inventory.loadError")}
         </p>
       )}
@@ -274,13 +274,13 @@ export function LowStockPage() {
           <button
             type="button"
             onClick={() => window.print()}
-            className="inline-flex h-10 items-center rounded-md border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50"
+            className="inline-flex h-10 items-center rounded-sm border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50"
           >
             {t("dashboard.lowStockPage.exportList")}
           </button>
           <Link
             href="/dashboard/inventory/stock-summary"
-            className="inline-flex h-10 items-center rounded-md border border-brand-primary/20 bg-brand-primary/[0.04] px-4 text-sm font-semibold text-brand-primary hover:bg-brand-primary/[0.08]"
+            className="inline-flex h-10 items-center rounded-sm border border-brand-primary/20 bg-brand-primary/[0.04] px-4 text-sm font-semibold text-brand-primary hover:bg-brand-primary/[0.08]"
           >
             {t("dashboard.lowStockPage.viewStockSummary")}
           </Link>
@@ -303,7 +303,7 @@ export function LowStockPage() {
       ) : (
         <>
           {analytics.totals.criticalCount > 0 && (
-            <div className="mb-6 flex gap-3 rounded-md border border-red-200/80 bg-gradient-to-r from-red-50 to-amber-50/80 px-4 py-4">
+            <div className="mb-6 flex gap-3 rounded-sm border border-red-200/80 bg-gradient-to-r from-red-50 to-amber-50/80 px-4 py-4">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-red-100 text-red-700">
                 <AlertIcon />
               </span>
@@ -361,7 +361,7 @@ export function LowStockPage() {
 
           {analytics.categorySlices.length > 0 && (
             <div className="mb-8 grid gap-4 lg:grid-cols-2">
-              <section className="rounded-md border border-slate-200/90 bg-white p-4 lg:p-5">
+              <section className="rounded-sm border border-slate-200/90 bg-white p-4 lg:p-5">
                 <h3 className="text-sm font-bold text-brand-primary">
                   {t("dashboard.lowStockPage.byCategory")}
                 </h3>
@@ -373,7 +373,7 @@ export function LowStockPage() {
                   />
                 </div>
               </section>
-              <section className="rounded-md border border-slate-200/90 bg-white p-4 lg:p-5">
+              <section className="rounded-sm border border-slate-200/90 bg-white p-4 lg:p-5">
                 <h3 className="text-sm font-bold text-brand-primary">
                   {t("dashboard.lowStockPage.colDeficit")}
                 </h3>
@@ -399,7 +399,7 @@ export function LowStockPage() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t("dashboard.lowStockPage.searchPlaceholder")}
-              className="h-10 min-w-0 flex-1 rounded-md border border-slate-200/90 bg-white px-3 text-sm outline-none focus:border-brand-orange-1/40 focus:ring-2 focus:ring-brand-orange-1/15"
+              className="h-10 min-w-0 flex-1 rounded-sm border border-slate-200/90 bg-white px-3 text-sm outline-none focus:border-brand-orange-1/40 focus:ring-2 focus:ring-brand-orange-1/15"
             />
             <div className="w-full sm:w-[180px]">
               <ModernSelect
@@ -469,7 +469,7 @@ export function LowStockPage() {
           )}
 
           {filteredOut.length > 0 && (
-            <section className="mb-8 overflow-hidden rounded-md border border-red-200/70 bg-white shadow-sm">
+            <section className="mb-8 overflow-hidden rounded-sm border border-red-200/70 bg-white shadow-sm">
               <div className="border-b border-red-100 bg-red-50/60 px-4 py-3">
                 <h2 className="text-sm font-bold text-red-900">
                   {t("dashboard.lowStockPage.outOfStockSection")}{" "}

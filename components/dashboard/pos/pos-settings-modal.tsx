@@ -66,7 +66,7 @@ export function PosSettingsModal({ open, settings, onClose, onSave }: PosSetting
       <button
         type="button"
         onClick={() => onSave(draft)}
-        className="flex h-11 w-full items-center justify-center rounded-lg bg-brand-orange-1 text-sm font-bold text-white hover:bg-brand-orange-1/90"
+        className="flex h-11 w-full items-center justify-center rounded-sm bg-brand-orange-1 text-sm font-bold text-white hover:bg-brand-orange-1/90"
       >
         {t("common.save")}
         <ShortcutBadge keys="F7" />
@@ -74,7 +74,7 @@ export function PosSettingsModal({ open, settings, onClose, onSave }: PosSetting
       <button
         type="button"
         onClick={onClose}
-        className="flex h-11 w-full items-center justify-center rounded-lg border border-slate-200/90 text-sm font-semibold text-brand-primary hover:bg-slate-50"
+        className="flex h-11 w-full items-center justify-center rounded-sm border border-slate-200/90 text-sm font-semibold text-brand-primary hover:bg-slate-50"
       >
         {t("common.cancel")}
         <ShortcutBadge keys="ESC" />

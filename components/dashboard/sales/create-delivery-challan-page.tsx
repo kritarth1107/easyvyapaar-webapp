@@ -23,9 +23,9 @@ import type { SalesInvoiceSummary } from "@/lib/types/sales-api";
 import { useTranslation } from "@/lib/localization";
 
 const inputSmClass =
-  "h-9 w-full rounded-md border border-slate-200/90 bg-white px-2.5 text-sm text-brand-primary outline-none focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
+  "h-9 w-full rounded-sm border border-slate-200/90 bg-white px-2.5 text-sm text-brand-primary outline-none focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
 const textareaClass =
-  "w-full rounded-md border border-slate-200/90 bg-white px-3 py-2 text-sm text-brand-primary outline-none placeholder:text-brand-primary-muted/60 focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
+  "w-full rounded-sm border border-slate-200/90 bg-white px-3 py-2 text-sm text-brand-primary outline-none placeholder:text-brand-primary-muted/60 focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
 
 function formatDate(iso: string): string {
   return new Date(iso + "T12:00:00").toLocaleDateString("en-IN", {
@@ -227,12 +227,12 @@ export function CreateDeliveryChallanPage() {
       </div>
 
       {error ? (
-        <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+        <div className="mb-4 rounded-sm border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
       ) : null}
 
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <div className="space-y-6">
-          <section className="rounded-md border border-slate-200/90 bg-white p-4">
+          <section className="rounded-sm border border-slate-200/90 bg-white p-4">
             <h3 className="text-sm font-semibold text-brand-primary">{t("dashboard.deliveryChallans.create.partySection")}</h3>
             <div className="mt-3 flex flex-wrap items-center gap-3">
               {party ? (
@@ -253,7 +253,7 @@ export function CreateDeliveryChallanPage() {
             </div>
           </section>
 
-          <section className="rounded-md border border-slate-200/90 bg-white p-4">
+          <section className="rounded-sm border border-slate-200/90 bg-white p-4">
             <h3 className="text-sm font-semibold text-brand-primary">{t("dashboard.deliveryChallans.create.invoiceSection")}</h3>
             <p className="mt-1 text-xs text-brand-primary-muted">{t("dashboard.deliveryChallans.create.invoiceHint")}</p>
             {form?.invoiceId ? (
@@ -304,7 +304,7 @@ export function CreateDeliveryChallanPage() {
             )}
           </section>
 
-          <section className="rounded-md border border-slate-200/90 bg-white p-4">
+          <section className="rounded-sm border border-slate-200/90 bg-white p-4">
             <div className="flex items-center justify-between gap-3">
               <h3 className="text-sm font-semibold text-brand-primary">{t("dashboard.deliveryChallans.create.itemsSection")}</h3>
               <button
@@ -373,7 +373,7 @@ export function CreateDeliveryChallanPage() {
         </div>
 
         <aside className="space-y-4">
-          <section className="rounded-md border border-slate-200/90 bg-white p-4">
+          <section className="rounded-sm border border-slate-200/90 bg-white p-4">
             <h3 className="text-sm font-semibold text-brand-primary">{t("dashboard.deliveryChallans.create.detailsSection")}</h3>
             {form ? (
               <div className="mt-3 space-y-3">
@@ -462,7 +462,7 @@ export function CreateDeliveryChallanPage() {
             ) : null}
           </section>
 
-          <section className="rounded-md border border-slate-200/90 bg-white p-4">
+          <section className="rounded-sm border border-slate-200/90 bg-white p-4">
             <p className="text-xs font-medium uppercase tracking-wide text-brand-primary-muted">
               {t("dashboard.deliveryChallans.create.totalQty")}
             </p>
@@ -472,7 +472,7 @@ export function CreateDeliveryChallanPage() {
                 type="button"
                 disabled={saving || !form}
                 onClick={() => void save("draft")}
-                className="h-10 rounded-md border border-slate-200 text-sm font-semibold text-brand-primary hover:bg-slate-50 disabled:opacity-60"
+                className="h-10 rounded-sm border border-slate-200 text-sm font-semibold text-brand-primary hover:bg-slate-50 disabled:opacity-60"
               >
                 {saving ? t("dashboard.deliveryChallans.create.saving") : t("dashboard.deliveryChallans.create.saveDraft")}
               </button>
@@ -480,7 +480,7 @@ export function CreateDeliveryChallanPage() {
                 type="button"
                 disabled={saving || !form}
                 onClick={() => void save("dispatched")}
-                className="h-10 rounded-md bg-gradient-to-r from-brand-primary to-brand-primary-light text-sm font-semibold text-white hover:brightness-110 disabled:opacity-60"
+                className="h-10 rounded-sm bg-gradient-to-r from-brand-primary to-brand-primary-light text-sm font-semibold text-white hover:brightness-110 disabled:opacity-60"
               >
                 {saving ? t("dashboard.deliveryChallans.create.saving") : t("dashboard.deliveryChallans.create.saveDispatch")}
               </button>

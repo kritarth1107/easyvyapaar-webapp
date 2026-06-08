@@ -142,7 +142,7 @@ export function PaymentViewPage({ paymentId }: { paymentId: string }) {
       </div>
 
       {payment.notes ? (
-        <div className="mb-6 rounded-md border border-slate-200/90 bg-white p-4">
+        <div className="mb-6 rounded-sm border border-slate-200/90 bg-white p-4">
           <p className="text-sm text-brand-primary">
             <span className="font-semibold">{t("dashboard.financePayments.view.notes")}: </span>
             {payment.notes}
@@ -151,7 +151,7 @@ export function PaymentViewPage({ paymentId }: { paymentId: string }) {
       ) : null}
 
       {payment.allocations.length > 0 ? (
-        <div className="overflow-hidden rounded-md border border-slate-200/90 bg-white">
+        <div className="overflow-hidden rounded-sm border border-slate-200/90 bg-white">
           <div className="border-b border-slate-100 px-4 py-3">
             <h3 className="text-sm font-semibold text-brand-primary">
               {t("dashboard.financePayments.view.allocations")}
@@ -190,7 +190,7 @@ export function PaymentViewPage({ paymentId }: { paymentId: string }) {
       <div className="mt-4 flex flex-wrap gap-3">
         <Link
           href={`/dashboard/parties/${encodeURIComponent(payment.partyId)}`}
-          className="inline-flex h-9 items-center rounded-md border border-slate-200/90 bg-white px-4 text-sm font-medium text-brand-primary transition-colors hover:bg-slate-50"
+          className="inline-flex h-9 items-center rounded-sm border border-slate-200/90 bg-white px-4 text-sm font-medium text-brand-primary transition-colors hover:bg-slate-50"
         >
           {t("dashboard.financePayments.view.viewParty")}
         </Link>
@@ -201,7 +201,7 @@ export function PaymentViewPage({ paymentId }: { paymentId: string }) {
 
 function InfoCard({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
-    <div className="rounded-md border border-slate-200/90 bg-white px-3.5 py-3">
+    <div className="rounded-sm border border-slate-200/90 bg-white px-3.5 py-3">
       <p className="text-[11px] font-semibold uppercase tracking-wide text-brand-primary-muted">{label}</p>
       <p className={`mt-1 text-sm font-semibold text-brand-primary ${mono ? "font-mono" : ""}`}>{value}</p>
     </div>

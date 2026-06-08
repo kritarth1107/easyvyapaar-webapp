@@ -233,14 +233,14 @@ export function BalanceSheetReportView({
           <button
             type="button"
             onClick={() => exportBalanceSheetCsv(report, outletName)}
-            className="h-9 rounded-lg border border-slate-200/90 px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50"
+            className="h-9 rounded-sm border border-slate-200/90 px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50"
           >
             {t("dashboard.reports.balanceSheet.exportExcel")}
           </button>
           <button
             type="button"
             onClick={handlePrintPdf}
-            className="h-9 rounded-lg border border-slate-200/90 px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50"
+            className="h-9 rounded-sm border border-slate-200/90 px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50"
           >
             {t("dashboard.reports.balanceSheet.exportPdf")}
           </button>

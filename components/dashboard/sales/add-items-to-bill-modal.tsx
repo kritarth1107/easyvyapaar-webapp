@@ -241,7 +241,7 @@ export function AddItemsToBillModal({
       onClick={onClose}
     >
       <div
-        className="flex h-[min(680px,90vh)] w-[min(960px,calc(100vw-2rem))] flex-col overflow-hidden rounded-md border border-slate-200/90 bg-white shadow-xl"
+        className="flex h-[min(680px,90vh)] w-[min(960px,calc(100vw-2rem))] flex-col overflow-hidden rounded-sm border border-slate-200/90 bg-white shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-5 py-4">
@@ -266,7 +266,7 @@ export function AddItemsToBillModal({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t("dashboard.salesInvoices.create.searchItems")}
-              className="h-10 w-full rounded-md border border-slate-200/90 bg-slate-50/80 px-3 text-sm text-brand-primary outline-none focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15"
+              className="h-10 w-full rounded-sm border border-slate-200/90 bg-slate-50/80 px-3 text-sm text-brand-primary outline-none focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15"
               autoFocus
             />
           </label>
@@ -408,7 +408,7 @@ export function AddItemsToBillModal({
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex h-10 items-center rounded-md border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50"
+              className="inline-flex h-10 items-center rounded-sm border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50"
             >
               {t("common.cancel")}
             </button>

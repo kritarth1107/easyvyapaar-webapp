@@ -101,7 +101,7 @@ export function PurchaseBillViewPage() {
         <StatCard label={t("dashboard.purchases.view.items")} value={String(bill.lineItems.length)} />
       </div>
 
-      <div className="mt-6 overflow-hidden rounded-md border border-slate-200/90 bg-white">
+      <div className="mt-6 overflow-hidden rounded-sm border border-slate-200/90 bg-white">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-brand-surface/50 text-[11px] uppercase text-brand-primary-muted">
@@ -125,7 +125,7 @@ export function PurchaseBillViewPage() {
       </div>
 
       {bill.balanceAmount > 0 && (
-        <div className="mt-6 max-w-md rounded-md border border-slate-200/90 bg-white p-4">
+        <div className="mt-6 max-w-md rounded-sm border border-slate-200/90 bg-white p-4">
           <p className="text-sm font-semibold text-brand-primary">{t("dashboard.purchases.view.recordPayment")}</p>
           <div className="mt-3 space-y-3">
             <input type="number" value={payAmount} onChange={(e) => setPayAmount(e.target.value)} className={inputClass} />

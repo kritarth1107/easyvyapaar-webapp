@@ -119,7 +119,7 @@ export function ReportViewerPage() {
               type="month"
               value={month}
               onChange={(e) => setMonth(e.target.value)}
-              className="h-9 rounded-lg border border-slate-200/90 bg-white px-3 text-sm text-brand-primary shadow-sm"
+              className="h-9 rounded-sm border border-slate-200/90 bg-white px-3 text-sm text-brand-primary shadow-sm"
             />
           </label>
         ) : isAsOfReport && !isBalanceSheet ? (
@@ -156,7 +156,7 @@ export function ReportViewerPage() {
           type="button"
           onClick={() => void load()}
           disabled={loading}
-          className="h-9 rounded-lg bg-brand-primary px-4 text-sm font-semibold text-white transition-colors hover:brightness-105 disabled:opacity-60"
+          className="h-9 rounded-sm bg-brand-primary px-4 text-sm font-semibold text-white transition-colors hover:brightness-105 disabled:opacity-60"
         >
           {loading ? t("common.pleaseWait") : t("dashboard.reports.runReport")}
         </button>
@@ -209,7 +209,7 @@ export function ReportViewerPage() {
                   type="button"
                   disabled={page <= 1 || loading}
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  className="rounded-lg border border-slate-200/90 px-3 py-1.5 text-sm font-semibold text-brand-primary disabled:opacity-40"
+                  className="rounded-sm border border-slate-200/90 px-3 py-1.5 text-sm font-semibold text-brand-primary disabled:opacity-40"
                 >
                   Previous
                 </button>
@@ -217,7 +217,7 @@ export function ReportViewerPage() {
                   type="button"
                   disabled={page >= report.pagination.totalPages || loading}
                   onClick={() => setPage((p) => p + 1)}
-                  className="rounded-lg border border-slate-200/90 px-3 py-1.5 text-sm font-semibold text-brand-primary disabled:opacity-40"
+                  className="rounded-sm border border-slate-200/90 px-3 py-1.5 text-sm font-semibold text-brand-primary disabled:opacity-40"
                 >
                   Next
                 </button>

@@ -25,13 +25,13 @@ import type { BusinessProfileSuccessResponse } from "@/lib/types/business-profil
 import { useTranslation } from "@/lib/localization";
 
 const inputClass =
-  "h-10 w-full rounded-md border border-slate-200/90 bg-white px-3 text-sm text-brand-primary outline-none transition-all placeholder:text-brand-primary-muted/60 focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
+  "h-10 w-full rounded-sm border border-slate-200/90 bg-white px-3 text-sm text-brand-primary outline-none transition-all placeholder:text-brand-primary-muted/60 focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
 
 const lockedInputClass =
   `${inputClass} disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-600`;
 
 const textareaClass =
-  "w-full rounded-md border border-slate-200/90 bg-white px-3 py-2.5 text-sm text-brand-primary outline-none transition-all placeholder:text-brand-primary-muted/60 focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
+  "w-full rounded-sm border border-slate-200/90 bg-white px-3 py-2.5 text-sm text-brand-primary outline-none transition-all placeholder:text-brand-primary-muted/60 focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
 
 function VerifiedCheckmark({ title, size = "sm" }: { title: string; size?: "sm" | "md" }) {
   const isSmall = size === "sm";
@@ -375,14 +375,14 @@ export function BusinessProfilePage() {
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              className="inline-flex h-9 items-center gap-1.5 rounded-md border border-slate-200/90 bg-white px-3 text-sm font-medium text-brand-primary-mid hover:bg-slate-50"
+              className="inline-flex h-9 items-center gap-1.5 rounded-sm border border-slate-200/90 bg-white px-3 text-sm font-medium text-brand-primary-mid hover:bg-slate-50"
             >
               <span aria-hidden>💬</span>
               {t("dashboard.businessProfile.chatSupport")}
             </button>
             <button
               type="button"
-              className="inline-flex h-9 items-center gap-1.5 rounded-md border border-slate-200/90 bg-white px-3 text-sm font-medium text-brand-primary-mid hover:bg-slate-50"
+              className="inline-flex h-9 items-center gap-1.5 rounded-sm border border-slate-200/90 bg-white px-3 text-sm font-medium text-brand-primary-mid hover:bg-slate-50"
             >
               <span aria-hidden>📁</span>
               {t("dashboard.businessProfile.closeFinancialYear")}
@@ -776,7 +776,7 @@ export function BusinessProfilePage() {
               </div>
               <button
                 type="button"
-                className="shrink-0 rounded-md border border-slate-200/90 px-3 py-2 text-sm font-medium text-brand-primary-mid hover:bg-slate-50"
+                className="shrink-0 rounded-sm border border-slate-200/90 px-3 py-2 text-sm font-medium text-brand-primary-mid hover:bg-slate-50"
               >
                 {t("dashboard.businessProfile.configure")}
               </button>

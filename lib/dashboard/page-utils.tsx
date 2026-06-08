@@ -1,6 +1,7 @@
 "use client";
 
 import { formatDateIndian } from "@/lib/dashboard/date-format";
+import { inputControlClass, inputControlSmClass } from "@/lib/ui/control-styles";
 
 export function formatInr(amount: number): string {
   return new Intl.NumberFormat("en-IN", {
@@ -48,11 +49,9 @@ export const panelClass = "rounded-xl border border-slate-200/90 bg-white shadow
 export const formPanelClass = "rounded-xl border border-slate-200/90 bg-white p-4 shadow-sm lg:p-5";
 export const tablePanelClass = "overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-sm";
 
-export const inputClass =
-  "h-10 w-full rounded-md border border-slate-200/90 bg-white px-3 text-sm text-brand-primary outline-none transition-all placeholder:text-brand-primary-muted/70 focus:border-brand-primary/25 focus:ring-2 focus:ring-brand-primary/[0.08]";
+export const inputClass = inputControlClass;
 
-export const inputSmClass =
-  "h-9 w-full rounded-md border border-slate-200/90 bg-white px-2.5 text-sm text-brand-primary outline-none focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
+export const inputSmClass = inputControlSmClass;
 
 export const tableClass = "w-full text-sm text-brand-primary";
 export const tableHeadRowClass =

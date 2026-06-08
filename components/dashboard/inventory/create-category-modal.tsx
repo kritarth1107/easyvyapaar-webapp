@@ -60,7 +60,7 @@ export function CreateCategoryModal({ open, onClose, onAdd }: CreateCategoryModa
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-sm rounded-md border border-slate-200/90 bg-white p-6 shadow-xl"
+        className="relative w-full max-w-sm rounded-sm border border-slate-200/90 bg-white p-6 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -88,7 +88,7 @@ export function CreateCategoryModal({ open, onClose, onAdd }: CreateCategoryModa
               setError(false);
             }}
             placeholder={t("dashboard.inventory.createItem.categoryNamePlaceholder")}
-            className={`mt-1.5 h-10 w-full rounded-md border px-3 text-sm text-brand-primary outline-none transition-all focus:ring-2 ${
+            className={`mt-1.5 h-10 w-full rounded-sm border px-3 text-sm text-brand-primary outline-none transition-all focus:ring-2 ${
               error
                 ? "border-red-300 bg-red-50/50 focus:border-red-400 focus:ring-red-200"
                 : "border-slate-200/90 focus:border-brand-orange-1/50 focus:ring-brand-orange-1/15"
@@ -106,14 +106,14 @@ export function CreateCategoryModal({ open, onClose, onAdd }: CreateCategoryModa
           <button
             type="button"
             onClick={onClose}
-            className="h-10 rounded-md border border-slate-200/90 bg-white px-5 text-sm font-semibold text-brand-primary hover:bg-slate-50"
+            className="h-10 rounded-sm border border-slate-200/90 bg-white px-5 text-sm font-semibold text-brand-primary hover:bg-slate-50"
           >
             {t("dashboard.inventory.createItem.cancel")}
           </button>
           <button
             type="button"
             onClick={submit}
-            className="h-10 rounded-md bg-gradient-to-r from-brand-orange-2 to-brand-orange-1 px-5 text-sm font-semibold text-white shadow-[0_2px_8px_-4px_rgba(246,62,22,0.45)] hover:brightness-105"
+            className="h-10 rounded-sm bg-gradient-to-r from-brand-orange-2 to-brand-orange-1 px-5 text-sm font-semibold text-white shadow-[0_2px_8px_-4px_rgba(246,62,22,0.45)] hover:brightness-105"
           >
             {t("dashboard.inventory.createItem.addCategory")}
           </button>

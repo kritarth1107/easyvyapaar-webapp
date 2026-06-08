@@ -264,7 +264,7 @@ export function TeamManagementPage() {
                     type="button"
                     disabled={revokingInviteId === invite.inviteId}
                     onClick={() => void handleRevokeInvite(invite)}
-                    className="h-9 shrink-0 rounded-lg border border-red-200 px-3 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-60"
+                    className="h-9 shrink-0 rounded-sm border border-red-200 px-3 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-60"
                   >
                     {revokingInviteId === invite.inviteId
                       ? t("common.pleaseWait")
@@ -338,7 +338,7 @@ export function TeamManagementPage() {
                           type="button"
                           disabled={removingUserId === member.userId}
                           onClick={() => void handleRemove(member)}
-                          className="h-9 rounded-lg border border-red-200 px-3 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-60"
+                          className="h-9 rounded-sm border border-red-200 px-3 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-60"
                         >
                           {removingUserId === member.userId
                             ? t("common.pleaseWait")

@@ -17,7 +17,7 @@ import type { OrganisationBankAccount } from "@/lib/types/organisation-bank-api"
 import { useTranslation } from "@/lib/localization";
 
 const inputClass =
-  "h-9 w-full rounded-md border border-slate-200/90 bg-white px-2.5 text-sm text-brand-primary outline-none transition-all placeholder:text-brand-primary-muted/60 focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
+  "h-9 w-full rounded-sm border border-slate-200/90 bg-white px-2.5 text-sm text-brand-primary outline-none transition-all placeholder:text-brand-primary-muted/60 focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
 
 const fieldLabelClass = "mb-1 block text-xs font-medium text-brand-primary";
 
@@ -176,7 +176,7 @@ export function BusinessBankAccountsPage() {
         </button>
       </div>
 
-      <section className="rounded-md border border-slate-200/90 bg-white p-4 lg:p-5">
+      <section className="rounded-sm border border-slate-200/90 bg-white p-4 lg:p-5">
         {loading ? (
           <p className="py-10 text-center text-sm text-brand-primary-muted">{t("common.pleaseWait")}</p>
         ) : loadError ? (
@@ -242,7 +242,7 @@ export function BusinessBankAccountsPage() {
                         <button
                           type="button"
                           onClick={() => setViewAccount(row)}
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-200/90 text-brand-primary hover:bg-slate-50"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-sm border border-slate-200/90 text-brand-primary hover:bg-slate-50"
                           aria-label={t("dashboard.editParty.viewBankAccount")}
                         >
                           <EyeIcon />
@@ -378,7 +378,7 @@ function BankAccountFormModal({
       onClick={() => !saving && onClose()}
     >
       <div
-        className="relative flex max-h-[min(90vh,560px)] w-full max-w-md flex-col overflow-hidden rounded-md border border-slate-200/90 bg-white shadow-xl"
+        className="relative flex max-h-[min(90vh,560px)] w-full max-w-md flex-col overflow-hidden rounded-sm border border-slate-200/90 bg-white shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
@@ -499,7 +499,7 @@ function BankAccountViewModal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-md border border-slate-200/90 bg-white shadow-xl"
+        className="w-full max-w-md rounded-sm border border-slate-200/90 bg-white shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="border-b border-slate-100 px-5 py-4">
@@ -520,7 +520,7 @@ function BankAccountViewModal({
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-10 w-full items-center justify-center rounded-md border border-slate-200/90 text-sm font-semibold text-brand-primary hover:bg-slate-50"
+            className="inline-flex h-10 w-full items-center justify-center rounded-sm border border-slate-200/90 text-sm font-semibold text-brand-primary hover:bg-slate-50"
           >
             {t("common.close")}
           </button>
@@ -559,7 +559,7 @@ function BankAccountDeleteConfirmModal({
       onClick={() => !saving && onClose()}
     >
       <div
-        className="w-full max-w-md rounded-md border border-slate-200/90 bg-white shadow-xl"
+        className="w-full max-w-md rounded-sm border border-slate-200/90 bg-white shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="border-b border-slate-100 px-5 py-4">
@@ -576,7 +576,7 @@ function BankAccountDeleteConfirmModal({
           ) : null}
         </div>
         <div className="flex justify-end gap-2 px-5 py-4">
-          <button type="button" onClick={onClose} disabled={saving} className="inline-flex h-10 items-center rounded-md border border-slate-200/90 px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50">
+          <button type="button" onClick={onClose} disabled={saving} className="inline-flex h-10 items-center rounded-sm border border-slate-200/90 px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50">
             {t("common.cancel")}
           </button>
           <button

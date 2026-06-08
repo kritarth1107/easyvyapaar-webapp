@@ -11,7 +11,7 @@ import {
 import { useTranslation } from "@/lib/localization";
 
 const settingsInputClass =
-  "mt-1 h-9 w-full rounded-md border border-slate-200/90 bg-white px-2.5 text-sm text-brand-primary outline-none transition-all placeholder:text-brand-primary-muted/60 focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
+  "mt-1 h-9 w-full rounded-sm border border-slate-200/90 bg-white px-2.5 text-sm text-brand-primary outline-none transition-all placeholder:text-brand-primary-muted/60 focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
 
 type InvoiceSettingsModalProps = {
   open: boolean;
@@ -118,7 +118,7 @@ export function InvoiceSettingsModal({
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-md rounded-md border border-slate-200/90 bg-white shadow-xl"
+        className="relative w-full max-w-md rounded-sm border border-slate-200/90 bg-white shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
@@ -223,7 +223,7 @@ export function InvoiceSettingsModal({
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-10 items-center rounded-md border border-brand-primary/20 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-brand-surface/80"
+            className="inline-flex h-10 items-center rounded-sm border border-brand-primary/20 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-brand-surface/80"
           >
             {t("common.cancel")}
           </button>

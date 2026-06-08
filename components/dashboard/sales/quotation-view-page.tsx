@@ -242,7 +242,7 @@ export function QuotationViewPage({ quotationId }: { quotationId: string }) {
           <div className="flex min-w-0 items-center gap-3">
             <Link
               href="/dashboard/sales/quotations"
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-slate-200/90 text-brand-primary transition-colors hover:bg-slate-50"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm border border-slate-200/90 text-brand-primary transition-colors hover:bg-slate-50"
               aria-label={t("common.back")}
             >
               <BackIcon />
@@ -260,7 +260,7 @@ export function QuotationViewPage({ quotationId }: { quotationId: string }) {
             {quotation.status !== "converted" ? (
               <Link
                 href={`/dashboard/sales/quotations/${encodeURIComponent(quotation.quotationId)}/edit`}
-                className="inline-flex h-10 items-center rounded-md border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50"
+                className="inline-flex h-10 items-center rounded-sm border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50"
               >
                 {t("dashboard.quotations.view.edit")}
               </Link>
@@ -268,7 +268,7 @@ export function QuotationViewPage({ quotationId }: { quotationId: string }) {
             <button
               type="button"
               onClick={() => setSendModalOpen(true)}
-              className="inline-flex h-10 items-center rounded-md border border-emerald-200 bg-emerald-50 px-4 text-sm font-semibold text-emerald-800 hover:bg-emerald-100"
+              className="inline-flex h-10 items-center rounded-sm border border-emerald-200 bg-emerald-50 px-4 text-sm font-semibold text-emerald-800 hover:bg-emerald-100"
             >
               {t("dashboard.quotations.view.send")}
             </button>
@@ -282,7 +282,7 @@ export function QuotationViewPage({ quotationId }: { quotationId: string }) {
             <button
               type="button"
               onClick={() => triggerInvoiceSavePdf(printAreaRef.current, printOptions)}
-              className="inline-flex h-10 items-center rounded-md border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50"
+              className="inline-flex h-10 items-center rounded-sm border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50"
             >
               {t("dashboard.quotations.create.saveAsPdf")}
             </button>

@@ -110,7 +110,7 @@ function OutstandingHero({
           {formatPartyBalance(toCollect)}
         </p>
       </div>
-      <div className="rounded-md border border-red-200/80 bg-gradient-to-br from-red-50/80 to-white p-5">
+      <div className="rounded-sm border border-red-200/80 bg-gradient-to-br from-red-50/80 to-white p-5">
         <p className="text-[11px] font-bold uppercase tracking-wide text-red-800/80">{payLabel}</p>
         <p className="mt-2 text-3xl font-bold tabular-nums text-red-800">
           {formatPartyBalance(toPay)}
@@ -239,7 +239,7 @@ export function PartiesPage({ view }: PartiesPageProps) {
       )}
 
       {error && (
-        <p className="mb-4 rounded-md border border-red-200/80 bg-red-50/60 px-4 py-3 text-sm text-red-800">
+        <p className="mb-4 rounded-sm border border-red-200/80 bg-red-50/60 px-4 py-3 text-sm text-red-800">
           {error}
         </p>
       )}
@@ -373,7 +373,7 @@ export function PartiesPage({ view }: PartiesPageProps) {
               ))}
             </ul>
           </section>
-          <section className="rounded-md border border-red-200/60 bg-white p-4">
+          <section className="rounded-sm border border-red-200/60 bg-white p-4">
             <h2 className="text-sm font-bold text-red-900">{t("dashboard.partiesPage.topPayable")}</h2>
             <ul className="mt-3 space-y-2">
               {topPayable.map((p) => (
@@ -395,7 +395,7 @@ export function PartiesPage({ view }: PartiesPageProps) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={t("dashboard.partiesPage.searchPlaceholder")}
-          className="h-10 min-w-0 flex-1 rounded-md border border-slate-200/90 bg-white px-3 text-sm outline-none focus:border-brand-orange-1/40 focus:ring-2 focus:ring-brand-orange-1/15"
+          className="h-10 min-w-0 flex-1 rounded-sm border border-slate-200/90 bg-white px-3 text-sm outline-none focus:border-brand-orange-1/40 focus:ring-2 focus:ring-brand-orange-1/15"
         />
         <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-3 lg:w-auto lg:min-w-[540px]">
           {view === "all" && (
@@ -435,7 +435,7 @@ export function PartiesPage({ view }: PartiesPageProps) {
         </div>
       </div>
 
-      <section className="overflow-hidden rounded-md border border-slate-200/90 bg-white shadow-sm">
+      <section className="overflow-hidden rounded-sm border border-slate-200/90 bg-white shadow-sm">
         <div className="border-b border-slate-100 bg-brand-surface/50 px-4 py-3">
           <h2 className="text-sm font-bold text-brand-primary">
             {t("dashboard.partiesPage.listTitle")}{" "}
@@ -502,7 +502,7 @@ export function PartiesPage({ view }: PartiesPageProps) {
                 type="button"
                 disabled={pagination.page <= 1 || isLoading}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className="h-8 rounded-md border border-slate-200/90 px-3 text-xs font-semibold text-brand-primary disabled:opacity-50"
+                className="h-8 rounded-sm border border-slate-200/90 px-3 text-xs font-semibold text-brand-primary disabled:opacity-50"
               >
                 Previous
               </button>
@@ -510,7 +510,7 @@ export function PartiesPage({ view }: PartiesPageProps) {
                 type="button"
                 disabled={pagination.page >= pagination.totalPages || isLoading}
                 onClick={() => setPage((p) => p + 1)}
-                className="h-8 rounded-md border border-slate-200/90 px-3 text-xs font-semibold text-brand-primary disabled:opacity-50"
+                className="h-8 rounded-sm border border-slate-200/90 px-3 text-xs font-semibold text-brand-primary disabled:opacity-50"
               >
                 Next
               </button>

@@ -48,7 +48,7 @@ function BarcodeIcon() {
 }
 
 const inputClass =
-  "h-10 w-full rounded-md border border-slate-200/90 bg-white px-3 text-sm text-brand-primary outline-none transition-all placeholder:text-brand-primary-muted/60 focus:border-violet-400/60 focus:ring-2 focus:ring-violet-400/15";
+  "h-10 w-full rounded-sm border border-slate-200/90 bg-white px-3 text-sm text-brand-primary outline-none transition-all placeholder:text-brand-primary-muted/60 focus:border-violet-400/60 focus:ring-2 focus:ring-violet-400/15";
 
 export function AdjustSerialStockModal({
   open,
@@ -279,7 +279,7 @@ export function AdjustSerialStockModal({
                     onChange={(e) => setBulkInput(e.target.value)}
                     placeholder={t("dashboard.inventory.itemDetail.adjustStock.serialBulkPlaceholder")}
                     rows={3}
-                    className="w-full rounded-md border border-slate-200/90 bg-white px-3 py-2.5 font-mono text-sm text-brand-primary outline-none transition-all placeholder:text-brand-primary-muted/60 focus:border-violet-400/60 focus:ring-2 focus:ring-violet-400/15"
+                    className="w-full rounded-sm border border-slate-200/90 bg-white px-3 py-2.5 font-mono text-sm text-brand-primary outline-none transition-all placeholder:text-brand-primary-muted/60 focus:border-violet-400/60 focus:ring-2 focus:ring-violet-400/15"
                   />
                   <button
                     type="button"
@@ -438,7 +438,7 @@ export function AdjustSerialStockModal({
                 onChange={(e) => setRemarks(e.target.value)}
                 placeholder={t("dashboard.inventory.itemDetail.adjustStock.remarksPlaceholder")}
                 rows={3}
-                className="w-full rounded-md border border-slate-200/90 bg-white px-3 py-2.5 text-sm text-brand-primary outline-none transition-all placeholder:text-brand-primary-muted/60 focus:border-violet-400/60 focus:ring-2 focus:ring-violet-400/15"
+                className="w-full rounded-sm border border-slate-200/90 bg-white px-3 py-2.5 text-sm text-brand-primary outline-none transition-all placeholder:text-brand-primary-muted/60 focus:border-violet-400/60 focus:ring-2 focus:ring-violet-400/15"
               />
             </div>
           </div>
@@ -528,7 +528,7 @@ export function AdjustSerialStockModal({
             type="button"
             onClick={onClose}
             disabled={saveLoading}
-            className="h-10 rounded-md border border-slate-200/90 bg-white px-5 text-sm font-semibold text-brand-primary hover:bg-slate-50 disabled:opacity-60"
+            className="h-10 rounded-sm border border-slate-200/90 bg-white px-5 text-sm font-semibold text-brand-primary hover:bg-slate-50 disabled:opacity-60"
           >
             {t("dashboard.inventory.itemDetail.adjustStock.close")}
           </button>
@@ -536,7 +536,7 @@ export function AdjustSerialStockModal({
             type="button"
             onClick={() => void handleSave()}
             disabled={saveLoading || activeSerials.length === 0}
-            className="h-10 rounded-md bg-gradient-to-r from-violet-600 to-violet-500 px-5 text-sm font-semibold text-white shadow-[0_2px_10px_-4px_rgba(124,58,237,0.45)] hover:brightness-105 disabled:opacity-60"
+            className="h-10 rounded-sm bg-gradient-to-r from-violet-600 to-violet-500 px-5 text-sm font-semibold text-white shadow-[0_2px_10px_-4px_rgba(124,58,237,0.45)] hover:brightness-105 disabled:opacity-60"
           >
             {saveLoading
               ? t("dashboard.inventory.itemDetail.adjustStock.saving")

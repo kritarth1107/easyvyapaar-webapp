@@ -102,7 +102,7 @@ export function QuotationSendModal({ open, onClose, shareInput }: QuotationSendM
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-md rounded-md border border-slate-200/90 bg-white shadow-xl"
+        className="relative w-full max-w-md rounded-sm border border-slate-200/90 bg-white shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
@@ -128,7 +128,7 @@ export function QuotationSendModal({ open, onClose, shareInput }: QuotationSendM
           <button
             type="button"
             onClick={handleWhatsApp}
-            className="flex w-full items-center gap-4 rounded-md border border-slate-200/90 px-4 py-3 text-left transition-colors hover:border-emerald-300 hover:bg-emerald-50/60"
+            className="flex w-full items-center gap-4 rounded-sm border border-slate-200/90 px-4 py-3 text-left transition-colors hover:border-emerald-300 hover:bg-emerald-50/60"
           >
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
               <WhatsAppIcon />
@@ -146,7 +146,7 @@ export function QuotationSendModal({ open, onClose, shareInput }: QuotationSendM
           <button
             type="button"
             onClick={handleEmail}
-            className="flex w-full items-center gap-4 rounded-md border border-slate-200/90 px-4 py-3 text-left transition-colors hover:border-blue-300 hover:bg-blue-50/60"
+            className="flex w-full items-center gap-4 rounded-sm border border-slate-200/90 px-4 py-3 text-left transition-colors hover:border-blue-300 hover:bg-blue-50/60"
           >
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-700">
               <EmailIcon />
@@ -168,7 +168,7 @@ export function QuotationSendModal({ open, onClose, shareInput }: QuotationSendM
           <button
             type="button"
             onClick={onClose}
-            className="h-10 w-full rounded-md border border-slate-200/90 text-sm font-semibold text-brand-primary hover:bg-slate-50"
+            className="h-10 w-full rounded-sm border border-slate-200/90 text-sm font-semibold text-brand-primary hover:bg-slate-50"
           >
             {t("common.cancel")}
           </button>

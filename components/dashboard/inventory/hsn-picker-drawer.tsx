@@ -140,7 +140,7 @@ export function HsnPickerDrawer({ open, onClose, onSelect, initialQuery = "" }: 
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t("dashboard.inventory.createItem.hsnPicker.searchPlaceholder")}
             autoFocus
-            className="h-10 w-full rounded-md border border-slate-200/90 bg-white px-3 text-sm text-brand-primary outline-none focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15"
+            className="h-10 w-full rounded-sm border border-slate-200/90 bg-white px-3 text-sm text-brand-primary outline-none focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15"
           />
           <p className="mt-2 text-[11px] text-brand-primary-muted">
             {t("dashboard.inventory.createItem.hsnPicker.searchHint")}

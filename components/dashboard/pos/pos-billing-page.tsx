@@ -612,7 +612,7 @@ export function PosBillingPage() {
   }
 
   const toolbarBtn =
-    "inline-flex h-9 items-center rounded-md border border-slate-200/90 bg-white px-3 text-xs font-semibold text-brand-primary hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40";
+    "inline-flex h-9 items-center rounded-sm border border-slate-200/90 bg-white px-3 text-xs font-semibold text-brand-primary hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40";
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-slate-50 text-brand-primary">
@@ -621,7 +621,7 @@ export function PosBillingPage() {
         <button
           type="button"
           onClick={() => router.push("/dashboard")}
-          className="inline-flex items-center rounded-md border border-slate-200/90 px-3 py-2 text-sm font-semibold text-brand-primary hover:bg-slate-50"
+          className="inline-flex items-center rounded-sm border border-slate-200/90 px-3 py-2 text-sm font-semibold text-brand-primary hover:bg-slate-50"
         >
           {t("dashboard.pos.exit")}
           <ShortcutBadge keys="CTRL + ESC" />
@@ -631,7 +631,7 @@ export function PosBillingPage() {
           <button
             type="button"
             onClick={() => setSettingsOpen(true)}
-            className="inline-flex items-center rounded-md border border-slate-200/90 px-3 py-2 text-sm font-semibold text-brand-primary hover:bg-slate-50"
+            className="inline-flex items-center rounded-sm border border-slate-200/90 px-3 py-2 text-sm font-semibold text-brand-primary hover:bg-slate-50"
           >
             {t("dashboard.pos.settings")}
             <ShortcutBadge keys="CTRL + S" />
@@ -744,7 +744,7 @@ export function PosBillingPage() {
                     }
                   }}
                   placeholder={t("dashboard.pos.searchPlaceholder")}
-                  className="h-10 w-full rounded-md border border-slate-200/90 bg-white px-3 pr-16 text-sm outline-none focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15"
+                  className="h-10 w-full rounded-sm border border-slate-200/90 bg-white px-3 pr-16 text-sm outline-none focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15"
                 />
                 <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
                   <ShortcutBadge keys="F1" />
@@ -909,7 +909,7 @@ export function PosBillingPage() {
             <button
               type="button"
               onClick={() => setDiscountOpen(true)}
-              className="h-10 rounded-md border border-slate-200/90 text-xs font-semibold hover:bg-slate-50"
+              className="h-10 rounded-sm border border-slate-200/90 text-xs font-semibold hover:bg-slate-50"
             >
               {t("dashboard.pos.addDiscount")}
               <ShortcutBadge keys="F2" />
@@ -917,7 +917,7 @@ export function PosBillingPage() {
             <button
               type="button"
               onClick={() => setChargeOpen(true)}
-              className="h-10 rounded-md border border-slate-200/90 text-xs font-semibold hover:bg-slate-50"
+              className="h-10 rounded-sm border border-slate-200/90 text-xs font-semibold hover:bg-slate-50"
             >
               {t("dashboard.pos.addCharge")}
               <ShortcutBadge keys="F3" />
@@ -964,7 +964,7 @@ export function PosBillingPage() {
                       patchBillForm(bill, { amountReceived: Number(e.target.value) || 0 }),
                     )
                   }
-                  className="h-10 min-w-0 flex-1 rounded-md border border-slate-200/90 px-3 text-sm tabular-nums outline-none focus:border-brand-orange-1/50"
+                  className="h-10 min-w-0 flex-1 rounded-sm border border-slate-200/90 px-3 text-sm tabular-nums outline-none focus:border-brand-orange-1/50"
                 />
                 <div className="w-28">
                   <ModernSelect
@@ -987,7 +987,7 @@ export function PosBillingPage() {
                 <button
                   type="button"
                   onClick={() => setPartyOpen(true)}
-                  className="flex h-10 w-full items-center justify-between rounded-md border border-slate-200/90 px-3 text-sm hover:bg-slate-50"
+                  className="flex h-10 w-full items-center justify-between rounded-sm border border-slate-200/90 px-3 text-sm hover:bg-slate-50"
                 >
                   <span className="truncate">{getCustomerLabel(activeBill)}</span>
                   <span aria-hidden>✎</span>
@@ -1007,7 +1007,7 @@ export function PosBillingPage() {
               type="button"
               disabled={saving || activeBill.form.lineItems.length === 0}
               onClick={() => void handleSaveBill(true)}
-              className="flex h-11 w-full items-center justify-center rounded-lg border border-brand-orange-1 text-sm font-bold text-brand-orange-1 hover:bg-brand-orange-1/5 disabled:opacity-40"
+              className="flex h-11 w-full items-center justify-center rounded-sm border border-brand-orange-1 text-sm font-bold text-brand-orange-1 hover:bg-brand-orange-1/5 disabled:opacity-40"
             >
               {t("dashboard.pos.saveAndPrint")}
               <ShortcutBadge keys="F6" />
@@ -1016,7 +1016,7 @@ export function PosBillingPage() {
               type="button"
               disabled={saving || activeBill.form.lineItems.length === 0}
               onClick={() => void handleSaveBill(false)}
-              className="flex h-11 w-full items-center justify-center rounded-lg bg-brand-orange-1 text-sm font-bold text-white hover:bg-brand-orange-1/90 disabled:opacity-40"
+              className="flex h-11 w-full items-center justify-center rounded-sm bg-brand-orange-1 text-sm font-bold text-white hover:bg-brand-orange-1/90 disabled:opacity-40"
             >
               {saving ? t("common.pleaseWait") : t("dashboard.pos.saveBill")}
               <ShortcutBadge keys="F7" />

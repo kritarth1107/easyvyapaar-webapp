@@ -86,7 +86,7 @@ export function PurchaseOrdersPage() {
         <StatCard label={t("dashboard.purchases.openOrders")} value={String(summary.open)} accent="amber" />
         <StatCard label={t("dashboard.purchases.ordersValue")} value={formatInr(summary.amount)} accent="navy" />
       </div>
-      <div className="overflow-hidden rounded-md border border-slate-200/90 bg-white">
+      <div className="overflow-hidden rounded-sm border border-slate-200/90 bg-white">
         <div className="flex gap-3 border-b p-4">
           <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("dashboard.purchases.searchPlaceholder")} className="h-10 flex-1 rounded-md border border-slate-200/90 px-3 text-sm" />
           <div className="w-40"><ModernSelect value={status} onChange={setStatus} options={[{ value: "all", label: t("dashboard.purchases.allStatuses") }, { value: "open", label: t("dashboard.purchases.orderStatusOpen") }, { value: "received", label: t("dashboard.purchases.orderStatusReceived") }]} /></div>

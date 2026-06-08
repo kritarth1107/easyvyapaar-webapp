@@ -65,7 +65,7 @@ export function MobileWebGate({ hasSession = false }: MobileWebGateProps) {
             type="button"
             onClick={handleLogout}
             disabled={loggingOut}
-            className="rounded-full border border-slate-200/90 bg-white/90 px-4 py-2 text-xs font-semibold text-brand-primary shadow-sm backdrop-blur-sm disabled:opacity-60"
+            className="rounded-sm border border-slate-200/90 bg-white/90 px-4 py-2 text-xs font-semibold text-brand-primary shadow-sm backdrop-blur-sm disabled:opacity-60"
           >
             {loggingOut ? t("common.pleaseWait") : t("dashboard.accountLogout")}
           </button>

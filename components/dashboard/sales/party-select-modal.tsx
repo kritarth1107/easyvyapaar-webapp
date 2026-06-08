@@ -191,7 +191,7 @@ export function PartySelectModal({
       onClick={onClose}
     >
       <div
-        className="flex max-h-[min(560px,90vh)] w-full max-w-md flex-col overflow-hidden rounded-md border border-slate-200/90 bg-white shadow-xl"
+        className="flex max-h-[min(560px,90vh)] w-full max-w-md flex-col overflow-hidden rounded-sm border border-slate-200/90 bg-white shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-5 py-4">
@@ -221,7 +221,7 @@ export function PartySelectModal({
                 value={createName}
                 onChange={(e) => setCreateName(e.target.value)}
                 placeholder={t("dashboard.createParty.partyNamePlaceholder")}
-                className="h-10 rounded-md border border-slate-200/90 bg-slate-50/80 px-3 text-sm text-brand-primary outline-none focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15"
+                className="h-10 rounded-sm border border-slate-200/90 bg-slate-50/80 px-3 text-sm text-brand-primary outline-none focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15"
                 autoFocus
               />
             </label>
@@ -234,7 +234,7 @@ export function PartySelectModal({
                 value={createPhone}
                 onChange={(e) => setCreatePhone(e.target.value)}
                 placeholder={t("dashboard.createParty.mobile")}
-                className="h-10 rounded-md border border-slate-200/90 bg-slate-50/80 px-3 text-sm text-brand-primary outline-none focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15"
+                className="h-10 rounded-sm border border-slate-200/90 bg-slate-50/80 px-3 text-sm text-brand-primary outline-none focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15"
               />
             </label>
             <label className="flex flex-col gap-1">
@@ -339,7 +339,7 @@ export function PartySelectModal({
                   setCreateError(null);
                 }}
                 disabled={createSaving}
-                className="inline-flex h-10 flex-1 items-center justify-center rounded-md border border-slate-200/90 bg-white text-sm font-semibold text-brand-primary hover:bg-slate-50 disabled:opacity-50"
+                className="inline-flex h-10 flex-1 items-center justify-center rounded-sm border border-slate-200/90 bg-white text-sm font-semibold text-brand-primary hover:bg-slate-50 disabled:opacity-50"
               >
                 {t("common.cancel")}
               </button>
@@ -368,7 +368,7 @@ export function PartySelectModal({
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex h-10 items-center rounded-md border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50"
+              className="inline-flex h-10 items-center rounded-sm border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50"
             >
               {t("common.cancel")}
             </button>

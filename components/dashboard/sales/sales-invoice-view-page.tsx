@@ -314,7 +314,7 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
           <div className="flex min-w-0 items-center gap-3">
             <Link
               href="/dashboard/sales/invoices"
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-slate-200/90 text-brand-primary transition-colors hover:bg-slate-50"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm border border-slate-200/90 text-brand-primary transition-colors hover:bg-slate-50"
               aria-label={t("common.back")}
             >
               <BackIcon />
@@ -339,7 +339,7 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
             <button
               type="button"
               onClick={() => triggerInvoiceSavePdf(printAreaRef.current, printOptions)}
-              className="inline-flex h-10 items-center rounded-md border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50"
+              className="inline-flex h-10 items-center rounded-sm border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50"
             >
               {t("dashboard.salesInvoices.create.saveAsPdf")}
             </button>
@@ -360,7 +360,7 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
 
         <aside className="w-full shrink-0 lg:w-72 lg:self-start">
           <div className="space-y-4 lg:sticky lg:top-[3.625rem] lg:max-h-[calc(100dvh-4rem-3.625rem-1rem)] lg:overflow-y-auto lg:overscroll-contain lg:pr-1">
-          <div className="rounded-md border border-slate-200/90 bg-white p-4 shadow-sm">
+          <div className="rounded-sm border border-slate-200/90 bg-white p-4 shadow-sm">
             <h2 className="text-sm font-bold text-brand-primary">
               {t("dashboard.salesInvoices.view.paymentHistory")}
             </h2>
@@ -410,7 +410,7 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
           </div>
 
           {canRecordPayment ? (
-            <div className="rounded-md border border-slate-200/90 bg-white p-4 shadow-sm">
+            <div className="rounded-sm border border-slate-200/90 bg-white p-4 shadow-sm">
               <h2 className="text-sm font-bold text-brand-primary">
                 {t("dashboard.salesInvoices.view.recordPayment")}
               </h2>
@@ -426,7 +426,7 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
                     step="0.01"
                     value={paymentAmount}
                     onChange={(e) => setPaymentAmount(Number(e.target.value) || 0)}
-                    className="h-10 w-full rounded-md border border-slate-200/90 bg-white px-3 text-sm text-brand-primary outline-none focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15"
+                    className="h-10 w-full rounded-sm border border-slate-200/90 bg-white px-3 text-sm text-brand-primary outline-none focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15"
                   />
                   <p className="mt-1 text-xs text-brand-primary-muted">
                     {t("dashboard.salesInvoices.create.balanceAmount")}: {formatInr(invoice.balanceAmount)}
@@ -452,7 +452,7 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
                     type="button"
                     disabled={recordingPayment || paymentAmount <= 0}
                     onClick={() => void submitPayment(false)}
-                    className="inline-flex h-10 items-center justify-center rounded-md border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                    className="inline-flex h-10 items-center justify-center rounded-sm border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     {recordingPayment
                       ? t("dashboard.salesInvoices.view.recordingPayment")

@@ -32,9 +32,9 @@ import type { SalesRefundMode } from "@/lib/types/sales-returns-api";
 import { useTranslation } from "@/lib/localization";
 
 const inputSmClass =
-  "h-9 w-full rounded-md border border-slate-200/90 bg-white px-2.5 text-sm text-brand-primary outline-none focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
+  "h-9 w-full rounded-sm border border-slate-200/90 bg-white px-2.5 text-sm text-brand-primary outline-none focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
 const textareaClass =
-  "w-full rounded-md border border-slate-200/90 bg-white px-3 py-2 text-sm text-brand-primary outline-none placeholder:text-brand-primary-muted/60 focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
+  "w-full rounded-sm border border-slate-200/90 bg-white px-3 py-2 text-sm text-brand-primary outline-none placeholder:text-brand-primary-muted/60 focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
 
 function formatInr(amount: number): string {
   return new Intl.NumberFormat("en-IN", {
@@ -306,7 +306,7 @@ export function CreateSalesReturnPage() {
       </div>
 
       <div className="space-y-6">
-        <section className="rounded-md border border-slate-200/90 bg-white p-4">
+        <section className="rounded-sm border border-slate-200/90 bg-white p-4">
           <h3 className="text-sm font-semibold text-brand-primary">{t("dashboard.salesReturns.create.selectInvoice")}</h3>
           <div className="mt-3 flex flex-col gap-3 sm:flex-row">
             <input
@@ -355,7 +355,7 @@ export function CreateSalesReturnPage() {
           <p className="text-sm text-brand-primary-muted">{t("common.pleaseWait")}</p>
         ) : invoice && form ? (
           <>
-            <section className="rounded-md border border-slate-200/90 bg-white p-4">
+            <section className="rounded-sm border border-slate-200/90 bg-white p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wide text-brand-primary-muted">

@@ -48,7 +48,7 @@ export function PurchaseReturnsPage() {
       </div>
       <div className="mb-6 grid grid-cols-2 gap-3"><StatCard label={t("dashboard.purchases.totalCount")} value={String(returns.length)} /><StatCard label={t("dashboard.purchases.returnsTotal")} value={formatInr(total)} accent="amber" /></div>
       <div className="overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-sm">
-        <div className="border-b p-4"><input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("dashboard.purchases.searchPlaceholder")} className="h-10 w-full rounded-md border px-3 text-sm" /></div>
+        <div className="border-b p-4"><input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("dashboard.purchases.searchPlaceholder")} className="h-10 w-full rounded-sm border px-3 text-sm" /></div>
         <table className="w-full text-sm">
           <thead><tr className="border-b bg-brand-surface/50 text-[11px] uppercase"><th className="px-4 py-3">{t("dashboard.purchases.colReturn")}</th><th className="px-4 py-3">{t("dashboard.purchases.colBill")}</th><th className="px-4 py-3">{t("dashboard.purchases.colDate")}</th><th className="px-4 py-3">{t("dashboard.purchases.colSupplier")}</th><th className="px-4 py-3 text-right">{t("dashboard.purchases.colAmount")}</th></tr></thead>
           <tbody>

@@ -29,7 +29,7 @@ function CloseIcon() {
 }
 
 const inputClass =
-  "h-10 w-full rounded-md border border-slate-200/90 bg-white px-3 text-sm text-brand-primary outline-none transition-all placeholder:text-brand-primary-muted/60 focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
+  "h-10 w-full rounded-sm border border-slate-200/90 bg-white px-3 text-sm text-brand-primary outline-none transition-all placeholder:text-brand-primary-muted/60 focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
 
 export function AdjustStockModal({
   open,
@@ -118,7 +118,7 @@ export function AdjustStockModal({
       onClick={() => !saveLoading && onClose()}
     >
       <div
-        className="relative flex max-h-[min(90vh,720px)] w-full max-w-3xl flex-col overflow-hidden rounded-md border border-slate-200/90 bg-white shadow-xl"
+        className="relative flex max-h-[min(90vh,720px)] w-full max-w-3xl flex-col overflow-hidden rounded-sm border border-slate-200/90 bg-white shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between border-b border-slate-100 px-6 py-4">
@@ -193,7 +193,7 @@ export function AdjustStockModal({
                 onChange={(e) => setRemarks(e.target.value)}
                 placeholder={t("dashboard.inventory.itemDetail.adjustStock.remarksPlaceholder")}
                 rows={4}
-                className="w-full rounded-md border border-slate-200/90 bg-white px-3 py-2.5 text-sm text-brand-primary outline-none transition-all placeholder:text-brand-primary-muted/60 focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15"
+                className="w-full rounded-sm border border-slate-200/90 bg-white px-3 py-2.5 text-sm text-brand-primary outline-none transition-all placeholder:text-brand-primary-muted/60 focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15"
               />
             </div>
           </div>
@@ -257,7 +257,7 @@ export function AdjustStockModal({
             type="button"
             onClick={onClose}
             disabled={saveLoading}
-            className="h-10 rounded-md border border-slate-200/90 bg-white px-5 text-sm font-semibold text-brand-primary hover:bg-slate-50 disabled:opacity-60"
+            className="h-10 rounded-sm border border-slate-200/90 bg-white px-5 text-sm font-semibold text-brand-primary hover:bg-slate-50 disabled:opacity-60"
           >
             {t("dashboard.inventory.itemDetail.adjustStock.close")}
           </button>
@@ -265,7 +265,7 @@ export function AdjustStockModal({
             type="button"
             onClick={() => void handleSave()}
             disabled={saveLoading}
-            className="h-10 rounded-md bg-gradient-to-r from-brand-orange-2 to-brand-orange-1 px-5 text-sm font-semibold text-white shadow-[0_2px_10px_-4px_rgba(246,62,22,0.4)] hover:brightness-105 disabled:opacity-60"
+            className="h-10 rounded-sm bg-gradient-to-r from-brand-orange-2 to-brand-orange-1 px-5 text-sm font-semibold text-white shadow-[0_2px_10px_-4px_rgba(246,62,22,0.4)] hover:brightness-105 disabled:opacity-60"
           >
             {saveLoading
               ? t("dashboard.inventory.itemDetail.adjustStock.saving")

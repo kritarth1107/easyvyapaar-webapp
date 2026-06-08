@@ -79,9 +79,9 @@ function FieldLabel({
 }
 
 const inputClass =
-  "h-10 w-full rounded-md border border-slate-200/90 bg-white px-3 text-sm text-brand-primary outline-none transition-all placeholder:text-brand-primary-muted/60 focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
+  "h-10 w-full rounded-sm border border-slate-200/90 bg-white px-3 text-sm text-brand-primary outline-none transition-all placeholder:text-brand-primary-muted/60 focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
 const inputErrorClass =
-  "h-10 w-full rounded-md border border-red-300 bg-red-50/50 px-3 text-sm text-brand-primary outline-none focus:border-red-400 focus:ring-2 focus:ring-red-200";
+  "h-10 w-full rounded-sm border border-red-300 bg-red-50/50 px-3 text-sm text-brand-primary outline-none focus:border-red-400 focus:ring-2 focus:ring-red-200";
 
 const formGridClass = "grid grid-cols-1 gap-6 sm:grid-cols-2 sm:items-start";
 
@@ -519,7 +519,7 @@ export function CreateItemModal({ open, onClose, organisationId, onSaved }: Crea
               type="button"
               onClick={onClose}
               disabled={saveLoading}
-              className="h-10 rounded-md border border-slate-200/90 bg-white px-5 text-sm font-semibold text-brand-primary transition-colors hover:bg-slate-50 disabled:opacity-60"
+              className="h-10 rounded-sm border border-slate-200/90 bg-white px-5 text-sm font-semibold text-brand-primary transition-colors hover:bg-slate-50 disabled:opacity-60"
             >
               {t("dashboard.inventory.createItem.cancel")}
             </button>
@@ -528,7 +528,7 @@ export function CreateItemModal({ open, onClose, organisationId, onSaved }: Crea
                 type="button"
                 onClick={() => void handleSave(true)}
                 disabled={saveLoading || !organisationId}
-                className="h-10 rounded-md border border-slate-200/90 bg-white px-5 text-sm font-semibold text-brand-primary transition-colors hover:border-brand-orange-1/40 hover:bg-brand-surface-warm disabled:opacity-60"
+                className="h-10 rounded-sm border border-slate-200/90 bg-white px-5 text-sm font-semibold text-brand-primary transition-colors hover:border-brand-orange-1/40 hover:bg-brand-surface-warm disabled:opacity-60"
               >
                 {saveLoading
                   ? t("dashboard.inventory.createItem.saving")
@@ -538,7 +538,7 @@ export function CreateItemModal({ open, onClose, organisationId, onSaved }: Crea
                 type="button"
                 onClick={() => void handleSave(false)}
                 disabled={saveLoading || !organisationId}
-                className="h-10 rounded-md bg-gradient-to-r from-brand-orange-2 to-brand-orange-1 px-5 text-sm font-semibold text-white shadow-[0_2px_10px_-4px_rgba(246,62,22,0.4)] transition-all hover:brightness-105 disabled:opacity-60"
+                className="h-10 rounded-sm bg-gradient-to-r from-brand-orange-2 to-brand-orange-1 px-5 text-sm font-semibold text-white shadow-[0_2px_10px_-4px_rgba(246,62,22,0.4)] transition-all hover:brightness-105 disabled:opacity-60"
               >
                 {saveLoading
                   ? t("dashboard.inventory.createItem.saving")
@@ -1128,7 +1128,7 @@ function StockSection({
               {t("dashboard.inventory.createItem.uploadHint")}
             </p>
           </div>
-          <label className="inline-flex h-10 shrink-0 cursor-pointer items-center justify-center rounded-md border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary transition-colors hover:bg-slate-50">
+          <label className="inline-flex h-10 shrink-0 cursor-pointer items-center justify-center rounded-sm border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary transition-colors hover:bg-slate-50">
             {t("dashboard.inventory.createItem.selectFile")}
             <input type="file" className="sr-only" accept="image/png,image/jpeg" multiple />
           </label>

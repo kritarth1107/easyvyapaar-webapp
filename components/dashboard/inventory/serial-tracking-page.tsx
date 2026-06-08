@@ -196,7 +196,7 @@ export function SerialTrackingPage() {
             type="button"
             onClick={() => exportSerialRegistryCsv(filtered)}
             disabled={filtered.length === 0}
-            className="inline-flex h-10 items-center rounded-md border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50 disabled:opacity-50"
+            className="inline-flex h-10 items-center rounded-sm border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50 disabled:opacity-50"
           >
             {t("dashboard.serialTrackingPage.exportList")}
           </button>
@@ -216,7 +216,7 @@ export function SerialTrackingPage() {
       )}
 
       {error && (
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-md border border-red-200/80 bg-red-50/60 px-4 py-3">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-sm border border-red-200/80 bg-red-50/60 px-4 py-3">
           <p className="text-sm font-medium text-red-800">{error}</p>
           <button
             type="button"
@@ -229,7 +229,7 @@ export function SerialTrackingPage() {
       )}
 
       {isLoading ? (
-        <div className="rounded-md border border-slate-200/90 bg-white px-6 py-16 text-center">
+        <div className="rounded-sm border border-slate-200/90 bg-white px-6 py-16 text-center">
           <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-2 border-violet-200 border-t-violet-600" />
           <p className="text-sm text-brand-primary-muted">{t("dashboard.serialTrackingPage.loading")}</p>
         </div>
@@ -319,7 +319,7 @@ export function SerialTrackingPage() {
 
           {hasSerials && (
             <div className="mb-8 grid gap-4 lg:grid-cols-3">
-              <section className="rounded-md border border-slate-200/90 bg-white p-4 lg:p-5">
+              <section className="rounded-sm border border-slate-200/90 bg-white p-4 lg:p-5">
                 <h3 className="text-sm font-bold text-brand-primary">
                   {t("dashboard.serialTrackingPage.statusChart")}
                 </h3>
@@ -328,7 +328,7 @@ export function SerialTrackingPage() {
                   <ChartLegend slices={statusSlices} valueFormatter={(n) => `${n}`} />
                 </div>
               </section>
-              <section className="rounded-md border border-slate-200/90 bg-white p-4 lg:p-5">
+              <section className="rounded-sm border border-slate-200/90 bg-white p-4 lg:p-5">
                 <h3 className="text-sm font-bold text-brand-primary">
                   {t("dashboard.serialTrackingPage.byProduct")}
                 </h3>
@@ -348,7 +348,7 @@ export function SerialTrackingPage() {
                   )}
                 </div>
               </section>
-              <section className="rounded-md border border-slate-200/90 bg-white p-4 lg:p-5">
+              <section className="rounded-sm border border-slate-200/90 bg-white p-4 lg:p-5">
                 <h3 className="text-sm font-bold text-brand-primary">
                   {t("dashboard.serialTrackingPage.byCategory")}
                 </h3>
@@ -368,7 +368,7 @@ export function SerialTrackingPage() {
 
           {hasSerials && (
             <div className="mb-8 grid gap-4 lg:grid-cols-2">
-              <section className="rounded-md border border-slate-200/90 bg-white p-4">
+              <section className="rounded-sm border border-slate-200/90 bg-white p-4">
                 <h3 className="text-sm font-bold text-brand-primary">
                   {t("dashboard.serialTrackingPage.recentAdded")}
                 </h3>
@@ -388,7 +388,7 @@ export function SerialTrackingPage() {
                   ))}
                 </ul>
               </section>
-              <section className="rounded-md border border-slate-200/90 bg-white p-4">
+              <section className="rounded-sm border border-slate-200/90 bg-white p-4">
                 <h3 className="text-sm font-bold text-brand-primary">
                   {t("dashboard.serialTrackingPage.recentSold")}
                 </h3>
@@ -483,7 +483,7 @@ export function SerialTrackingPage() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t("dashboard.serialTrackingPage.searchPlaceholder")}
-              className="h-10 min-w-0 flex-1 rounded-md border border-slate-200/90 bg-white px-3 text-sm outline-none focus:border-violet-400/50 focus:ring-2 focus:ring-violet-400/15"
+              className="h-10 min-w-0 flex-1 rounded-sm border border-slate-200/90 bg-white px-3 text-sm outline-none focus:border-violet-400/50 focus:ring-2 focus:ring-violet-400/15"
             />
             <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-3 lg:w-auto lg:min-w-[540px]">
               <ModernSelect
@@ -514,7 +514,7 @@ export function SerialTrackingPage() {
             </div>
           </div>
 
-          <section className="mb-8 overflow-hidden rounded-md border border-slate-200/90 bg-white shadow-sm">
+          <section className="mb-8 overflow-hidden rounded-sm border border-slate-200/90 bg-white shadow-sm">
             <div className="border-b border-slate-100 bg-brand-surface/50 px-4 py-3">
               <h2 className="text-sm font-bold text-brand-primary">
                 {t("dashboard.serialTrackingPage.registry")}{" "}

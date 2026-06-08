@@ -16,9 +16,9 @@ import type { FinancePaymentMode, FinancePaymentType } from "@/lib/types/finance
 import { useTranslation } from "@/lib/localization";
 
 const inputSmClass =
-  "h-9 w-full rounded-md border border-slate-200/90 bg-white px-2.5 text-sm text-brand-primary outline-none focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
+  "h-9 w-full rounded-sm border border-slate-200/90 bg-white px-2.5 text-sm text-brand-primary outline-none focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
 const textareaClass =
-  "w-full rounded-md border border-slate-200/90 bg-white px-3 py-2 text-sm text-brand-primary outline-none placeholder:text-brand-primary-muted/60 focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
+  "w-full rounded-sm border border-slate-200/90 bg-white px-3 py-2 text-sm text-brand-primary outline-none placeholder:text-brand-primary-muted/60 focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
 
 function formatInr(amount: number): string {
   return new Intl.NumberFormat("en-IN", {
@@ -208,7 +208,7 @@ export function CreatePaymentPage() {
 
       <div className="space-y-6">
         {form ? (
-          <section className="rounded-md border border-slate-200/90 bg-white p-4">
+          <section className="rounded-sm border border-slate-200/90 bg-white p-4">
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <label className="block">
                 <span className="mb-1 block text-xs font-medium text-brand-primary-muted">
@@ -267,7 +267,7 @@ export function CreatePaymentPage() {
           </section>
         ) : null}
 
-        <section className="rounded-md border border-slate-200/90 bg-white p-4">
+        <section className="rounded-sm border border-slate-200/90 bg-white p-4">
           <h3 className="text-sm font-semibold text-brand-primary">
             {t("dashboard.financePayments.create.selectParty")}
           </h3>
@@ -312,7 +312,7 @@ export function CreatePaymentPage() {
           <p className="text-sm text-brand-primary-muted">{t("common.pleaseWait")}</p>
         ) : selectedParty && form ? (
           <>
-            <section className="rounded-md border border-slate-200/90 bg-white p-4">
+            <section className="rounded-sm border border-slate-200/90 bg-white p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-brand-primary-muted">
                 {t("dashboard.financePayments.create.partyDetails")}
               </p>
