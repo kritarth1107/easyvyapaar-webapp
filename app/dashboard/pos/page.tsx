@@ -1,6 +1,5 @@
-import { redirect } from "next/navigation";
+import { PosBillingPage } from "@/components/dashboard/pos/pos-billing-page";
 
-/** POS billing uses the sales invoice flow. */
 export default function PosPage() {
-  redirect("/dashboard/sales/invoices/new");
+  return <PosBillingPage />;
 }

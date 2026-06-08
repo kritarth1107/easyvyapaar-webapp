@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useScrollbarAutohide } from "@/lib/hooks/use-scrollbar-autohide";
 import {
   getSidebarCollapsedPreference,
@@ -28,6 +28,8 @@ function isTypingTarget(target: EventTarget | null): boolean {
 
 export function DashboardShell({ children, hasSession = false }: DashboardShellProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const isPosFullscreen = pathname?.startsWith("/dashboard/pos");
   const isMobileOrTablet = useIsMobileOrTablet();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [businessSwitchOpen, setBusinessSwitchOpen] = useState(false);
@@ -65,6 +67,19 @@ export function DashboardShell({ children, hasSession = false }: DashboardShellP
 
   if (isMobileOrTablet) {
     return <MobileWebGate hasSession={hasSession} />;
+  }
+
+  if (isPosFullscreen) {
+    return (
+      <UserMeProvider>
+        <BusinessSwitchModal
+          open={businessSwitchOpen}
+          onClose={() => setBusinessSwitchOpen(false)}
+        />
+        <ShopSwitchOverlay />
+        <div className="h-screen overflow-hidden">{children}</div>
+      </UserMeProvider>
+    );
   }
 
   return (
