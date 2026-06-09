@@ -58,13 +58,24 @@ function UserInitial({ name }: { name: string }) {
 }
 
 function AuthActions({ mobile = false, onNavigate }: { mobile?: boolean; onNavigate?: () => void }) {
-  const { user, isLoggedIn, isLoading } = useMarketingAuth();
+  const { user, isLoggedIn, isLoading, hasSessionHint } = useMarketingAuth();
 
-  if (isLoading) {
+  if (isLoading && hasSessionHint && !isLoggedIn) {
     return (
-      <div
-        className={`${mobile ? "mt-3 h-10" : "hidden h-10 w-40 lg:block"} animate-pulse rounded-full bg-brand-surface`}
-      />
+      <div className={`flex items-center gap-2 ${mobile ? "mt-3 w-full" : ""}`}>
+        <div
+          className={`${mobile ? "h-10 w-full" : "h-10 w-28"} animate-pulse rounded-full bg-brand-surface`}
+        />
+        <Link
+          href="/dashboard"
+          onClick={onNavigate}
+          className={`brand-gradient-orange-h inline-flex items-center justify-center rounded-sm px-5 py-2.5 text-sm font-semibold text-white shadow-sm ${
+            mobile ? "w-full" : ""
+          }`}
+        >
+          Dashboard
+        </Link>
+      </div>
     );
   }
 

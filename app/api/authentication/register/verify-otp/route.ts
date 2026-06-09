@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { getApiBaseUrl, parseBackendBody } from "@/lib/api/backend";
+import { fetchBackend, getApiBaseUrl, parseBackendBody } from "@/lib/api/backend";
+import { setSessionCookies } from "@/lib/auth/session-cookies";
 import { getHeadersFromRequest } from "@/lib/header-utils";
-import { SESSION_COOKIE_NAME, SESSION_MAX_AGE } from "@/lib/auth/session";
 import type { VerifyOtpSuccessResponse } from "@/lib/types/auth-api";
 
 export async function POST(request: Request) {
@@ -46,18 +45,24 @@ export async function POST(request: Request) {
 
     let backendResponse: Response;
     try {
-      backendResponse = await fetch(`${apiBaseUrl}auth/register/verify-otp`, {
+      backendResponse = await fetchBackend(`${apiBaseUrl}auth/register/verify-otp`, {
         method: "POST",
         headers,
         body: JSON.stringify({
           verificationToken: verificationToken.trim(),
           otp: otpValue,
         }),
+        timeoutMs: 20_000,
       });
     } catch (error) {
       console.error("Register verify OTP backend request failed:", error);
+      const isTimeout = error instanceof Error && error.name === "AbortError";
       return NextResponse.json(
-        { error: "Unable to reach authentication service" },
+        {
+          error: isTimeout
+            ? "Authentication service is slow to respond. Please try again."
+            : "Unable to reach authentication service",
+        },
         { status: 502 }
       );
     }
@@ -69,14 +74,7 @@ export async function POST(request: Request) {
       const sessionToken = success?.data?.sessionToken;
 
       if (sessionToken) {
-        const cookieStore = await cookies();
-        cookieStore.set(SESSION_COOKIE_NAME, sessionToken, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "lax",
-          path: "/",
-          maxAge: SESSION_MAX_AGE,
-        });
+        await setSessionCookies(sessionToken);
       }
     }
 

@@ -114,8 +114,11 @@ export function UserMeProvider({ children }: { children: React.ReactNode }) {
       ? `/api/user/me?organisationId=${encodeURIComponent(orgParam)}`
       : "/api/user/me";
 
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 12_000);
+
     try {
-      const res = await fetch(meUrl, { cache: "no-store" });
+      const res = await fetch(meUrl, { cache: "no-store", signal: controller.signal });
       const body: unknown = await res.json();
 
       if (!res.ok) {
@@ -149,12 +152,18 @@ export function UserMeProvider({ children }: { children: React.ReactNode }) {
       if (orgId) {
         await loadShopWorkspace(orgId, false);
       }
-    } catch {
-      setError("Network error while loading profile");
+    } catch (error) {
+      const isTimeout = error instanceof Error && error.name === "AbortError";
+      setError(
+        isTimeout
+          ? "Server is slow to respond. Please refresh and try again."
+          : "Network error while loading profile"
+      );
       setUser(null);
       setActiveOrganisationId(null);
       setShopStats(null);
     } finally {
+      window.clearTimeout(timeout);
       if (!options?.silent) {
         setIsLoading(false);
       }

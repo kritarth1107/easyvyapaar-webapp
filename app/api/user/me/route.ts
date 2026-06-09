@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
-import { getApiBaseUrl, parseBackendBody } from "@/lib/api/backend";
+import { cookies } from "next/headers";
+import { fetchBackend, getApiBaseUrl, parseBackendBody } from "@/lib/api/backend";
 import { normalizeUserMeResponse } from "@/lib/api/user-me";
+import {
+  SESSION_COOKIE_NAME,
+  SESSION_HINT_COOKIE_NAME,
+  SESSION_MAX_AGE,
+} from "@/lib/auth/session";
 import { getHeadersFromRequest } from "@/lib/header-utils";
 
 export async function GET(request: Request) {
@@ -25,21 +31,40 @@ export async function GET(request: Request) {
 
     let backendResponse: Response;
     try {
-      backendResponse = await fetch(backendUrl.toString(), {
+      backendResponse = await fetchBackend(backendUrl.toString(), {
         method: "GET",
         headers,
         cache: "no-store",
+        timeoutMs: 12_000,
       });
     } catch (error) {
       console.error("Get me backend request failed:", error);
+      const isTimeout = error instanceof Error && error.name === "AbortError";
       return NextResponse.json(
-        { error: "Unable to reach authentication service" },
+        {
+          error: isTimeout
+            ? "Authentication service is slow to respond. Please try again."
+            : "Unable to reach authentication service",
+        },
         { status: 502 }
       );
     }
 
     const responseBody = await parseBackendBody(backendResponse);
     const normalized = normalizeUserMeResponse(responseBody, organisationId);
+
+    if (backendResponse.ok) {
+      const cookieStore = await cookies();
+      if (cookieStore.get(SESSION_COOKIE_NAME)?.value) {
+        cookieStore.set(SESSION_HINT_COOKIE_NAME, "1", {
+          httpOnly: false,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          path: "/",
+          maxAge: SESSION_MAX_AGE,
+        });
+      }
+    }
 
     return NextResponse.json(normalized, { status: backendResponse.status });
   } catch (error) {

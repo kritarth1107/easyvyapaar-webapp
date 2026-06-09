@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getApiBaseUrl, parseBackendBody } from "@/lib/api/backend";
+import { fetchBackend, getApiBaseUrl, parseBackendBody } from "@/lib/api/backend";
 import { getHeadersFromRequest } from "@/lib/header-utils";
 import { parseIndianMobile } from "@/lib/validators/indian-mobile";
 
@@ -35,15 +35,21 @@ export async function POST(request: Request) {
 
     let backendResponse: Response;
     try {
-      backendResponse = await fetch(`${apiBaseUrl}auth/login`, {
+      backendResponse = await fetchBackend(`${apiBaseUrl}auth/login`, {
         method: "POST",
         headers,
         body: JSON.stringify({ mobile: parsed.national }),
+        timeoutMs: 25_000,
       });
     } catch (error) {
       console.error("Get OTP backend request failed:", error);
+      const isTimeout = error instanceof Error && error.name === "AbortError";
       return NextResponse.json(
-        { error: "Unable to reach authentication service" },
+        {
+          error: isTimeout
+            ? "Authentication service is slow to respond. Please try again."
+            : "Unable to reach authentication service",
+        },
         { status: 502 }
       );
     }

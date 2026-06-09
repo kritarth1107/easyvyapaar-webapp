@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { getApiBaseUrl, parseBackendBody } from "@/lib/api/backend";
+import { fetchBackend, getApiBaseUrl, parseBackendBody } from "@/lib/api/backend";
+import { setSessionCookies } from "@/lib/auth/session-cookies";
 import { getHeadersFromRequest } from "@/lib/header-utils";
-import { SESSION_COOKIE_NAME, SESSION_MAX_AGE } from "@/lib/auth/session";
 
 export async function POST(request: Request) {
   try {
@@ -32,13 +31,14 @@ export async function POST(request: Request) {
 
     let backendResponse: Response;
     try {
-      backendResponse = await fetch(backendUrl.toString(), {
+      backendResponse = await fetchBackend(backendUrl.toString(), {
         method: "POST",
         headers: {
           ...headers,
           "Content-Type": "application/json",
         },
         body: JSON.stringify(body),
+        timeoutMs: 20_000,
       });
     } catch (error) {
       console.error("Verify mobile change OTP backend request failed:", error);
@@ -54,14 +54,7 @@ export async function POST(request: Request) {
       const sessionToken = (responseBody as { data?: { sessionToken?: string } })?.data
         ?.sessionToken;
       if (sessionToken) {
-        const cookieStore = await cookies();
-        cookieStore.set(SESSION_COOKIE_NAME, sessionToken, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "lax",
-          path: "/",
-          maxAge: SESSION_MAX_AGE,
-        });
+        await setSessionCookies(sessionToken);
       }
     }
 
