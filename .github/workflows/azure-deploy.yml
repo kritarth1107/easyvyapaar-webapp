@@ -1,0 +1,77 @@
+name: Deploy Web App to Azure App Service
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AZURE_WEBAPP_NAME: mahajaan-web
+  RESOURCE_GROUP: rg-mahajaan-prod
+  NODE_VERSION: "22"
+  NEXT_PUBLIC_API_URL: https://mahajaan-api.icybeach-b419bf3c.centralindia.azurecontainerapps.io/api/v1/
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install and build
+        run: |
+          npm ci
+          npm run build
+        env:
+          NEXT_PUBLIC_API_URL: ${{ env.NEXT_PUBLIC_API_URL }}
+
+      - name: Prepare standalone package
+        run: |
+          cp -r public .next/standalone/public
+          cp -r .next/static .next/standalone/.next/static
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy to App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          package: .next/standalone
+
+      - name: Set startup command
+        run: |
+          az webapp config set \
+            --name ${{ env.AZURE_WEBAPP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --startup-file "node server.js"
+
+      - name: Verify deployment
+        run: |
+          URL="https://mahajaan-web-f3byg4ecd4e7cgc7.centralindia-01.azurewebsites.net"
+          for i in $(seq 1 12); do
+            if curl -fsS "$URL" -o /dev/null; then
+              echo "Site is up: $URL"
+              exit 0
+            fi
+            echo "Waiting for site... ($i/12)"
+            sleep 10
+          done
+          echo "Site check failed"
+          exit 1
