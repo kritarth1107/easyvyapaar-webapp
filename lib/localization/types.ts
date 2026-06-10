@@ -147,6 +147,14 @@ export type MessageTree = {
       enterOtpError: string;
       verifyFailed: string;
     };
+    consent: {
+      agreePrefix: string;
+      termsLink: string;
+      privacyLink: string;
+      required: string;
+      viewFullDocument: string;
+      closeModal: string;
+    };
     orgTypes: Record<OrganisationType, string>;
   };
   sidebar: {

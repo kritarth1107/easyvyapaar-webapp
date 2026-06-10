@@ -1,33 +1,7 @@
 import Link from "next/link";
 import { LEGAL_ENTITY } from "@/legal/company";
-import type { LegalDocument, LegalSection } from "@/legal/types";
-
-function renderSection(section: LegalSection, depth = 0) {
-  const HeadingTag = depth === 0 ? "h2" : "h3";
-  const headingClass =
-    depth === 0
-      ? "mt-10 scroll-mt-24 text-xl font-bold text-brand-primary first:mt-0"
-      : "mt-6 text-lg font-semibold text-brand-primary";
-
-  return (
-    <section key={section.id} id={section.id} className="scroll-mt-24">
-      <HeadingTag className={headingClass}>{section.title}</HeadingTag>
-      {section.paragraphs?.map((paragraph) => (
-        <p key={paragraph.slice(0, 48)} className="mt-3 text-sm leading-7 text-brand-primary/85">
-          {paragraph}
-        </p>
-      ))}
-      {section.bullets?.length ? (
-        <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-7 text-brand-primary/85">
-          {section.bullets.map((item) => (
-            <li key={item}>{item}</li>
-          ))}
-        </ul>
-      ) : null}
-      {section.subsections?.map((subsection) => renderSection(subsection, depth + 1))}
-    </section>
-  );
-}
+import type { LegalDocument } from "@/legal/types";
+import { LegalDocumentContent } from "./legal-document-content";
 
 export function LegalDocumentView({ document }: { document: LegalDocument }) {
   return (
@@ -64,7 +38,9 @@ export function LegalDocumentView({ document }: { document: LegalDocument }) {
         </dl>
       </header>
 
-      <div className="py-8">{document.sections.map((section) => renderSection(section))}</div>
+      <div className="py-8">
+        <LegalDocumentContent document={document} />
+      </div>
 
       <footer className="border-t border-slate-200/90 pt-8 text-sm text-brand-primary-muted">
         <p>

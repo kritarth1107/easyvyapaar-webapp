@@ -128,6 +128,14 @@ export const enMessages: MessageTree = {
       enterOtpError: "Enter the 6-digit OTP",
       verifyFailed: "OTP verification failed",
     },
+    consent: {
+      agreePrefix: "I agree to the",
+      termsLink: "Terms of Service",
+      privacyLink: "Privacy Policy",
+      required: "Accept the Terms of Service and Privacy Policy to continue",
+      viewFullDocument: "Open full document in new tab",
+      closeModal: "Close",
+    },
     orgTypes: {
       PROPRIETORSHIP: "Proprietorship",
       PARTNERSHIP: "Partnership",

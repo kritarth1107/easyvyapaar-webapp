@@ -38,6 +38,8 @@ import {
 } from "@/lib/types/auth-api";
 import { normalizeIndianMobileInput } from "@/lib/validators/indian-mobile";
 import { isValidGstin, normalizeGstin } from "@/lib/validators/gstin";
+import { LegalDocumentModal } from "@/components/legal/legal-document-modal";
+import { privacyPolicy, termsOfService } from "@/legal/documents";
 
 const INDIAN_MOBILE_REGEX = /^[6-9]\d{9}$/;
 
@@ -225,6 +227,10 @@ export function RegisterForm({ initialMobile = "" }: RegisterFormProps) {
 
   const [verificationToken, setVerificationToken] = useState("");
   const [otpDigits, setOtpDigits] = useState<string[]>(Array(6).fill(""));
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
+  const [termsModalOpen, setTermsModalOpen] = useState(false);
+  const [privacyModalOpen, setPrivacyModalOpen] = useState(false);
 
   const organisationTypeOptions = useMemo(
     () =>
@@ -377,6 +383,10 @@ export function RegisterForm({ initialMobile = "" }: RegisterFormProps) {
       setError(t("register.details.mobileError"));
       return;
     }
+    if (!termsAccepted || !privacyAccepted) {
+      setError(t("register.consent.required"));
+      return;
+    }
 
     setLoading(true);
     setError(null);
@@ -439,7 +449,6 @@ export function RegisterForm({ initialMobile = "" }: RegisterFormProps) {
       setError(t("register.otp.enterOtpError"));
       return;
     }
-
     setLoading(true);
     setError(null);
 
@@ -506,6 +515,20 @@ export function RegisterForm({ initialMobile = "" }: RegisterFormProps) {
         subtitle={t("orgSelect.loginSubtitle")}
         continueLabel={t("orgSelect.loginHint")}
         onSelect={handleOrganisationSelect}
+      />
+      <LegalDocumentModal
+        open={termsModalOpen}
+        onClose={() => setTermsModalOpen(false)}
+        legalDocument={termsOfService}
+        closeLabel={t("register.consent.closeModal")}
+        viewFullLabel={t("register.consent.viewFullDocument")}
+      />
+      <LegalDocumentModal
+        open={privacyModalOpen}
+        onClose={() => setPrivacyModalOpen(false)}
+        legalDocument={privacyPolicy}
+        closeLabel={t("register.consent.closeModal")}
+        viewFullLabel={t("register.consent.viewFullDocument")}
       />
     <div className="flex min-h-screen min-h-[100dvh] w-full min-w-0 flex-1 flex-col justify-start bg-white px-4 py-6 sm:px-8 sm:py-10 lg:px-16 xl:px-24 2xl:px-28">
       <div className="mx-auto w-full max-w-lg lg:mx-0">
@@ -781,6 +804,52 @@ export function RegisterForm({ initialMobile = "" }: RegisterFormProps) {
               )}
             </div>
 
+            <div className="space-y-3 rounded-xs border border-slate-200/90 bg-slate-50/80 px-3.5 py-3.5">
+              <label className="flex items-start gap-3 text-sm text-brand-primary">
+                <input
+                  type="checkbox"
+                  checked={termsAccepted}
+                  onChange={(e) => {
+                    setTermsAccepted(e.target.checked);
+                    if (error === t("register.consent.required")) setError(null);
+                  }}
+                  className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-brand-orange-2 focus:ring-brand-orange-1"
+                />
+                <span className="leading-snug">
+                  {t("register.consent.agreePrefix")}{" "}
+                  <button
+                    type="button"
+                    onClick={() => setTermsModalOpen(true)}
+                    className="font-semibold text-brand-primary-mid underline underline-offset-2 hover:text-brand-primary"
+                  >
+                    {t("register.consent.termsLink")}
+                  </button>
+                </span>
+              </label>
+
+              <label className="flex items-start gap-3 text-sm text-brand-primary">
+                <input
+                  type="checkbox"
+                  checked={privacyAccepted}
+                  onChange={(e) => {
+                    setPrivacyAccepted(e.target.checked);
+                    if (error === t("register.consent.required")) setError(null);
+                  }}
+                  className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-brand-orange-2 focus:ring-brand-orange-1"
+                />
+                <span className="leading-snug">
+                  {t("register.consent.agreePrefix")}{" "}
+                  <button
+                    type="button"
+                    onClick={() => setPrivacyModalOpen(true)}
+                    className="font-semibold text-brand-primary-mid underline underline-offset-2 hover:text-brand-primary"
+                  >
+                    {t("register.consent.privacyLink")}
+                  </button>
+                </span>
+              </label>
+            </div>
+
             {error && (
               <p className="text-sm text-red-600" role="alert">
                 {error}
@@ -806,7 +875,7 @@ export function RegisterForm({ initialMobile = "" }: RegisterFormProps) {
               </button>
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || !termsAccepted || !privacyAccepted}
                 className="login-btn-primary w-full rounded-xs px-4 py-3.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? t("common.pleaseWait") : t("common.next")}
