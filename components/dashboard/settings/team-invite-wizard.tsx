@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { OtpInput } from "@/components/login/otp-input";
 import { useTranslation } from "@/lib/localization";
 import type { TranslationKey } from "@/lib/localization";
+import { useUserMe } from "@/components/providers/user-me-provider";
 import {
   previewInviteMobile,
   requestInviteConsentOtp,
@@ -92,6 +93,8 @@ export function TeamInviteWizard({
 }: TeamInviteWizardProps) {
   const isModal = variant === "modal";
   const { t } = useTranslation();
+  const { user } = useUserMe();
+  const yourMobileDisplay = user?.mobile?.trim() ?? "";
   const [step, setStep] = useState<InviteStep>("details");
   const [mobile, setMobile] = useState("");
   const [inviteeName, setInviteeName] = useState("");
@@ -103,7 +106,6 @@ export function TeamInviteWizard({
   const [otpDigits, setOtpDigits] = useState<string[]>(Array(6).fill(""));
   const [sendingOtp, setSendingOtp] = useState(false);
   const [verifying, setVerifying] = useState(false);
-  const [otpHint, setOtpHint] = useState<string | null>(null);
 
   const resetWizard = () => {
     setStep("details");
@@ -114,7 +116,6 @@ export function TeamInviteWizard({
     setRole("Staff");
     setVerificationToken("");
     setOtpDigits(Array(6).fill(""));
-    setOtpHint(null);
   };
 
   useEffect(() => {
@@ -177,9 +178,6 @@ export function TeamInviteWizard({
       setVerificationToken(result.verificationToken);
       setMobile(result.mobile);
       setRole(result.role);
-      setOtpHint(
-        result.details ?? t("dashboard.teamSettings.otpSentInviter"),
-      );
       setStep("verify");
     } catch (err) {
       onError(err instanceof Error ? err.message : t("dashboard.teamSettings.otpError"));
@@ -299,25 +297,19 @@ export function TeamInviteWizard({
         ) : null}
 
         {step === "verify" ? (
-          <div className="mx-auto max-w-md space-y-6">
-            <div className="rounded-xl border border-amber-200/80 bg-amber-50/80 px-4 py-3 text-sm text-amber-900">
-              <p className="font-medium">{t("dashboard.teamSettings.verifyConsentTitle")}</p>
-              <p className="mt-1 text-amber-800/90">
+          <div className="space-y-5">
+            <div className="rounded-xl border border-amber-200/80 bg-amber-50/80 px-4 py-3.5 text-sm text-amber-900">
+              <p className="font-semibold">{t("dashboard.teamSettings.verifyConsentTitle")}</p>
+              <p className="mt-1.5 leading-relaxed text-amber-800/90">
                 {formatMessage(t("dashboard.teamSettings.verifyConsentHint"), {
-                  mobile,
+                  yourMobile: yourMobileDisplay,
                   role: t(ROLE_LABEL_KEYS[role]),
                 })}
               </p>
             </div>
 
-            {otpHint ? (
-              <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-brand-primary-muted">
-                {otpHint}
-              </p>
-            ) : null}
-
-            <div>
-              <label className="mb-3 block text-center text-sm font-semibold text-brand-primary">
+            <div className="w-full">
+              <label className="mb-3 block text-sm font-semibold text-brand-primary">
                 {t("dashboard.teamSettings.enterOtp")}
               </label>
               <OtpInput value={otpDigits} onChange={setOtpDigits} disabled={verifying} />

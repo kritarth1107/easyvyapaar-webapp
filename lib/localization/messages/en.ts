@@ -2110,7 +2110,8 @@ export const enMessages: MessageTree = {
         "This person is not on Mahajaan yet. We will create their account under your organisation — no separate shop signup needed.",
       inviteeNameRequired: "Enter the team member name before sending OTP.",
       existingUserHint: "Registered as {name}. They will see an invite after they log in.",
-      otpSentInviter: "OTP sent to your WhatsApp. Enter the code below to confirm adding this team member.",
+      otpSentInviter:
+        "OTP sent to your WhatsApp. Enter the code on the next step to confirm adding this team member.",
       inviteActionOtpHint: "OTP sent to your WhatsApp. Enter it to confirm this invitation action.",
       acceptInviteTitle: "Accept invitation",
       declineInviteTitle: "Decline invitation",
@@ -2124,7 +2125,7 @@ export const enMessages: MessageTree = {
       sendConsentOtp: "Send consent OTP",
       verifyConsentTitle: "Enter consent OTP",
       verifyConsentHint:
-        "We sent a 6-digit OTP to your WhatsApp. Enter it below to invite {mobile} as {role}.",
+        "We sent a 6-digit OTP to +91 {yourMobile} on your WhatsApp. Enter it below to confirm inviting this person as {role}.",
       registeredNameHint: "This person is already on Mahajaan. They will see an invite after they log in.",
       enterOtp: "Enter 6-digit OTP",
       confirmInvite: "Verify & send invite",
