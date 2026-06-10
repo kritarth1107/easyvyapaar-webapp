@@ -10,6 +10,7 @@ import {
   useState,
 } from "react";
 import {
+  clearStoredActiveOrganisationId,
   findOrganisationInList,
   getStoredActiveOrganisationId,
   setStoredActiveOrganisationId,
@@ -55,6 +56,7 @@ export function UserMeProvider({ children }: { children: React.ReactNode }) {
       let nextId = preferredId ?? getStoredActiveOrganisationId();
 
       if (nextId && !findOrganisationInList(nextId, organisations)) {
+        clearStoredActiveOrganisationId();
         nextId = null;
       }
 
@@ -63,6 +65,9 @@ export function UserMeProvider({ children }: { children: React.ReactNode }) {
           organisations,
           profile.defaultOrganisationId
         );
+        if (!nextId) {
+          clearStoredActiveOrganisationId();
+        }
       } else {
         setStoredActiveOrganisationId(nextId);
       }
@@ -202,14 +207,14 @@ export function UserMeProvider({ children }: { children: React.ReactNode }) {
 
   const activeOrganisation = useMemo(() => {
     if (!user) return null;
-    const id = activeOrganisationId ?? user.activeOrganisation?.orgId ?? null;
-    if (!id) return user.activeOrganisation ?? null;
+    const id = activeOrganisationId ?? null;
+    if (!id) return null;
 
     if (user.activeOrganisation?.orgId === id) {
       return user.activeOrganisation;
     }
 
-    return findOrganisationInList(id, user.organisations) ?? user.activeOrganisation ?? null;
+    return findOrganisationInList(id, user.organisations) ?? null;
   }, [user, activeOrganisationId]);
 
   const value = useMemo(

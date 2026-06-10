@@ -11,7 +11,7 @@ import { OrganisationPermissionsProvider } from "@/components/providers/organisa
 import { UserMeProvider } from "@/components/providers/user-me-provider";
 import { PendingInvitesBanner } from "@/components/dashboard/pending-invites-banner";
 import { useIsMobileOrTablet } from "@/lib/hooks/use-is-mobile-or-tablet";
-import { BusinessSwitchModal } from "./business-switch";
+import { AutoOpenOrganisationPicker, BusinessSwitchModal } from "./business-switch";
 import { DashboardSidebar } from "./dashboard-sidebar";
 import { DashboardTopbar } from "./dashboard-topbar";
 import { MobileWebGate } from "./mobile-web-gate";
@@ -75,6 +75,7 @@ export function DashboardShell({ children, hasSession = false }: DashboardShellP
     return (
       <UserMeProvider>
         <OrganisationPermissionsProvider>
+          <AutoOpenOrganisationPicker onOpen={openBusinessSwitch} />
           <BusinessSwitchModal
             open={businessSwitchOpen}
             onClose={() => setBusinessSwitchOpen(false)}
@@ -89,6 +90,7 @@ export function DashboardShell({ children, hasSession = false }: DashboardShellP
   return (
     <UserMeProvider>
       <OrganisationPermissionsProvider>
+        <AutoOpenOrganisationPicker onOpen={openBusinessSwitch} />
         <BusinessSwitchModal
           open={businessSwitchOpen}
           onClose={() => setBusinessSwitchOpen(false)}

@@ -48,6 +48,11 @@ export type MessageTree = {
     createBusinessTitle: string;
     createBusinessSubtitle: string;
     createBusinessCta: string;
+    noOrganisationSelected: string;
+    selectOrganisationPrompt: string;
+    requiredTitle: string;
+    requiredSubtitle: string;
+    selectFromSidebarHint: string;
   };
   login: {
     signIn: string;

@@ -28,6 +28,8 @@ type OrganisationSelectModalProps = {
   /** Dashboard only — ignored when variant is login */
   createBusiness?: CreateBusinessPrompt;
   variant?: "login" | "dashboard";
+  /** When true, user must pick an org — no close button or backdrop dismiss */
+  requireSelection?: boolean;
   onSelect: (organisationId: string) => void;
   onClose?: () => void;
 };
@@ -117,12 +119,14 @@ export function OrganisationSelectModal({
   continueLabel,
   createBusiness,
   variant = "login",
+  requireSelection = false,
   onSelect,
   onClose,
 }: OrganisationSelectModalProps) {
   const [mounted, setMounted] = useState(false);
   const isDashboard = variant === "dashboard";
-  const showCreateBusiness = isDashboard && createBusiness;
+  const showCreateBusiness = isDashboard && createBusiness && !requireSelection;
+  const canDismiss = isDashboard && onClose && !requireSelection;
 
   useEffect(() => {
     setMounted(true);
@@ -132,7 +136,7 @@ export function OrganisationSelectModal({
     if (!open) return;
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose?.();
+      if (e.key === "Escape" && canDismiss) onClose?.();
     };
 
     document.addEventListener("keydown", onKeyDown);
@@ -142,7 +146,7 @@ export function OrganisationSelectModal({
       document.removeEventListener("keydown", onKeyDown);
       document.body.style.overflow = prev;
     };
-  }, [open, onClose]);
+  }, [open, onClose, canDismiss]);
 
   if (!open || !mounted) return null;
 
@@ -152,13 +156,13 @@ export function OrganisationSelectModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="org-select-title"
-      onClick={isDashboard ? onClose : undefined}
+      onClick={canDismiss ? onClose : undefined}
     >
       <div
         className="relative w-full max-w-md rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        {isDashboard && onClose && (
+        {canDismiss && (
           <button
             type="button"
             onClick={onClose}

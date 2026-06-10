@@ -166,6 +166,18 @@ export function TeamManagementPage() {
     );
   }
 
+  if (!activeOrganisationId?.trim()) {
+    return (
+      <div className="px-4 py-8 lg:px-6">
+        <div className="mx-auto max-w-lg rounded-2xl border border-amber-200/90 bg-amber-50/50 p-8 text-center shadow-sm">
+          <h1 className="text-lg font-bold text-amber-950">{t("orgSelect.noOrganisationSelected")}</h1>
+          <p className="mt-2 text-sm text-amber-900/80">{t("orgSelect.selectOrganisationPrompt")}</p>
+          <p className="mt-4 text-xs text-amber-900/70">{t("orgSelect.selectFromSidebarHint")}</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!can("members.manage")) {
     return (
       <div className="px-4 py-8 lg:px-6">

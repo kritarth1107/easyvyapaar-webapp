@@ -27,6 +27,11 @@ export const enMessages: MessageTree = {
     createBusinessTitle: "Add another shop",
     createBusinessSubtitle: "Register a new GST business on your account — separate stock, billing & reports.",
     createBusinessCta: "Create new business",
+    noOrganisationSelected: "No organisation selected",
+    selectOrganisationPrompt: "Please select one to continue",
+    requiredTitle: "Select your business",
+    requiredSubtitle: "Choose which shop you want to work in before using the dashboard.",
+    selectFromSidebarHint: "Use the business selector at the top of the sidebar to choose your shop.",
   },
   login: {
     signIn: "Sign in",
