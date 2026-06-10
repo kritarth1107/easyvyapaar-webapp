@@ -96,10 +96,15 @@ export function createMultipartHeaders(metadata: IdentityMetadata = {}) {
  * @param token Optional bearer token override
  * @returns Fully populated headers for backend communication
  */
+function resolveForwardedClientIp(forwardedFor: string | null): string {
+  if (!forwardedFor) return '';
+  return forwardedFor.split(',')[0]?.trim() ?? '';
+}
+
 export function getHeadersFromRequest(request: any, token?: string, isMultipart: boolean = false) {
   const fingerprint = request.headers.get('x-fingerprint') || request.cookies?.get('x-fingerprint')?.value;
   const userAgent = request.headers.get('user-agent');
-  let ip = request.headers.get('x-forwarded-for') || '';
+  const ip = resolveForwardedClientIp(request.headers.get('x-forwarded-for'));
   
   const contentType = request.headers.get('content-type') || '';
   const multipart = isMultipart || contentType.includes('multipart/form-data');
