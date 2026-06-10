@@ -11,12 +11,12 @@ export async function POST(request: Request, context: RouteContext) {
       return NextResponse.json({ error: "Authentication service is not configured" }, { status: 500 });
     }
     const { organisationId } = await context.params;
+    const body = await request.json();
     const headers = getHeadersFromRequest(request);
     const backendUrl = new URL(
-      `user/organisations/${encodeURIComponent(organisationId)}/invites/accept`,
+      `user/organisations/${encodeURIComponent(organisationId)}/invites/request-action-otp`,
       apiBaseUrl,
     );
-    const body = await request.json();
     const backendResponse = await fetch(backendUrl.toString(), {
       method: "POST",
       headers: { ...headers, "Content-Type": "application/json" },
@@ -25,7 +25,7 @@ export async function POST(request: Request, context: RouteContext) {
     const responseBody = await parseBackendBody(backendResponse);
     return NextResponse.json(responseBody, { status: backendResponse.status });
   } catch (error) {
-    console.error("Accept invite error:", error);
-    return NextResponse.json({ error: "Failed to accept invite" }, { status: 500 });
+    console.error("Invite action OTP error:", error);
+    return NextResponse.json({ error: "Failed to send invite action OTP" }, { status: 500 });
   }
 }

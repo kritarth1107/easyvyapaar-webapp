@@ -2091,6 +2091,18 @@ export type MessageTree = {
       inviteHint: string;
       inviteHintOtp: string;
       consentHint: string;
+      consentHintInviter: string;
+      inviteeName: string;
+      inviteeNamePlaceholder: string;
+      inviteeNameHint: string;
+      inviteeNameRequired: string;
+      existingUserHint: string;
+      otpSentInviter: string;
+      inviteActionOtpHint: string;
+      acceptInviteTitle: string;
+      declineInviteTitle: string;
+      confirmAccept: string;
+      confirmDecline: string;
       chooseRole: string;
       mobile: string;
       mobilePlaceholder: string;
@@ -2102,7 +2114,7 @@ export type MessageTree = {
       enterOtp: string;
       confirmInvite: string;
       resendOtp: string;
-      otpSentMock: string;
+      otpSentWhatsapp: string;
       otpError: string;
       otpIncomplete: string;
       otpVerifyError: string;

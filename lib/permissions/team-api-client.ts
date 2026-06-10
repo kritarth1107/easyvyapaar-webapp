@@ -47,32 +47,70 @@ export async function fetchOrganisationMembers(organisationId: string): Promise<
   return { members: data?.members ?? [], pendingInvites: data?.pendingInvites ?? [] };
 }
 
-export const MOCK_INVITE_CONSENT_OTP = "887766";
+export async function previewInviteMobile(
+  organisationId: string,
+  mobile: string,
+): Promise<{ userExists: boolean; needsProfile: boolean; existingName?: string }> {
+  const res = await fetch(
+    `/api/user/organisations/${encodeURIComponent(organisationId)}/members/invite/preview?mobile=${encodeURIComponent(mobile)}`,
+  );
+  const body = await parseJson(res);
+  if (!res.ok) {
+    throw new Error(extractBackendError(body) ?? "Failed to check mobile");
+  }
+  const data = (body as {
+    data?: { userExists: boolean; needsProfile: boolean; existingName?: string };
+  }).data;
+  return {
+    userExists: Boolean(data?.userExists),
+    needsProfile: Boolean(data?.needsProfile),
+    ...(data?.existingName ? { existingName: data.existingName } : {}),
+  };
+}
 
 export async function requestInviteConsentOtp(
   organisationId: string,
   mobile: string,
   role: UserRole,
-): Promise<{ verificationToken: string; mobile: string; role: UserRole }> {
+  inviteeName?: string,
+): Promise<{
+  verificationToken: string;
+  mobile: string;
+  role: UserRole;
+  details?: string;
+}> {
   const res = await fetch(
     `/api/user/organisations/${encodeURIComponent(organisationId)}/members/invite/request-otp`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mobile, role }),
+      body: JSON.stringify({
+        mobile,
+        role,
+        ...(inviteeName?.trim() ? { inviteeName: inviteeName.trim() } : {}),
+      }),
     },
   );
   const body = await parseJson(res);
   if (!res.ok) {
     throw new Error(extractBackendError(body) ?? "Failed to send consent OTP");
   }
-  const data = (body as {
+  const root = body as {
     data?: { verificationToken: string; mobile: string; role: UserRole };
-  }).data;
+    details?: string;
+    message?: string;
+  };
+  const data = root.data;
   if (!data?.verificationToken) {
     throw new Error("Invalid response from server");
   }
-  return data;
+  const details =
+    typeof root.details === "string" && root.details.trim()
+      ? root.details.trim()
+      : typeof root.message === "string" && root.message.trim()
+        ? root.message.trim()
+        : undefined;
+  return { ...data, ...(details ? { details } : {}) };
 }
 
 export async function verifyInviteConsentOtp(
@@ -148,10 +186,51 @@ export async function fetchMyPendingInvites(): Promise<PendingInvite[]> {
   return (body as { data?: { invites: PendingInvite[] } }).data?.invites ?? [];
 }
 
-export async function acceptOrganisationInvite(organisationId: string): Promise<void> {
+export async function requestInviteActionOtp(
+  organisationId: string,
+  action: "accept" | "decline",
+): Promise<{ verificationToken: string; details?: string }> {
+  const res = await fetch(
+    `/api/user/organisations/${encodeURIComponent(organisationId)}/invites/request-action-otp`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action }),
+    },
+  );
+  const body = await parseJson(res);
+  if (!res.ok) {
+    throw new Error(extractBackendError(body) ?? "Failed to send OTP");
+  }
+  const root = body as {
+    data?: { verificationToken: string };
+    details?: string;
+    message?: string;
+  };
+  if (!root.data?.verificationToken) {
+    throw new Error("Invalid OTP response");
+  }
+  const details =
+    typeof root.details === "string" && root.details.trim()
+      ? root.details.trim()
+      : typeof root.message === "string" && root.message.trim()
+        ? root.message.trim()
+        : undefined;
+  return { verificationToken: root.data.verificationToken, ...(details ? { details } : {}) };
+}
+
+export async function acceptOrganisationInvite(
+  organisationId: string,
+  verificationToken: string,
+  otp: string,
+): Promise<void> {
   const res = await fetch(
     `/api/user/organisations/${encodeURIComponent(organisationId)}/invites/accept`,
-    { method: "POST" },
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ verificationToken, otp }),
+    },
   );
   const body = await parseJson(res);
   if (!res.ok) {
@@ -159,10 +238,18 @@ export async function acceptOrganisationInvite(organisationId: string): Promise<
   }
 }
 
-export async function declineOrganisationInvite(organisationId: string): Promise<void> {
+export async function declineOrganisationInvite(
+  organisationId: string,
+  verificationToken: string,
+  otp: string,
+): Promise<void> {
   const res = await fetch(
     `/api/user/organisations/${encodeURIComponent(organisationId)}/invites/decline`,
-    { method: "POST" },
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ verificationToken, otp }),
+    },
   );
   const body = await parseJson(res);
   if (!res.ok) {

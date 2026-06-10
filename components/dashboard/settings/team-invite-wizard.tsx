@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { OtpInput } from "@/components/login/otp-input";
 import { useTranslation } from "@/lib/localization";
 import type { TranslationKey } from "@/lib/localization";
 import {
-  MOCK_INVITE_CONSENT_OTP,
+  previewInviteMobile,
   requestInviteConsentOtp,
   verifyInviteConsentOtp,
 } from "@/lib/permissions/team-api-client";
@@ -86,6 +86,9 @@ export function TeamInviteWizard({ organisationId, onSuccess, onError }: TeamInv
   const { t } = useTranslation();
   const [step, setStep] = useState<InviteStep>("details");
   const [mobile, setMobile] = useState("");
+  const [inviteeName, setInviteeName] = useState("");
+  const [needsProfile, setNeedsProfile] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false);
   const [role, setRole] = useState<UserRole>("Staff");
   const [verificationToken, setVerificationToken] = useState("");
   const [otpDigits, setOtpDigits] = useState<string[]>(Array(6).fill(""));
@@ -96,11 +99,45 @@ export function TeamInviteWizard({ organisationId, onSuccess, onError }: TeamInv
   const resetWizard = () => {
     setStep("details");
     setMobile("");
+    setInviteeName("");
+    setNeedsProfile(false);
     setRole("Staff");
     setVerificationToken("");
     setOtpDigits(Array(6).fill(""));
     setOtpHint(null);
   };
+
+  useEffect(() => {
+    const normalized = normalizeIndianMobileInput(mobile);
+    if (!normalized || normalized.length !== 10) {
+      setNeedsProfile(false);
+      setInviteeName("");
+      return;
+    }
+
+    let cancelled = false;
+    setPreviewLoading(true);
+    void previewInviteMobile(organisationId, normalized)
+      .then((preview) => {
+        if (cancelled) return;
+        setNeedsProfile(preview.needsProfile);
+        if (preview.needsProfile) {
+          setInviteeName("");
+        } else if (preview.existingName) {
+          setInviteeName(preview.existingName);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setNeedsProfile(false);
+      })
+      .finally(() => {
+        if (!cancelled) setPreviewLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [mobile, organisationId]);
 
   const handleSendOtp = async () => {
     const normalized = normalizeIndianMobileInput(mobile);
@@ -108,15 +145,24 @@ export function TeamInviteWizard({ organisationId, onSuccess, onError }: TeamInv
       onError(t("dashboard.teamSettings.invalidMobile"));
       return;
     }
+    if (needsProfile && !inviteeName.trim()) {
+      onError(t("dashboard.teamSettings.inviteeNameRequired"));
+      return;
+    }
     setSendingOtp(true);
     onError(null);
     try {
-      const result = await requestInviteConsentOtp(organisationId, normalized, role);
+      const result = await requestInviteConsentOtp(
+        organisationId,
+        normalized,
+        role,
+        needsProfile ? inviteeName : undefined,
+      );
       setVerificationToken(result.verificationToken);
       setMobile(result.mobile);
       setRole(result.role);
       setOtpHint(
-        formatMessage(t("dashboard.teamSettings.otpSentMock"), { otp: MOCK_INVITE_CONSENT_OTP }),
+        result.details ?? t("dashboard.teamSettings.otpSentInviter"),
       );
       setStep("verify");
     } catch (err) {
@@ -169,9 +215,35 @@ export function TeamInviteWizard({ organisationId, onSuccess, onError }: TeamInv
                 className={inputClass}
               />
               <p className="mt-2 text-xs text-brand-primary-muted">
-                {t("dashboard.teamSettings.consentHint")}
+                {t("dashboard.teamSettings.consentHintInviter")}
               </p>
             </div>
+
+            {needsProfile ? (
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-brand-primary">
+                  {t("dashboard.teamSettings.inviteeName")}
+                </label>
+                <input
+                  type="text"
+                  value={inviteeName}
+                  onChange={(e) => setInviteeName(e.target.value)}
+                  placeholder={t("dashboard.teamSettings.inviteeNamePlaceholder")}
+                  className={inputClass}
+                />
+                <p className="mt-2 text-xs text-brand-primary-muted">
+                  {t("dashboard.teamSettings.inviteeNameHint")}
+                </p>
+              </div>
+            ) : previewLoading ? (
+              <p className="text-xs text-brand-primary-muted">{t("common.pleaseWait")}</p>
+            ) : inviteeName ? (
+              <p className="text-xs text-brand-primary-muted">
+                {formatMessage(t("dashboard.teamSettings.existingUserHint"), {
+                  name: inviteeName,
+                })}
+              </p>
+            ) : null}
 
             <div>
               <label className="mb-3 block text-sm font-semibold text-brand-primary">

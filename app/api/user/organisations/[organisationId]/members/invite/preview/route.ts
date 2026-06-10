@@ -4,28 +4,26 @@ import { getHeadersFromRequest } from "@/lib/header-utils";
 
 type RouteContext = { params: Promise<{ organisationId: string }> };
 
-export async function POST(request: Request, context: RouteContext) {
+export async function GET(request: Request, context: RouteContext) {
   try {
     const apiBaseUrl = getApiBaseUrl();
     if (!apiBaseUrl) {
       return NextResponse.json({ error: "Authentication service is not configured" }, { status: 500 });
     }
     const { organisationId } = await context.params;
+    const { searchParams } = new URL(request.url);
+    const mobile = searchParams.get("mobile")?.trim() ?? "";
     const headers = getHeadersFromRequest(request);
     const backendUrl = new URL(
-      `user/organisations/${encodeURIComponent(organisationId)}/invites/accept`,
+      `user/organisations/${encodeURIComponent(organisationId)}/members/invite/preview`,
       apiBaseUrl,
     );
-    const body = await request.json();
-    const backendResponse = await fetch(backendUrl.toString(), {
-      method: "POST",
-      headers: { ...headers, "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
+    backendUrl.searchParams.set("mobile", mobile);
+    const backendResponse = await fetch(backendUrl.toString(), { headers });
     const responseBody = await parseBackendBody(backendResponse);
     return NextResponse.json(responseBody, { status: backendResponse.status });
   } catch (error) {
-    console.error("Accept invite error:", error);
-    return NextResponse.json({ error: "Failed to accept invite" }, { status: 500 });
+    console.error("Invite preview error:", error);
+    return NextResponse.json({ error: "Failed to preview invite mobile" }, { status: 500 });
   }
 }

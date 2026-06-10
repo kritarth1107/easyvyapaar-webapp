@@ -2089,6 +2089,20 @@ export const enMessages: MessageTree = {
       inviteHintOtp:
         "An OTP is sent to the person's mobile so they can give consent before joining your business.",
       consentHint: "The person must share the OTP from their phone — this confirms they agree to join.",
+      consentHintInviter:
+        "A consent OTP is sent to your WhatsApp. Enter it here to confirm you are adding this team member.",
+      inviteeName: "Team member name",
+      inviteeNamePlaceholder: "e.g. Rahul Kumar",
+      inviteeNameHint:
+        "This person is not on Mahajaan yet. We will create their account under your organisation — no separate shop signup needed.",
+      inviteeNameRequired: "Enter the team member name before sending OTP.",
+      existingUserHint: "Registered as {name}. They will see an invite after they log in.",
+      otpSentInviter: "OTP sent to your WhatsApp. Enter the code below to confirm adding this team member.",
+      inviteActionOtpHint: "OTP sent to your WhatsApp. Enter it to confirm this invitation action.",
+      acceptInviteTitle: "Accept invitation",
+      declineInviteTitle: "Decline invitation",
+      confirmAccept: "Accept invite",
+      confirmDecline: "Decline invite",
       chooseRole: "Choose a role",
       mobile: "Mobile number",
       mobilePlaceholder: "10-digit mobile number",
@@ -2100,7 +2114,8 @@ export const enMessages: MessageTree = {
       enterOtp: "Enter 6-digit OTP",
       confirmInvite: "Verify & send invite",
       resendOtp: "Resend OTP",
-      otpSentMock: "OTP sent (mock). Ask them for {otp} or use it to verify.",
+      otpSentWhatsapp:
+        "OTP sent to +91 {mobile} on WhatsApp. Ask them to share the 6-digit code from their phone.",
       otpError: "Failed to send OTP",
       otpIncomplete: "Enter the full 6-digit OTP",
       otpVerifyError: "OTP verification failed",

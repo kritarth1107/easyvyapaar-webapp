@@ -16,7 +16,12 @@ export async function POST(request: Request, context: RouteContext) {
       `user/organisations/${encodeURIComponent(organisationId)}/invites/decline`,
       apiBaseUrl,
     );
-    const backendResponse = await fetch(backendUrl.toString(), { method: "POST", headers });
+    const body = await request.json();
+    const backendResponse = await fetch(backendUrl.toString(), {
+      method: "POST",
+      headers: { ...headers, "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
     const responseBody = await parseBackendBody(backendResponse);
     return NextResponse.json(responseBody, { status: backendResponse.status });
   } catch (error) {
