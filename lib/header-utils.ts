@@ -118,3 +118,10 @@ export function getHeadersFromRequest(request: any, token?: string, isMultipart:
 
   return multipart ? createMultipartHeaders(metadata) : createJsonHeaders(metadata);
 }
+
+/** DELETE and other bodyless proxy calls — omit Content-Type so Fastify does not expect JSON. */
+export function getBodylessHeadersFromRequest(request: any, token?: string): Record<string, string> {
+  const headers = getHeadersFromRequest(request, token) as Record<string, string>;
+  const { "Content-Type": _contentType, ...rest } = headers;
+  return rest;
+}

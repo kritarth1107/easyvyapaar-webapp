@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getApiBaseUrl, parseBackendBody } from "@/lib/api/backend";
-import { getHeadersFromRequest } from "@/lib/header-utils";
+import { getBodylessHeadersFromRequest } from "@/lib/header-utils";
 
 type RouteContext = { params: Promise<{ organisationId: string; inviteId: string }> };
 
@@ -11,7 +11,7 @@ export async function DELETE(request: Request, context: RouteContext) {
       return NextResponse.json({ error: "Authentication service is not configured" }, { status: 500 });
     }
     const { organisationId, inviteId } = await context.params;
-    const headers = getHeadersFromRequest(request);
+    const headers = getBodylessHeadersFromRequest(request);
     const backendUrl = new URL(
       `user/organisations/${encodeURIComponent(organisationId)}/invites/${encodeURIComponent(inviteId)}`,
       apiBaseUrl,

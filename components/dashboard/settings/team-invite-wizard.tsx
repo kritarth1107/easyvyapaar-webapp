@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { OtpInput } from "@/components/login/otp-input";
 import { useTranslation } from "@/lib/localization";
 import type { TranslationKey } from "@/lib/localization";
@@ -34,6 +35,7 @@ type TeamInviteWizardProps = {
   organisationId: string;
   onSuccess: () => void;
   onError: (message: string | null) => void;
+  variant?: "card" | "modal";
 };
 
 function StepIndicator({ step, t }: { step: InviteStep; t: (key: TranslationKey) => string }) {
@@ -82,11 +84,18 @@ function StepIndicator({ step, t }: { step: InviteStep; t: (key: TranslationKey)
   );
 }
 
-export function TeamInviteWizard({ organisationId, onSuccess, onError }: TeamInviteWizardProps) {
+export function TeamInviteWizard({
+  organisationId,
+  onSuccess,
+  onError,
+  variant = "card",
+}: TeamInviteWizardProps) {
+  const isModal = variant === "modal";
   const { t } = useTranslation();
   const [step, setStep] = useState<InviteStep>("details");
   const [mobile, setMobile] = useState("");
   const [inviteeName, setInviteeName] = useState("");
+  const [existingName, setExistingName] = useState("");
   const [needsProfile, setNeedsProfile] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [role, setRole] = useState<UserRole>("Staff");
@@ -100,6 +109,7 @@ export function TeamInviteWizard({ organisationId, onSuccess, onError }: TeamInv
     setStep("details");
     setMobile("");
     setInviteeName("");
+    setExistingName("");
     setNeedsProfile(false);
     setRole("Staff");
     setVerificationToken("");
@@ -112,6 +122,7 @@ export function TeamInviteWizard({ organisationId, onSuccess, onError }: TeamInv
     if (!normalized || normalized.length !== 10) {
       setNeedsProfile(false);
       setInviteeName("");
+      setExistingName("");
       return;
     }
 
@@ -123,12 +134,17 @@ export function TeamInviteWizard({ organisationId, onSuccess, onError }: TeamInv
         setNeedsProfile(preview.needsProfile);
         if (preview.needsProfile) {
           setInviteeName("");
-        } else if (preview.existingName) {
-          setInviteeName(preview.existingName);
+          setExistingName("");
+        } else {
+          setInviteeName("");
+          setExistingName(preview.existingName ?? "");
         }
       })
       .catch(() => {
-        if (!cancelled) setNeedsProfile(false);
+        if (!cancelled) {
+          setNeedsProfile(false);
+          setExistingName("");
+        }
       })
       .finally(() => {
         if (!cancelled) setPreviewLoading(false);
@@ -182,8 +198,13 @@ export function TeamInviteWizard({ organisationId, onSuccess, onError }: TeamInv
     onError(null);
     try {
       await verifyInviteConsentOtp(organisationId, verificationToken, otp);
-      setStep("done");
-      onSuccess();
+      if (isModal) {
+        resetWizard();
+        onSuccess();
+      } else {
+        setStep("done");
+        onSuccess();
+      }
     } catch (err) {
       onError(err instanceof Error ? err.message : t("dashboard.teamSettings.otpVerifyError"));
     } finally {
@@ -191,14 +212,8 @@ export function TeamInviteWizard({ organisationId, onSuccess, onError }: TeamInv
     }
   };
 
-  return (
-    <section className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm">
-      <div className="border-b border-slate-100 bg-gradient-to-r from-brand-primary/[0.04] to-brand-orange-1/[0.06] px-5 py-5 lg:px-6">
-        <h2 className="text-lg font-bold text-brand-primary">{t("dashboard.teamSettings.inviteTitle")}</h2>
-        <p className="mt-1 text-sm text-brand-primary-muted">{t("dashboard.teamSettings.inviteHintOtp")}</p>
-      </div>
-
-      <div className="p-5 lg:p-6">
+  const wizardBody = (
+    <>
         <StepIndicator step={step} t={t} />
 
         {step === "details" ? (
@@ -237,12 +252,21 @@ export function TeamInviteWizard({ organisationId, onSuccess, onError }: TeamInv
               </div>
             ) : previewLoading ? (
               <p className="text-xs text-brand-primary-muted">{t("common.pleaseWait")}</p>
-            ) : inviteeName ? (
-              <p className="text-xs text-brand-primary-muted">
-                {formatMessage(t("dashboard.teamSettings.existingUserHint"), {
-                  name: inviteeName,
-                })}
-              </p>
+            ) : existingName ? (
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-brand-primary">
+                  {t("dashboard.teamSettings.inviteeName")}
+                </label>
+                <input
+                  type="text"
+                  value={existingName}
+                  disabled
+                  className={`${inputClass} cursor-not-allowed bg-slate-50 text-brand-primary-muted`}
+                />
+                <p className="mt-2 text-xs text-brand-primary-muted">
+                  {t("dashboard.teamSettings.registeredNameHint")}
+                </p>
+              </div>
             ) : null}
 
             <div>
@@ -353,7 +377,110 @@ export function TeamInviteWizard({ organisationId, onSuccess, onError }: TeamInv
             </button>
           </div>
         ) : null}
+    </>
+  );
+
+  if (isModal) {
+    return <div className="py-1">{wizardBody}</div>;
+  }
+
+  return (
+    <section className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm">
+      <div className="border-b border-slate-100 bg-gradient-to-r from-brand-primary/[0.04] to-brand-orange-1/[0.06] px-5 py-5 lg:px-6">
+        <h2 className="text-lg font-bold text-brand-primary">{t("dashboard.teamSettings.inviteTitle")}</h2>
+        <p className="mt-1 text-sm text-brand-primary-muted">{t("dashboard.teamSettings.inviteHintOtp")}</p>
       </div>
+      <div className="p-5 lg:p-6">{wizardBody}</div>
     </section>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden>
+      <path
+        d="M6 6l12 12M18 6L6 18"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+type TeamInviteModalProps = {
+  open: boolean;
+  organisationId: string;
+  onClose: () => void;
+  onSuccess: () => void;
+  onError: (message: string | null) => void;
+};
+
+export function TeamInviteModal({
+  open,
+  organisationId,
+  onClose,
+  onSuccess,
+  onError,
+}: TeamInviteModalProps) {
+  const { t } = useTranslation();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = prev;
+    };
+  }, [open, onClose]);
+
+  if (!open || !mounted) return null;
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[120] flex items-center justify-center bg-brand-primary/45 p-4 backdrop-blur-[2px]"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="team-invite-modal-title"
+      onClick={onClose}
+    >
+      <div
+        className="relative flex w-full max-w-2xl max-h-[min(90vh,880px)] flex-col overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-lg text-brand-primary-muted transition-colors hover:bg-slate-100 hover:text-brand-primary"
+          aria-label={t("common.close")}
+        >
+          <CloseIcon />
+        </button>
+        <div className="border-b border-slate-100 px-6 py-5 pr-14">
+          <h2 id="team-invite-modal-title" className="text-lg font-bold text-brand-primary">
+            {t("dashboard.teamSettings.inviteTitle")}
+          </h2>
+          <p className="mt-1 text-sm text-brand-primary-muted">{t("dashboard.teamSettings.inviteHintOtp")}</p>
+        </div>
+        <div className="overflow-y-auto px-6 py-5 scrollbar-brand">
+          <TeamInviteWizard
+            key={organisationId}
+            organisationId={organisationId}
+            variant="modal"
+            onSuccess={onSuccess}
+            onError={onError}
+          />
+        </div>
+      </div>
+    </div>,
+    document.body,
   );
 }

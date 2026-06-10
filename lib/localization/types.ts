@@ -2116,6 +2116,7 @@ export type MessageTree = {
       sendConsentOtp: string;
       verifyConsentTitle: string;
       verifyConsentHint: string;
+      registeredNameHint: string;
       enterOtp: string;
       confirmInvite: string;
       resendOtp: string;
@@ -2136,8 +2137,17 @@ export type MessageTree = {
       memberCount: string;
       invalidMobile: string;
       loadError: string;
+      tabTeamMembers: string;
+      tabInviteMember: string;
+      inviteMemberButton: string;
+      colName: string;
+      colMobile: string;
+      colRole: string;
+      colStatus: string;
+      colActions: string;
       members: string;
       noMembers: string;
+      removeMemberTitle: string;
       you: string;
       statusJoined: string;
       statusPending: string;

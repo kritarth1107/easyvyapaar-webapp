@@ -83,6 +83,7 @@ export async function requestInviteConsentOtp(
     `/api/user/organisations/${encodeURIComponent(organisationId)}/members/invite/request-otp`,
     {
       method: "POST",
+      credentials: "same-origin",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         mobile,
@@ -122,6 +123,7 @@ export async function verifyInviteConsentOtp(
     `/api/user/organisations/${encodeURIComponent(organisationId)}/members/invite/verify-otp`,
     {
       method: "POST",
+      credentials: "same-origin",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ verificationToken, otp }),
     },
@@ -157,7 +159,7 @@ export async function removeOrganisationMember(
 ): Promise<void> {
   const res = await fetch(
     `/api/user/organisations/${encodeURIComponent(organisationId)}/members/${encodeURIComponent(memberUserId)}`,
-    { method: "DELETE" },
+    { method: "DELETE", credentials: "same-origin" },
   );
   const body = await parseJson(res);
   if (!res.ok) {
@@ -171,7 +173,7 @@ export async function revokeOrganisationInvite(
 ): Promise<void> {
   const res = await fetch(
     `/api/user/organisations/${encodeURIComponent(organisationId)}/invites/${encodeURIComponent(inviteId)}`,
-    { method: "DELETE" },
+    { method: "DELETE", credentials: "same-origin" },
   );
   const body = await parseJson(res);
   if (!res.ok) {
