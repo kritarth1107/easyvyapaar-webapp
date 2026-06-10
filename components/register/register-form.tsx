@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BRAND_LOGO } from "@/lib/brand/assets";
-import { useCallback, useMemo, useState } from "react";
+import { Fragment, useCallback, useMemo, useState } from "react";
 import { OtpInput } from "@/components/login/otp-input";
 import {
   APP_LANGUAGES,
@@ -119,19 +119,23 @@ function StepIndicator({ step, stepLabels }: StepIndicatorProps) {
 
   return (
     <nav
-      className="register-stepper mb-10 mt-8 overflow-visible px-1 sm:mt-10 sm:px-2"
+      className="mb-8 mt-6 w-full sm:mb-10 sm:mt-8"
       aria-label={`Registration progress, step ${displayStep} of ${steps.length}`}
     >
-      <div className="w-max min-w-full">
-      <ol className="relative z-10 flex w-max flex-nowrap items-center gap-x-1 sm:gap-x-2">
+      <ol className="flex w-full items-center gap-1 sm:gap-2">
         {steps.map((item, index) => {
           const active = item.id === displayStep;
           const done = item.id < displayStep;
           const connectorDone = item.id < displayStep;
 
           return (
-            <li key={item.id} className="register-step-item flex shrink-0 items-center">
-              <div className="flex shrink-0 items-center gap-2.5 px-0.5 sm:gap-3 sm:px-1">
+            <Fragment key={item.id}>
+              <li
+                className={`flex shrink-0 items-center gap-2 min-w-0 transition-all duration-300 ease-out ${
+                  active ? "max-w-[58%] sm:max-w-[70%]" : ""
+                }`}
+                aria-current={active ? "step" : undefined}
+              >
                 <div
                   className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-all duration-300 ease-out ${
                     done
@@ -145,30 +149,32 @@ function StepIndicator({ step, stepLabels }: StepIndicatorProps) {
                     <StepCheckIcon />
                   ) : active ? (
                     <StepCheckIcon className="h-3 w-3" />
-                  ) : null}
+                  ) : (
+                    <span className="text-[11px] font-semibold leading-none">{item.id}</span>
+                  )}
                 </div>
-                <span
-                  className={`whitespace-nowrap text-xs leading-snug transition-colors duration-300 sm:text-sm ${
-                    active || done ? "font-medium text-brand-primary" : "text-slate-400"
-                  }`}
-                >
-                  {item.label}
-                </span>
-              </div>
+                {active ? (
+                  <span className="min-w-0 truncate text-xs font-medium leading-snug text-brand-primary sm:text-sm">
+                    {item.label}
+                  </span>
+                ) : (
+                  <span className="sr-only">{item.label}</span>
+                )}
+              </li>
 
               {index < steps.length - 1 && (
-                <div
-                  className="register-step-connector mx-3 h-px w-6 shrink-0 overflow-hidden rounded-full bg-slate-200 sm:mx-4 sm:w-10 md:mx-5 md:w-12"
+                <li
+                  className="mx-0.5 h-px min-w-[8px] flex-1 overflow-hidden rounded-full bg-slate-200 sm:mx-1"
                   aria-hidden
                 >
                   <div
                     className={`register-step-connector-fill h-full rounded-full ${
-                      connectorDone ? "w-full" : "w-0"
+                      connectorDone ? "w-full bg-brand-primary" : "w-0"
                     }`}
                   />
-                </div>
+                </li>
               )}
-            </li>
+            </Fragment>
           );
         })}
       </ol>
@@ -178,7 +184,6 @@ function StepIndicator({ step, stepLabels }: StepIndicatorProps) {
           className="register-step-slider h-full w-1/3 rounded-full"
           style={{ transform: `translateX(${slideIndex * 100}%)` }}
         />
-      </div>
       </div>
     </nav>
   );
@@ -502,26 +507,26 @@ export function RegisterForm({ initialMobile = "" }: RegisterFormProps) {
         continueLabel={t("orgSelect.loginHint")}
         onSelect={handleOrganisationSelect}
       />
-    <div className="flex min-h-screen flex-1 flex-col justify-start bg-white px-8 py-10 sm:px-12 lg:px-16 xl:px-24 2xl:px-28">
-      <div className="w-full max-w-lg overflow-visible">
-        <div className="mb-8 lg:hidden">
+    <div className="flex min-h-screen min-h-[100dvh] w-full min-w-0 flex-1 flex-col justify-start bg-white px-4 py-6 sm:px-8 sm:py-10 lg:px-16 xl:px-24 2xl:px-28">
+      <div className="mx-auto w-full max-w-lg lg:mx-0">
+        <div className="mb-6 sm:mb-8 lg:hidden">
           <Image
             src={BRAND_LOGO}
             alt={t("common.brandName")}
             width={200}
             height={38}
-            className="h-10 w-auto object-contain"
+            className="h-9 w-auto object-contain sm:h-10"
             priority
           />
         </div>
 
-        <h1 className="text-2xl font-bold text-brand-primary xl:text-3xl">
+        <h1 className="text-xl font-bold text-brand-primary sm:text-2xl xl:text-3xl">
           {t("register.createAccount")}
         </h1>
 
         <StepIndicator step={step} stepLabels={stepLabels} />
 
-        <div className="relative overflow-x-hidden">
+        <div className="relative w-full overflow-x-hidden">
           <div
             key={step}
             className={
@@ -535,7 +540,7 @@ export function RegisterForm({ initialMobile = "" }: RegisterFormProps) {
             <p className="text-sm font-semibold text-brand-primary">{t("register.language.title")}</p>
             <p className="mt-1 text-xs text-slate-500">{t("register.language.subtitle")}</p>
 
-            <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div className="mt-4 grid grid-cols-2 gap-2 sm:mt-5 sm:grid-cols-3 sm:gap-3">
               {APP_LANGUAGES.map((lang) => {
                 const selected = locale === lang.code;
                 return (
@@ -543,7 +548,7 @@ export function RegisterForm({ initialMobile = "" }: RegisterFormProps) {
                     key={lang.code}
                     type="button"
                     onClick={() => selectLanguage(lang.code)}
-                    className={`rounded-xs border px-3 py-3 text-left transition-all duration-200 ${
+                    className={`rounded-xs border px-2.5 py-2.5 text-left transition-all duration-200 sm:px-3 sm:py-3 ${
                       selected
                         ? "border-brand-orange-1 bg-brand-surface-warm shadow-sm ring-1 ring-brand-orange-1/50"
                         : "border-slate-300/90 bg-white hover:border-slate-400"
@@ -787,7 +792,7 @@ export function RegisterForm({ initialMobile = "" }: RegisterFormProps) {
               </p>
             )}
 
-            <div className="flex gap-3 pt-2">
+            <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row">
               <button
                 type="button"
                 onClick={() => {
@@ -835,7 +840,7 @@ export function RegisterForm({ initialMobile = "" }: RegisterFormProps) {
               </p>
             )}
 
-            <div className="mt-6 flex gap-3">
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row">
               <button
                 type="button"
                 onClick={() => {
@@ -860,7 +865,7 @@ export function RegisterForm({ initialMobile = "" }: RegisterFormProps) {
           </div>
         </div>
 
-        <p className="mt-10 text-center text-sm text-slate-600">
+        <p className="mt-8 text-center text-sm text-slate-600 sm:mt-10">
           {t("register.alreadyHaveAccount")}{" "}
           <Link href="/auth/login" className="login-link font-semibold hover:underline">
             {t("register.loginLink")}

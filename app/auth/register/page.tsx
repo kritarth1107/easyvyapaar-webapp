@@ -36,7 +36,7 @@ export default async function RegisterPage({ searchParams }: RegisterPageProps) 
   return (
     <>
       <JsonLd data={registerJsonLd} />
-      <div className="flex min-h-screen font-sans">
+      <div className="flex min-h-screen min-h-[100dvh] w-full font-sans overflow-x-hidden">
         <RegisterSidebar />
         <RegisterForm initialMobile={initialMobile} />
       </div>
