@@ -398,7 +398,7 @@ export function CreateItemModal({ open, onClose, organisationId, onSaved }: Crea
     <>
       {createPortal(
     <div
-      className="fixed inset-0 z-[110] flex items-center justify-center bg-brand-primary/45 p-3 backdrop-blur-[3px] sm:p-4"
+      className="fixed inset-0 z-[120] flex items-center justify-center bg-brand-primary/45 p-3 backdrop-blur-[3px] sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="create-item-title"

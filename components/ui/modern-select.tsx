@@ -22,7 +22,7 @@ type ModernSelectProps = {
   /** When compact: true = left-border segment (attached to input); false = standalone bordered control */
   compactAttached?: boolean;
   alignMenu?: "start" | "end";
-  footer?: React.ReactNode;
+  footer?: React.ReactNode | ((api: { close: () => void }) => React.ReactNode);
   "aria-label"?: string;
 };
 
@@ -154,10 +154,14 @@ export function ModernSelect({
     return () => document.removeEventListener("mousedown", onPointerDown);
   }, [open, menuId]);
 
-  const pick = (next: string) => {
-    onChange(next);
+  const closeMenu = () => {
     setOpen(false);
     setSearch("");
+  };
+
+  const pick = (next: string) => {
+    onChange(next);
+    closeMenu();
   };
 
   const triggerClass = isCompact
@@ -267,7 +271,11 @@ export function ModernSelect({
               )}
             </ul>
 
-            {footer && <div className="border-t border-slate-100 p-2">{footer}</div>}
+            {footer && (
+              <div className="border-t border-slate-100 p-2">
+                {typeof footer === "function" ? footer({ close: closeMenu }) : footer}
+              </div>
+            )}
           </div>,
           document.body
         )}

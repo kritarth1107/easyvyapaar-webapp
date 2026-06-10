@@ -95,7 +95,7 @@ export function HsnPickerDrawer({ open, onClose, onSelect, initialQuery = "" }: 
   if (!open || !mounted) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[130] flex justify-end">
+    <div className="fixed inset-0 z-[140] flex justify-end">
       <button
         type="button"
         className="absolute inset-0 bg-brand-primary/40 backdrop-blur-[2px]"

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
+import { CreateItemModal } from "@/components/dashboard/inventory/create-item-modal";
 import { ModernSelect } from "@/components/ui/modern-select";
 import type { InventoryBillPick, InventoryItem } from "@/lib/types/inventory-ui";
 import { fetchInventoryItems } from "@/lib/inventory/inventory-api-client";
@@ -72,6 +73,8 @@ export function AddItemsToBillModal({
   const [suppliers, setSuppliers] = useState<PartySummary[]>([]);
   const [suppliersLoading, setSuppliersLoading] = useState(false);
   const [selectedSupplierId, setSelectedSupplierId] = useState("");
+  const [createItemOpen, setCreateItemOpen] = useState(false);
+  const [itemsRefreshKey, setItemsRefreshKey] = useState(0);
 
   useEffect(() => setMounted(true), []);
 
@@ -81,9 +84,11 @@ export function AddItemsToBillModal({
       setCategory("all");
       setSelected(new Set());
       setSelectedSupplierId("");
+      setCreateItemOpen(false);
       return;
     }
     const onKeyDown = (e: KeyboardEvent) => {
+      if (createItemOpen) return;
       if (e.key === "Escape") onClose();
     };
     document.addEventListener("keydown", onKeyDown);
@@ -92,7 +97,7 @@ export function AddItemsToBillModal({
       document.removeEventListener("keydown", onKeyDown);
       document.body.style.overflow = "";
     };
-  }, [open, onClose]);
+  }, [open, onClose, createItemOpen]);
 
   useEffect(() => {
     const orgId = organisationId?.trim();
@@ -132,7 +137,7 @@ export function AddItemsToBillModal({
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [open, organisationId, query, category, t]);
+  }, [open, organisationId, query, category, itemsRefreshKey, t]);
 
   useEffect(() => {
     const orgId = organisationId?.trim();
@@ -230,9 +235,18 @@ export function AddItemsToBillModal({
     }
   };
 
-  if (!open || !mounted) return null;
+  if (!mounted) return null;
 
-  return createPortal(
+  return (
+    <>
+      <CreateItemModal
+        open={createItemOpen}
+        organisationId={organisationId}
+        onClose={() => setCreateItemOpen(false)}
+        onSaved={() => setItemsRefreshKey((key) => key + 1)}
+      />
+      {open
+        ? createPortal(
     <div
       className="fixed inset-0 z-[110] flex items-center justify-center bg-brand-primary/45 p-4 backdrop-blur-[3px]"
       role="dialog"
@@ -280,6 +294,7 @@ export function AddItemsToBillModal({
           </div>
           <button
             type="button"
+            onClick={() => setCreateItemOpen(true)}
             className="inline-flex h-10 shrink-0 items-center rounded-md bg-gradient-to-r from-brand-primary to-brand-primary-light px-4 text-sm font-semibold text-white hover:brightness-110"
           >
             {t("dashboard.salesInvoices.create.createNewItem")}
@@ -424,6 +439,9 @@ export function AddItemsToBillModal({
         </div>
       </div>
     </div>,
-    document.body
+    document.body,
+          )
+        : null}
+    </>
   );
 }

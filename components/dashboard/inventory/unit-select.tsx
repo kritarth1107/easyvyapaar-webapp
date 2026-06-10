@@ -21,10 +21,13 @@ export function UnitSelect({ value, units, onChange, onAddUnit }: UnitSelectProp
       searchable
       searchPlaceholder={t("dashboard.inventory.createItem.searchUnit")}
       emptyMessage={t("dashboard.inventory.createItem.noUnits")}
-      footer={
+      footer={({ close }) => (
         <button
           type="button"
-          onClick={onAddUnit}
+          onClick={() => {
+            close();
+            onAddUnit();
+          }}
           className="flex w-full items-center justify-center gap-2 rounded-sm border border-dashed border-brand-orange-1/45 bg-brand-surface-warm/60 px-3 py-2.5 text-sm font-semibold text-brand-orange-2 transition-colors hover:border-brand-orange-1/70 hover:bg-brand-surface-warm hover:text-brand-orange-1"
         >
           <span className="flex h-5 w-5 items-center justify-center rounded-sm bg-brand-orange-1/10 text-brand-orange-2">
@@ -32,7 +35,7 @@ export function UnitSelect({ value, units, onChange, onAddUnit }: UnitSelectProp
           </span>
           {t("dashboard.inventory.createItem.addUnitOption")}
         </button>
-      }
+      )}
     />
   );
 }

@@ -53,7 +53,7 @@ export function CreateCategoryModal({ open, onClose, onAdd }: CreateCategoryModa
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[120] flex items-center justify-center bg-brand-primary/50 p-4 backdrop-blur-[2px]"
+      className="fixed inset-0 z-[140] flex items-center justify-center bg-brand-primary/50 p-4 backdrop-blur-[2px]"
       role="dialog"
       aria-modal="true"
       aria-labelledby="create-category-title"
