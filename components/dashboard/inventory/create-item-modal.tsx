@@ -15,6 +15,7 @@ import { ModernSelect } from "@/components/ui/modern-select";
 import {
   createInventoryCategory,
   createInventoryItem,
+  uploadInventoryItemImage,
 } from "@/lib/inventory/inventory-api-client";
 import { fetchParties } from "@/lib/parties/parties-api-client";
 import type { PartySummary } from "@/lib/types/parties-api";
@@ -196,11 +197,21 @@ export function CreateItemModal({ open, onClose, organisationId, onSaved }: Crea
   const [saveError, setSaveError] = useState<string | null>(null);
   const [suppliers, setSuppliers] = useState<PartySummary[]>([]);
   const [suppliersLoading, setSuppliersLoading] = useState(false);
+  const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
 
   const patch = useCallback(
     (partial: Partial<CreateItemFormState>) => setForm((prev) => ({ ...prev, ...partial })),
     []
   );
+
+  const clearPendingImage = useCallback(() => {
+    if (imagePreviewUrl) {
+      URL.revokeObjectURL(imagePreviewUrl);
+    }
+    setPendingImageFile(null);
+    setImagePreviewUrl(null);
+  }, [imagePreviewUrl]);
 
   const resetForm = useCallback(() => {
     setForm({ ...createInitialItemForm(), itemCode: generateItemCode() });
@@ -208,7 +219,8 @@ export function CreateItemModal({ open, onClose, organisationId, onSaved }: Crea
     setNameError(false);
     setCategoryError(false);
     setSaveError(null);
-  }, []);
+    clearPendingImage();
+  }, [clearPendingImage]);
 
   useEffect(() => setMounted(true), []);
 
@@ -324,7 +336,10 @@ export function CreateItemModal({ open, onClose, organisationId, onSaved }: Crea
         resolvedCategoryIds.current,
       );
       const payload = mapFormToCreateItemRequest({ ...form, categoryId }, orgId);
-      await createInventoryItem(payload);
+      const created = await createInventoryItem(payload);
+      if (pendingImageFile) {
+        await uploadInventoryItemImage(orgId, created.itemId, pendingImageFile);
+      }
       onSaved?.();
       if (saveAndNew) resetForm();
       else onClose();
@@ -491,6 +506,27 @@ export function CreateItemModal({ open, onClose, organisationId, onSaved }: Crea
                   units={units}
                   onAddUnit={() => setCreateUnitOpen(true)}
                   onOpenHsnPicker={() => setHsnPickerOpen(true)}
+                  imagePreviewUrl={imagePreviewUrl}
+                  onImageSelect={(file) => {
+                    if (!file) return;
+                    const allowed = ["image/jpeg", "image/png", "image/webp"];
+                    if (!allowed.includes(file.type)) {
+                      setSaveError(t("dashboard.inventory.createItem.imageTypeError"));
+                      return;
+                    }
+                    if (file.size > 5 * 1024 * 1024) {
+                      setSaveError(t("dashboard.inventory.createItem.imageSizeError"));
+                      return;
+                    }
+                    setSaveError(null);
+                    if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
+                    setPendingImageFile(file);
+                    setImagePreviewUrl(URL.createObjectURL(file));
+                  }}
+                  onImageClear={() => {
+                    clearPendingImage();
+                    setSaveError(null);
+                  }}
                   t={t}
                 />
               )}
@@ -968,6 +1004,9 @@ function StockSection({
   units,
   onAddUnit,
   onOpenHsnPicker,
+  imagePreviewUrl,
+  onImageSelect,
+  onImageClear,
   t,
 }: {
   form: CreateItemFormState;
@@ -975,6 +1014,9 @@ function StockSection({
   units: string[];
   onAddUnit: () => void;
   onOpenHsnPicker: () => void;
+  imagePreviewUrl: string | null;
+  onImageSelect: (file: File) => void;
+  onImageClear: () => void;
   t: (key: TranslationKey) => string;
 }) {
   return (
@@ -1113,25 +1155,53 @@ function StockSection({
       <div className="rounded-md border border-dashed border-slate-200 bg-slate-50/80 p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-white text-brand-primary-muted ring-1 ring-slate-200/80">
-              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden>
-                <path
-                  d="M12 16V8m0 0l-3 3m3-3l3 3M5 20h14a1 1 0 001-1V6l-5-4H5a1 1 0 00-1 1v17z"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </span>
+            {imagePreviewUrl ? (
+              <img
+                src={imagePreviewUrl}
+                alt={t("dashboard.inventory.createItem.imagePreviewAlt")}
+                className="h-16 w-16 shrink-0 rounded-sm object-cover ring-1 ring-slate-200/80"
+              />
+            ) : (
+              <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-sm bg-white text-brand-primary-muted ring-1 ring-slate-200/80">
+                <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" aria-hidden>
+                  <path
+                    d="M12 16V8m0 0l-3 3m3-3l3 3M5 20h14a1 1 0 001-1V6l-5-4H5a1 1 0 00-1 1v17z"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </span>
+            )}
             <p className="text-xs leading-relaxed text-brand-primary-muted">
               {t("dashboard.inventory.createItem.uploadHint")}
             </p>
           </div>
-          <label className="inline-flex h-10 shrink-0 cursor-pointer items-center justify-center rounded-sm border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary transition-colors hover:bg-slate-50">
-            {t("dashboard.inventory.createItem.selectFile")}
-            <input type="file" className="sr-only" accept="image/png,image/jpeg" multiple />
-          </label>
+          <div className="flex shrink-0 gap-2">
+            {imagePreviewUrl ? (
+              <button
+                type="button"
+                onClick={onImageClear}
+                className="inline-flex h-10 items-center justify-center rounded-sm border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary transition-colors hover:bg-slate-50"
+              >
+                {t("dashboard.inventory.createItem.removeImage")}
+              </button>
+            ) : null}
+            <label className="inline-flex h-10 cursor-pointer items-center justify-center rounded-sm border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary transition-colors hover:bg-slate-50">
+              {t("dashboard.inventory.createItem.selectFile")}
+              <input
+                type="file"
+                className="sr-only"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) onImageSelect(file);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+          </div>
         </div>
       </div>
     </div>

@@ -199,7 +199,9 @@ export async function createStockAdjustment(
   return result;
 }
 
-export async function createInventoryItem(payload: CreateInventoryItemRequest): Promise<void> {
+export async function createInventoryItem(
+  payload: CreateInventoryItemRequest,
+): Promise<InventoryItemDetail> {
   const res = await fetch("/api/inventory/items", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -209,4 +211,32 @@ export async function createInventoryItem(payload: CreateInventoryItemRequest): 
   if (!res.ok) {
     throw new Error(extractBackendError(body) ?? "Failed to save item");
   }
+  const detail = normalizeInventoryDetailResponse(body);
+  if (!detail) {
+    throw new Error("Failed to save item");
+  }
+  return detail;
+}
+
+export async function uploadInventoryItemImage(
+  organisationId: string,
+  itemId: string,
+  file: File,
+): Promise<InventoryItemDetail> {
+  const formData = new FormData();
+  formData.append("image", file);
+
+  const res = await fetch(
+    `/api/inventory/items/${encodeURIComponent(itemId)}/image?organisationId=${encodeURIComponent(organisationId)}`,
+    { method: "POST", body: formData },
+  );
+  const body = await parseJsonResponse(res);
+  if (!res.ok) {
+    throw new Error(extractBackendError(body) ?? "Failed to upload image");
+  }
+  const detail = normalizeInventoryDetailResponse(body);
+  if (!detail) {
+    throw new Error("Failed to upload image");
+  }
+  return detail;
 }

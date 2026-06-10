@@ -115,6 +115,7 @@ export function normalizeItemSummary(raw: unknown): InventoryItemSummary | null 
             .filter(Boolean),
         }
       : {}),
+    ...(pickString(row.imageUrl) && { imageUrl: pickString(row.imageUrl) }),
   };
 }
 
@@ -286,6 +287,7 @@ export function normalizeItemDetail(raw: unknown): InventoryItemDetail | null {
     ...(pickString(row.updatedByUserId) && { updatedByUserId: pickString(row.updatedByUserId) }),
     createdAt: pickString(row.createdAt) ?? "",
     updatedAt: pickString(row.updatedAt) ?? "",
+    ...(pickString(row.imageUrl) && { imageUrl: pickString(row.imageUrl) }),
   };
 }
 

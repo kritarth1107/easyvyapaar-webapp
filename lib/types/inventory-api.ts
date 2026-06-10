@@ -43,6 +43,7 @@ export type InventoryItemSummary = {
   lowStockWarning?: boolean;
   lowStockQty?: number;
   availableSerialNumbers?: string[];
+  imageUrl?: string;
 };
 
 export type InventoryCategory = {
@@ -108,6 +109,7 @@ export type InventoryItemDetail = {
   updatedByUserId?: string;
   createdAt: string;
   updatedAt: string;
+  imageUrl?: string;
 };
 
 export type CreateInventoryItemRequest = {

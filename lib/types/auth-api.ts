@@ -53,8 +53,10 @@ export interface VerifyOtpSuccessResponse {
 export interface CheckGstSuccessData {
   gstin: string;
   gstVerified: boolean;
+  gstDataMatch?: boolean;
   tradeName?: string;
   legalName?: string;
+  billingAddress?: string;
   mappedOrganisationType?: string;
   constitutionType?: string;
   status?: string;

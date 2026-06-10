@@ -4,7 +4,10 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { WALK_IN_PARTY_ID } from "@/lib/parties/constants";
 import { PARTY_CATEGORIES } from "@/lib/parties/party-categories";
+import { lookupGstin } from "@/lib/gst/lookup-gst";
+import { extractPanFromGstin } from "@/lib/parties/create-party-form";
 import { createParty, fetchParties } from "@/lib/parties/parties-api-client";
+import { isValidGstin, normalizeGstin } from "@/lib/validators/gstin";
 import { formatInr } from "@/lib/sales/create-invoice-form";
 import type { PartySummary } from "@/lib/types/parties-api";
 import { useTranslation } from "@/lib/localization";
@@ -75,6 +78,10 @@ export function PartySelectModal({
   const [createName, setCreateName] = useState("");
   const [createPhone, setCreatePhone] = useState("");
   const [createAddress, setCreateAddress] = useState("");
+  const [createGstin, setCreateGstin] = useState("");
+  const [gstVerified, setGstVerified] = useState(false);
+  const [gstMismatchHint, setGstMismatchHint] = useState<string | null>(null);
+  const [gstLoading, setGstLoading] = useState(false);
   const [createSaving, setCreateSaving] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
 
@@ -87,6 +94,10 @@ export function PartySelectModal({
       setCreateName("");
       setCreatePhone("");
       setCreateAddress("");
+      setCreateGstin("");
+      setGstVerified(false);
+      setGstMismatchHint(null);
+      setGstLoading(false);
       setCreateError(null);
       return;
     }
@@ -142,6 +153,45 @@ export function PartySelectModal({
     };
   }, [open, organisationId, query, t]);
 
+  const handleGstVerify = async () => {
+    const gstin = normalizeGstin(createGstin);
+    if (!isValidGstin(gstin)) {
+      setCreateError(t("dashboard.salesInvoices.create.gstinInvalid"));
+      return;
+    }
+
+    setGstLoading(true);
+    setCreateError(null);
+    setGstMismatchHint(null);
+    try {
+      const data = await lookupGstin(gstin, { compareName: createName.trim() });
+      const tradeName = (data.tradeName ?? data.legalName ?? "").trim();
+      const billingAddress = data.billingAddress?.trim() ?? "";
+      const pan = extractPanFromGstin(data.gstin);
+
+      setCreateGstin(data.gstin);
+      setGstVerified(true);
+
+      if (data.gstDataMatch === false && tradeName) {
+        setCreateName(tradeName);
+        if (billingAddress) setCreateAddress(billingAddress);
+        setGstMismatchHint(t("dashboard.salesInvoices.create.gstMismatchHint"));
+      } else if (!createName.trim() && tradeName) {
+        setCreateName(tradeName);
+      }
+      if (!createAddress.trim() && billingAddress) {
+        setCreateAddress(billingAddress);
+      }
+    } catch (err) {
+      setGstVerified(false);
+      setCreateError(
+        err instanceof Error ? err.message : t("dashboard.createParty.gstLookupError"),
+      );
+    } finally {
+      setGstLoading(false);
+    }
+  };
+
   const handleCreateParty = async () => {
     const orgId = organisationId?.trim();
     const name = createName.trim();
@@ -151,9 +201,16 @@ export function PartySelectModal({
       return;
     }
 
+    const gstin = createGstin.trim() ? normalizeGstin(createGstin) : "";
+    if (gstin && !isValidGstin(gstin)) {
+      setCreateError(t("dashboard.salesInvoices.create.gstinInvalid"));
+      return;
+    }
+
     setCreateSaving(true);
     setCreateError(null);
     try {
+      const pan = gstin ? extractPanFromGstin(gstin) : null;
       const party = await createParty({
         organisationId: orgId,
         partyType: "customer",
@@ -161,6 +218,8 @@ export function PartySelectModal({
         name,
         ...(createPhone.trim() ? { phone: createPhone.trim() } : {}),
         ...(createAddress.trim() ? { billingAddress: createAddress.trim() } : {}),
+        ...(gstin ? { gstin } : {}),
+        ...(pan ? { pan } : {}),
       });
       onSelect({
         partyId: party.partyId,
@@ -169,6 +228,8 @@ export function PartySelectModal({
         balance: party.currentBalance,
         ...(createAddress.trim() ? { billingAddress: createAddress.trim() } : {}),
         ...(createPhone.trim() ? { phone: createPhone.trim() } : {}),
+        ...(gstin ? { gstin } : {}),
+        ...(pan ? { pan } : {}),
       });
       onClose();
     } catch (err) {
@@ -249,6 +310,48 @@ export function PartySelectModal({
                 className="resize-none rounded-md border border-slate-200/90 bg-slate-50/80 px-3 py-2 text-sm text-brand-primary outline-none focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15"
               />
             </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-xs font-medium text-brand-primary-muted">
+                {t("dashboard.salesInvoices.create.gstinOptional")}
+              </span>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={createGstin}
+                  onChange={(e) => {
+                    setCreateGstin(e.target.value.toUpperCase());
+                    setGstVerified(false);
+                    setGstMismatchHint(null);
+                  }}
+                  placeholder="22AAAAA0000A1Z5"
+                  className="h-10 min-w-0 flex-1 rounded-sm border border-slate-200/90 bg-slate-50/80 px-3 font-mono text-sm uppercase text-brand-primary outline-none focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15"
+                />
+                <button
+                  type="button"
+                  onClick={() => void handleGstVerify()}
+                  disabled={
+                    gstLoading || !createGstin.trim() || !isValidGstin(normalizeGstin(createGstin))
+                  }
+                  className="h-10 shrink-0 rounded-md border border-brand-primary/20 bg-brand-primary/[0.04] px-3 text-xs font-semibold text-brand-primary hover:bg-brand-primary/[0.08] disabled:opacity-60"
+                >
+                  {gstLoading
+                    ? t("common.pleaseWait")
+                    : t("dashboard.salesInvoices.create.verifyGst")}
+                </button>
+              </div>
+              {gstVerified ? (
+                <p className="text-[11px] font-medium text-emerald-700">
+                  {t("dashboard.salesInvoices.create.gstVerified")}
+                </p>
+              ) : (
+                <p className="text-[11px] text-brand-primary-muted">
+                  {t("dashboard.salesInvoices.create.gstinOptionalHint")}
+                </p>
+              )}
+            </label>
+            {gstMismatchHint ? (
+              <p className="text-xs font-medium text-amber-800">{gstMismatchHint}</p>
+            ) : null}
             {createError ? <p className="text-sm text-red-600">{createError}</p> : null}
           </div>
         ) : (

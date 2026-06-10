@@ -449,6 +449,10 @@ export type MessageTree = {
         descriptionPlaceholder: string;
         uploadHint: string;
         selectFile: string;
+        removeImage: string;
+        imagePreviewAlt: string;
+        imageTypeError: string;
+        imageSizeError: string;
         salesDiscount: string;
         discountHint: string;
         discountPlaceholder: string;
@@ -917,6 +921,12 @@ export type MessageTree = {
         balance: string;
         createParty: string;
         quickCreatePartyTitle: string;
+        gstinOptional: string;
+        gstinOptionalHint: string;
+        verifyGst: string;
+        gstVerified: string;
+        gstinInvalid: string;
+        gstMismatchHint: string;
         stockMaxHint: string;
         decreaseQty: string;
         increaseQty: string;
