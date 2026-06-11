@@ -1,5 +1,6 @@
 "use client";
 
+import { orgInitials } from "@/components/dashboard/business-switch";
 import {
   fmtRupee,
   fmtSummaryValue,
@@ -14,6 +15,70 @@ export function formatInvoiceDateTime(showTime: boolean): string {
 }
 
 const TRADE_NAME_BLUE = "#2563eb";
+
+type InvoicePreviewLogoProps = {
+  businessName: string;
+  logoUrl?: string | null;
+  width?: number;
+  height?: number;
+  fontSize?: number;
+  containerWidth?: number;
+  taglineFontSize?: number;
+  taglineMarginTop?: number;
+  taglineLine2?: string;
+};
+
+export function InvoicePreviewLogo({
+  businessName,
+  logoUrl,
+  width = 44,
+  height = 44,
+  fontSize = 15,
+  containerWidth,
+  taglineFontSize = 6,
+  taglineMarginTop = 4,
+  taglineLine2 = "SABSE BADHIYA",
+}: InvoicePreviewLogoProps) {
+  const boxWidth = containerWidth ?? width + 12;
+  const trimmedLogo = logoUrl?.trim();
+
+  if (trimmedLogo) {
+    return (
+      <div className="shrink-0 text-center" style={{ width: boxWidth }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={trimmedLogo}
+          alt={businessName}
+          className="mx-auto rounded-sm object-contain"
+          style={{ width, height }}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="shrink-0 text-center" style={{ width: boxWidth }}>
+      <div
+        className="mx-auto flex items-center justify-center rounded-sm bg-[#f63e16] font-bold text-white"
+        style={{ width, height, fontSize }}
+      >
+        {orgInitials(businessName)}
+      </div>
+      <p
+        style={{
+          fontSize: taglineFontSize,
+          lineHeight: 1.2,
+          marginTop: taglineMarginTop,
+          color: "#555",
+        }}
+      >
+        SABSE SASTA
+        <br />
+        {taglineLine2}
+      </p>
+    </div>
+  );
+}
 
 type SignatureVisualProps = {
   businessName: string;

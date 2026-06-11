@@ -12,7 +12,10 @@ import { ModernSelect } from "@/components/ui/modern-select";
 import { fetchInventoryCategories, fetchInventoryItems } from "@/lib/inventory/inventory-api-client";
 import { fetchBusinessProfile } from "@/lib/business/business-profile-api-client";
 import { buildLiveInvoicePreviewModel } from "@/lib/sales/build-live-invoice-preview";
-import { organisationProfileToSnapshot } from "@/lib/sales/invoice-preview-formatters";
+import {
+  organisationProfileToSnapshot,
+  type InvoiceOrganisationSnapshot,
+} from "@/lib/sales/invoice-preview-formatters";
 import {
   calcInvoiceTotals,
   calcLineItem,
@@ -103,6 +106,9 @@ export function PosBillingPage() {
 
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewModel, setPreviewModel] = useState<LiveInvoicePreviewModel | null>(null);
+  const [previewOrganisation, setPreviewOrganisation] = useState<InvoiceOrganisationSnapshot | null>(
+    null,
+  );
   const [storedInvoiceSettings] = useState<StoredSalesInvoiceSettings>({
     ...DEFAULT_STORED_SALES_INVOICE_SETTINGS,
     themeId: "gst-advance-a4",
@@ -393,6 +399,7 @@ export function PosBillingPage() {
             },
           });
           setPreviewModel(model);
+          setPreviewOrganisation(orgSnapshot);
           setPreviewOpen(true);
         }
 
@@ -1114,6 +1121,7 @@ export function PosBillingPage() {
         open={previewOpen}
         onClose={() => setPreviewOpen(false)}
         model={previewModel}
+        organisation={previewOrganisation ?? undefined}
         storedSettings={{
           ...storedInvoiceSettings,
           themeId: posPrinterToTheme(posSettings.printerType),

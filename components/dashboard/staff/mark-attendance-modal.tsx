@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { ModernSelect } from "@/components/ui/modern-select";
 import { CompactDateField } from "@/components/ui/compact-date-field";
+import { isStaffEligibleForAttendanceDate } from "@/lib/staff/attendance-eligibility";
 import { markAttendance } from "@/lib/staff/staff-api-client";
 import {
   ATTENDANCE_STATUS_ORDER,
@@ -17,7 +18,7 @@ type MarkAttendanceModalProps = {
   organisationId: string;
   defaultDate: string;
   defaultStaffId?: string;
-  staffOptions: Array<{ value: string; label: string }>;
+  staffOptions: Array<{ value: string; label: string; joinDate?: string }>;
   onClose: () => void;
   onSaved: () => void;
 };
@@ -51,7 +52,13 @@ export function MarkAttendanceModal({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const selectableStaff = staffOptions.filter((option) => option.value);
+  const selectableStaff = useMemo(
+    () =>
+      staffOptions
+        .filter((option) => option.value)
+        .filter((option) => isStaffEligibleForAttendanceDate(option.joinDate, attendanceDate)),
+    [staffOptions, attendanceDate],
+  );
   const lockedStaff = Boolean(defaultStaffId?.trim());
 
   const selectedStaffName = useMemo(() => {
@@ -86,6 +93,13 @@ export function MarkAttendanceModal({
       setError(null);
     }
   }, [open, defaultDate, defaultStaffId]);
+
+  useEffect(() => {
+    if (!open || lockedStaff) return;
+    if (staffId && !selectableStaff.some((option) => option.value === staffId)) {
+      setStaffId("");
+    }
+  }, [open, lockedStaff, staffId, selectableStaff]);
 
   useEffect(() => {
     if (!open) return;

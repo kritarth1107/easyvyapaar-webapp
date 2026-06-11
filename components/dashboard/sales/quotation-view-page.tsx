@@ -202,8 +202,9 @@ export function QuotationViewPage({ quotationId }: { quotationId: string }) {
       enableReceiverSignature: storedSettings.enableReceiverSignature,
       signatureImageUrl: storedSettings.signatureDataUrl,
       document: mapQuotationPreviewToDocument(previewModel),
+      organisation: organisationSnapshot,
     };
-  }, [previewModel, storedSettings, themeLabel]);
+  }, [previewModel, storedSettings, themeLabel, organisationSnapshot]);
 
   if (!activeOrganisationId) {
     return (

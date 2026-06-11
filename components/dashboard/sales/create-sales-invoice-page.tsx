@@ -206,14 +206,16 @@ export function CreateSalesInvoicePage() {
         activeOrganisation?.pan,
       ),
       placeOfSupply: "",
+      ...(activeOrganisation?.logo?.trim() ? { logoUrl: activeOrganisation.logo.trim() } : {}),
     }),
-    [activeOrganisation?.gstNumber, activeOrganisation?.pan],
+    [activeOrganisation?.gstNumber, activeOrganisation?.logo, activeOrganisation?.pan],
   );
 
   const resolvedOrganisationSnapshot =
     organisationSnapshot.businessAddress ||
     organisationSnapshot.businessPhone ||
-    organisationSnapshot.placeOfSupply
+    organisationSnapshot.placeOfSupply ||
+    organisationSnapshot.logoUrl
       ? organisationSnapshot
       : fallbackOrganisationSnapshot;
 
@@ -1305,6 +1307,7 @@ export function CreateSalesInvoicePage() {
         onClose={() => setPreviewOpen(false)}
         model={previewModel}
         storedSettings={storedInvoiceSettings}
+        organisation={resolvedOrganisationSnapshot}
         footer={
           <button
             type="button"

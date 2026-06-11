@@ -6,6 +6,7 @@ import {
   InvoicePreviewBusinessDetails,
   InvoicePreviewGstBreakdownTable,
   InvoicePreviewItemDetails,
+  InvoicePreviewLogo,
   InvoicePreviewSummaryRows,
   InvoiceReceiverSignature,
 } from "@/components/dashboard/sales/invoice-preview-shared";
@@ -16,6 +17,7 @@ import {
   fmtRupee,
   PAGE_SIZES,
   pageScale,
+  resolveInvoiceLogoUrl,
   type InvoicePageSize,
   type InvoicePreviewProps,
 } from "@/lib/sales/invoice-preview-data";
@@ -49,6 +51,7 @@ export function InvoicePreviewBillbook(props: BillbookPreviewProps) {
   } = props;
   const content = resolveInvoicePreviewContent(props);
   const displayName = businessName.toUpperCase() || "MAYANK ELECTRONICS";
+  const logoUrl = resolveInvoiceLogoUrl(props);
   const headerTextColor = getHeaderTextColor(accentHex);
   const page = PAGE_SIZES[pageSize];
   const s = pageScale(pageSize);
@@ -93,19 +96,17 @@ export function InvoicePreviewBillbook(props: BillbookPreviewProps) {
             className="flex items-center border-b border-black p-[8px]"
             style={{ minHeight: px(78) }}
           >
-            <div className="shrink-0 text-center" style={{ width: px(56) }}>
-              <div
-                className="mx-auto flex items-center justify-center bg-[#f63e16] font-bold text-white"
-                style={{ width: px(44), height: px(44), fontSize: "16px" }}
-              >
-                ME
-              </div>
-              <p style={{ fontSize: "6px", lineHeight: 1.15, marginTop: 3, color: "#333" }}>
-                SABSE SASTA
-                <br />
-                SABSE ACCHA
-              </p>
-            </div>
+            <InvoicePreviewLogo
+              businessName={displayName}
+              logoUrl={logoUrl}
+              width={px(44)}
+              height={px(44)}
+              fontSize={16}
+              containerWidth={px(56)}
+              taglineFontSize={6}
+              taglineMarginTop={3}
+              taglineLine2="SABSE ACCHA"
+            />
             <div className="min-w-0 flex-1 text-center">
               <p style={{ fontSize: "18px", fontWeight: 700, lineHeight: 1.1 }}>{displayName}</p>
               <InvoicePreviewBusinessDetails

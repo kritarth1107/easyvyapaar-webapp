@@ -12,6 +12,7 @@ import {
   INVOICE_THEME_CARDS,
   type StoredSalesInvoiceSettings,
 } from "@/lib/sales/invoice-settings-config";
+import type { InvoiceOrganisationSnapshot } from "@/lib/sales/invoice-preview-formatters";
 import { useTranslation } from "@/lib/localization";
 
 type SalesInvoicePreviewModalProps = {
@@ -24,6 +25,7 @@ type SalesInvoicePreviewModalProps = {
   footer?: React.ReactNode;
   printAreaRef?: RefObject<HTMLDivElement | null>;
   quotation?: boolean;
+  organisation?: InvoiceOrganisationSnapshot;
 };
 
 function CloseIcon() {
@@ -44,6 +46,7 @@ export function SalesInvoicePreviewModal({
   footer,
   printAreaRef,
   quotation = false,
+  organisation,
 }: SalesInvoicePreviewModalProps) {
   const { t } = useTranslation();
   const [mounted, setMounted] = useState(false);
@@ -65,8 +68,9 @@ export function SalesInvoicePreviewModal({
       enableReceiverSignature: storedSettings.enableReceiverSignature,
       signatureImageUrl: storedSettings.signatureDataUrl,
       document: quotation ? mapQuotationPreviewToDocument(model) : mapLivePreviewToDocument(model),
+      organisation,
     };
-  }, [model, quotation, storedSettings]);
+  }, [model, organisation, quotation, storedSettings]);
 
   useEffect(() => setMounted(true), []);
 

@@ -226,8 +226,19 @@ export function normalizeGstRow(
   };
 }
 
+export function resolveInvoiceLogoUrl(props: {
+  logoUrl?: string | null;
+  organisation?: { logoUrl?: string };
+}): string | null {
+  const direct = props.logoUrl?.trim();
+  if (direct) return direct;
+  const fromOrg = props.organisation?.logoUrl?.trim();
+  return fromOrg || null;
+}
+
 export type InvoicePreviewProps = {
   businessName: string;
+  logoUrl?: string | null;
   accentHex: string;
   showPartyBalance: boolean;
   showPhoneOnInvoice: boolean;

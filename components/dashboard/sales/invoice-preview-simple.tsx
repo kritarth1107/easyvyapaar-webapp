@@ -6,6 +6,7 @@ import {
   InvoicePreviewBusinessDetails,
   InvoicePreviewGstBreakdownTable,
   InvoicePreviewItemDetails,
+  InvoicePreviewLogo,
   InvoicePreviewShippingAddress,
   InvoicePreviewSummaryRows,
   InvoiceReceiverSignature,
@@ -17,6 +18,7 @@ import {
   A4_WIDTH,
   COL,
   fmtRupee,
+  resolveInvoiceLogoUrl,
   type InvoicePreviewProps,
 } from "@/lib/sales/invoice-preview-data";
 
@@ -33,6 +35,7 @@ export function InvoicePreviewSimple(props: InvoicePreviewProps) {
   } = props;
   const content = resolveInvoicePreviewContent(props);
   const displayName = businessName.toUpperCase() || "MAYANK ELECTRONICS";
+  const logoUrl = resolveInvoiceLogoUrl(props);
   const headerTextColor = getHeaderTextColor(accentHex);
 
   const barStyle = {
@@ -62,19 +65,16 @@ export function InvoicePreviewSimple(props: InvoicePreviewProps) {
           {/* Header */}
           <div className="flex border-b border-black">
             <div className="flex flex-1 gap-2 border-r border-black p-[8px]">
-              <div className="shrink-0 text-center" style={{ width: 52 }}>
-                <div
-                  className="mx-auto flex items-center justify-center bg-[#f63e16] font-bold text-white"
-                  style={{ width: 42, height: 42, fontSize: "15px" }}
-                >
-                  ME
-                </div>
-                <p style={{ fontSize: "5px", lineHeight: 1.1, marginTop: 3, color: "#333" }}>
-                  SABSE SASTA
-                  <br />
-                  SABSE BADHIYA
-                </p>
-              </div>
+              <InvoicePreviewLogo
+                businessName={displayName}
+                logoUrl={logoUrl}
+                width={42}
+                height={42}
+                fontSize={15}
+                containerWidth={52}
+                taglineFontSize={5}
+                taglineMarginTop={3}
+              />
               <div className="min-w-0 flex-1">
                 <p style={{ fontSize: "16px", fontWeight: 700, lineHeight: 1.1 }}>{displayName}</p>
                 <InvoicePreviewBusinessDetails

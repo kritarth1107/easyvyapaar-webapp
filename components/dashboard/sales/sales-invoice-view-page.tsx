@@ -274,8 +274,9 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
       enableReceiverSignature: storedSettings.enableReceiverSignature,
       signatureImageUrl: storedSettings.signatureDataUrl,
       document: mapLivePreviewToDocument(previewModel),
+      organisation: organisationSnapshot,
     };
-  }, [previewModel, storedSettings, themeLabel]);
+  }, [previewModel, storedSettings, themeLabel, organisationSnapshot]);
 
   if (!activeOrganisationId) {
     return (

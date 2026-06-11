@@ -13,6 +13,10 @@ import {
   tableHeadRowClass,
 } from "@/lib/dashboard/page-utils";
 import { MarkAttendanceModal } from "@/components/dashboard/staff/mark-attendance-modal";
+import {
+  filterStaffEligibleForAttendanceDate,
+  isStaffEligibleForAttendanceDate,
+} from "@/lib/staff/attendance-eligibility";
 import { getAttendanceStatusUi } from "@/lib/staff/attendance-status-ui";
 import { fetchAttendance, fetchStaffList } from "@/lib/staff/staff-api-client";
 import type { AttendanceRecord, AttendanceStatus } from "@/lib/types/staff-api";
@@ -22,6 +26,7 @@ type StaffOption = {
   value: string;
   label: string;
   phone?: string;
+  joinDate?: string;
 };
 
 function addDaysIso(iso: string, delta: number): string {
@@ -243,6 +248,21 @@ export function AttendancePage() {
   const todayByStaff = useMemo(() => recordsByStaffId(todayRecords), [todayRecords]);
   const yesterdayByStaff = useMemo(() => recordsByStaffId(yesterdayRecords), [yesterdayRecords]);
 
+  const todayStaff = useMemo(
+    () => filterStaffEligibleForAttendanceDate(staffOptions, today),
+    [staffOptions, today],
+  );
+
+  const yesterdayStaff = useMemo(
+    () => filterStaffEligibleForAttendanceDate(staffOptions, yesterday),
+    [staffOptions, yesterday],
+  );
+
+  const joinDateByStaffId = useMemo(
+    () => new Map(staffOptions.map((option) => [option.value, option.joinDate])),
+    [staffOptions],
+  );
+
   const statusLabelFn = useCallback(
     (status: AttendanceStatus) => statusLabel(status, t),
     [t],
@@ -257,6 +277,7 @@ export function AttendancePage() {
             value: s.staffId,
             label: s.name,
             phone: s.phone,
+            joinDate: s.joinDate,
           })),
         ),
       )
@@ -313,12 +334,16 @@ export function AttendancePage() {
 
   const sortedRecords = useMemo(
     () =>
-      [...records].sort((a, b) => {
-        const dateCompare = b.attendanceDate.localeCompare(a.attendanceDate);
-        if (dateCompare !== 0) return dateCompare;
-        return a.staffName.localeCompare(b.staffName);
-      }),
-    [records],
+      [...records]
+        .filter((row) =>
+          isStaffEligibleForAttendanceDate(joinDateByStaffId.get(row.staffId), row.attendanceDate),
+        )
+        .sort((a, b) => {
+          const dateCompare = b.attendanceDate.localeCompare(a.attendanceDate);
+          if (dateCompare !== 0) return dateCompare;
+          return a.staffName.localeCompare(b.staffName);
+        }),
+    [records, joinDateByStaffId],
   );
 
   const handleFromDateChange = (value: string) => {
@@ -370,7 +395,7 @@ export function AttendancePage() {
           title={t("dashboard.staff.attendance.todaySection")}
           dateIso={today}
           dateLabel={formatDate(today)}
-          staff={staffOptions}
+          staff={todayStaff}
           recordsByStaff={todayByStaff}
           loading={snapshotsLoading}
           loadingLabel={t("common.pleaseWait")}
@@ -384,7 +409,7 @@ export function AttendancePage() {
           title={t("dashboard.staff.attendance.yesterdaySection")}
           dateIso={yesterday}
           dateLabel={formatDate(yesterday)}
-          staff={staffOptions}
+          staff={yesterdayStaff}
           recordsByStaff={yesterdayByStaff}
           loading={snapshotsLoading}
           loadingLabel={t("common.pleaseWait")}

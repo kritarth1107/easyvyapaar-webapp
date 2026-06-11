@@ -32,6 +32,7 @@ export type InvoiceOrganisationSnapshot = {
   businessPhone: string;
   businessTaxLine: string;
   placeOfSupply: string;
+  logoUrl?: string;
 };
 
 export function organisationProfileToSnapshot(
@@ -42,5 +43,6 @@ export function organisationProfileToSnapshot(
     businessPhone: profile.contactNumber.trim(),
     businessTaxLine: formatGstinOrPanLine(profile.gstin, profile.pan),
     placeOfSupply: organisationPlaceOfSupply(profile),
+    ...(profile.logoUrl?.trim() ? { logoUrl: profile.logoUrl.trim() } : {}),
   };
 }

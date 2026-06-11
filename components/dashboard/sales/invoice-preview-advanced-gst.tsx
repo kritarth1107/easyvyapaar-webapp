@@ -6,6 +6,7 @@ import {
   InvoicePreviewBusinessDetails,
   InvoicePreviewGstBreakdownTable,
   InvoicePreviewItemDetails,
+  InvoicePreviewLogo,
   InvoicePreviewShippingAddress,
   InvoicePreviewSummaryRows,
   InvoiceReceiverSignature,
@@ -17,6 +18,7 @@ import {
   fmtRupee,
   PAGE_SIZES,
   pageScale,
+  resolveInvoiceLogoUrl,
   type InvoicePageSize,
   type InvoicePreviewProps,
 } from "@/lib/sales/invoice-preview-data";
@@ -46,6 +48,7 @@ export function InvoicePreviewAdvancedGst(props: GstAdvancePreviewProps) {
   } = props;
   const content = resolveInvoicePreviewContent(props);
   const displayName = businessName.toUpperCase() || "MAYANK ELECTRONICS";
+  const logoUrl = resolveInvoiceLogoUrl(props);
   const headerTextColor = getHeaderTextColor(accentHex);
   const page = PAGE_SIZES[pageSize];
   const s = pageScale(pageSize);
@@ -86,19 +89,16 @@ export function InvoicePreviewAdvancedGst(props: GstAdvancePreviewProps) {
           {/* Seller + invoice meta */}
           <div className="flex border-b border-black" style={{ minHeight: px(88) }}>
             <div className="flex flex-1 gap-[8px] border-r border-black p-[10px]">
-              <div className="shrink-0 text-center" style={{ width: px(56) }}>
-                <div
-                  className="mx-auto flex items-center justify-center bg-[#f63e16] font-bold text-white"
-                  style={{ width: px(44), height: px(44), fontSize: "16px" }}
-                >
-                  ME
-                </div>
-                <p style={{ fontSize: "6px", lineHeight: 1.15, marginTop: 3, color: "#333" }}>
-                  SABSE SASTA
-                  <br />
-                  SABSE BADHIYA
-                </p>
-              </div>
+              <InvoicePreviewLogo
+                businessName={displayName}
+                logoUrl={logoUrl}
+                width={px(44)}
+                height={px(44)}
+                fontSize={16}
+                containerWidth={px(56)}
+                taglineFontSize={6}
+                taglineMarginTop={3}
+              />
               <div className="min-w-0 flex-1">
                 <p style={{ fontSize: "18px", fontWeight: 700, lineHeight: 1.1 }}>{displayName}</p>
                 <InvoicePreviewBusinessDetails

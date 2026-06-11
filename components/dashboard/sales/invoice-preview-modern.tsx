@@ -6,6 +6,7 @@ import {
   InvoicePreviewBusinessDetails,
   InvoicePreviewGstBreakdownTable,
   InvoicePreviewItemDetails,
+  InvoicePreviewLogo,
   InvoicePreviewShippingAddress,
   InvoicePreviewSummaryRows,
   InvoiceReceiverSignature,
@@ -16,6 +17,7 @@ import {
   A4_MIN_HEIGHT,
   A4_WIDTH,
   fmtRupee,
+  resolveInvoiceLogoUrl,
   type InvoicePreviewProps,
 } from "@/lib/sales/invoice-preview-data";
 
@@ -43,6 +45,7 @@ export function InvoicePreviewModern(props: InvoicePreviewProps) {
   } = props;
   const content = resolveInvoicePreviewContent(props);
   const displayName = businessName.toUpperCase() || "MAYANK ELECTRONICS";
+  const logoUrl = resolveInvoiceLogoUrl(props);
   const headerTextColor = getHeaderTextColor(accentHex);
 
   const barStyle = {
@@ -77,19 +80,14 @@ export function InvoicePreviewModern(props: InvoicePreviewProps) {
         {/* Header */}
         <div className="mb-6 flex gap-8">
           <div className="flex min-w-0 flex-1 gap-3">
-            <div className="shrink-0 text-center" style={{ width: 56 }}>
-              <div
-                className="mx-auto flex items-center justify-center rounded-sm bg-[#f63e16] font-bold text-white"
-                style={{ width: 44, height: 44, fontSize: "15px" }}
-              >
-                ME
-              </div>
-              <p style={{ fontSize: "6px", lineHeight: 1.2, marginTop: 4, color: "#555" }}>
-                SABSE SASTA
-                <br />
-                SABSE BADHIYA
-              </p>
-            </div>
+            <InvoicePreviewLogo
+              businessName={displayName}
+              logoUrl={logoUrl}
+              width={44}
+              height={44}
+              fontSize={15}
+              containerWidth={56}
+            />
             <div className="min-w-0">
               <p style={{ fontSize: "17px", fontWeight: 700, lineHeight: 1.15 }}>{displayName}</p>
               <InvoicePreviewBusinessDetails

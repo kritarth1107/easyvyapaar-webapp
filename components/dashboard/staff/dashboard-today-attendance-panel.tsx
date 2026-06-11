@@ -5,12 +5,13 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { MarkAttendanceModal } from "@/components/dashboard/staff/mark-attendance-modal";
 import { useUserMe } from "@/components/providers/user-me-provider";
 import { formatDate } from "@/lib/dashboard/page-utils";
+import { filterStaffEligibleForAttendanceDate } from "@/lib/staff/attendance-eligibility";
 import { getAttendanceStatusUi } from "@/lib/staff/attendance-status-ui";
 import { fetchAttendance, fetchStaffList } from "@/lib/staff/staff-api-client";
 import type { AttendanceRecord, AttendanceStatus } from "@/lib/types/staff-api";
 import { useTranslation, type TranslationKey } from "@/lib/localization";
 
-type StaffRow = { staffId: string; name: string };
+type StaffRow = { staffId: string; name: string; joinDate?: string };
 
 function StaffAvatar({ name }: { name: string }) {
   const initial = name.trim().charAt(0).toUpperCase() || "?";
@@ -59,12 +60,22 @@ export function DashboardTodayAttendancePanel() {
     return map;
   }, [records]);
 
-  const staffOptions = useMemo(
-    () => staff.map((row) => ({ value: row.staffId, label: row.name })),
-    [staff],
+  const eligibleStaff = useMemo(
+    () => filterStaffEligibleForAttendanceDate(staff, today),
+    [staff, today],
   );
 
-  const recordedCount = staff.filter((row) => recordsByStaff.has(row.staffId)).length;
+  const staffOptions = useMemo(
+    () =>
+      eligibleStaff.map((row) => ({
+        value: row.staffId,
+        label: row.name,
+        joinDate: row.joinDate,
+      })),
+    [eligibleStaff],
+  );
+
+  const recordedCount = eligibleStaff.filter((row) => recordsByStaff.has(row.staffId)).length;
 
   const load = useCallback(async () => {
     if (!orgId || isWorkspaceLoading) {
@@ -80,7 +91,13 @@ export function DashboardTodayAttendancePanel() {
         fetchStaffList(orgId, { status: "active", limit: 100, page: 1 }),
         fetchAttendance(orgId, { fromDate: today, toDate: today }),
       ]);
-      setStaff(staffData.items.map((row) => ({ staffId: row.staffId, name: row.name })));
+      setStaff(
+        staffData.items.map((row) => ({
+          staffId: row.staffId,
+          name: row.name,
+          joinDate: row.joinDate,
+        })),
+      );
       setRecords(attendanceData.items.filter((row) => row.attendanceDate === today));
     } catch {
       setStaff([]);
@@ -125,9 +142,9 @@ export function DashboardTodayAttendancePanel() {
             <p className="text-xs text-brand-primary-muted">{formatDate(today)}</p>
           </div>
           <div className="flex items-center gap-2">
-            {!loading && staff.length > 0 ? (
+            {!loading && eligibleStaff.length > 0 ? (
               <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-brand-primary-muted">
-                {recordedCount}/{staff.length}
+                {recordedCount}/{eligibleStaff.length}
               </span>
             ) : null}
             <Link
@@ -141,13 +158,13 @@ export function DashboardTodayAttendancePanel() {
 
         {loading ? (
           <p className="py-8 text-center text-sm text-brand-primary-muted">{t("common.pleaseWait")}</p>
-        ) : staff.length === 0 ? (
+        ) : eligibleStaff.length === 0 ? (
           <p className="rounded-xl bg-brand-surface px-3 py-3 text-sm text-brand-primary-muted">
             {t("dashboard.staff.attendance.noStaff")}
           </p>
         ) : (
           <ul className="max-h-44 space-y-1 overflow-y-auto pr-1 scrollbar-brand">
-            {staff.map((member) => {
+            {eligibleStaff.map((member) => {
               const record = recordsByStaff.get(member.staffId);
               if (!record) {
                 return (
