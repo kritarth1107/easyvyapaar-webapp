@@ -24,9 +24,17 @@ type PayrollAttendanceModalProps = {
   onSaved: () => void;
 };
 
-function formatDayLabel(date: string) {
+type DayRow = { date: string; status?: AttendanceStatus; attendanceId?: string };
+
+const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
+
+function parseLocalDate(date: string) {
   const [y, m, d] = date.split("-").map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString("en-IN", {
+  return new Date(y, m - 1, d);
+}
+
+function formatPeriodLabel(date: string) {
+  return parseLocalDate(date).toLocaleDateString("en-IN", {
     weekday: "short",
     day: "numeric",
     month: "short",
@@ -34,12 +42,40 @@ function formatDayLabel(date: string) {
   });
 }
 
-function formatShortDate(date: string) {
-  const [y, m, d] = date.split("-").map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+function formatMonthLabel(monthKey: string) {
+  const [y, m] = monthKey.split("-").map(Number);
+  return new Date(y, m - 1, 1).toLocaleDateString("en-IN", { month: "long", year: "numeric" });
 }
 
-const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
+function formatWeekdayLong(date: string) {
+  return parseLocalDate(date).toLocaleDateString("en-IN", { weekday: "long" });
+}
+
+function formatFullDate(date: string) {
+  return parseLocalDate(date).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function buildMonthCalendar(monthDays: DayRow[]) {
+  const sorted = [...monthDays].sort((a, b) => a.date.localeCompare(b.date));
+  if (sorted.length === 0) return [];
+
+  const startOffset = parseLocalDate(sorted[0].date).getDay();
+  const blanks = Array.from({ length: startOffset }, (_, index) => ({
+    key: `blank-${index}`,
+    blank: true as const,
+  }));
+  const cells = sorted.map((day) => ({
+    key: day.date,
+    blank: false as const,
+    date: day.date,
+  }));
+
+  return [...blanks, ...cells];
+}
 
 export function PayrollAttendanceModal({
   open,
@@ -56,8 +92,9 @@ export function PayrollAttendanceModal({
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [days, setDays] = useState<Array<{ date: string; status?: AttendanceStatus; attendanceId?: string }>>([]);
+  const [days, setDays] = useState<DayRow[]>([]);
   const [selection, setSelection] = useState<Record<string, AttendanceStatus | "">>({});
+  const [activeMonthKey, setActiveMonthKey] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
 
@@ -79,6 +116,21 @@ export function PayrollAttendanceModal({
     [t],
   );
 
+  const statusShort = useCallback((status: AttendanceStatus) => {
+    switch (status) {
+      case "present":
+        return "P";
+      case "absent":
+        return "A";
+      case "half_day":
+        return "HD";
+      case "leave":
+        return "L";
+      default:
+        return status;
+    }
+  }, []);
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -91,6 +143,19 @@ export function PayrollAttendanceModal({
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [open, saving, onClose]);
+
+  const pickDefaultDate = useCallback(
+    (
+      periodDays: DayRow[],
+      monthKey: string | null,
+      currentSelection: Record<string, AttendanceStatus | "">,
+    ) => {
+      const inMonth = periodDays.filter((day) => day.date.startsWith(monthKey ?? ""));
+      const firstUnmarked = inMonth.find((day) => !currentSelection[day.date])?.date;
+      return firstUnmarked ?? inMonth[0]?.date ?? periodDays[0]?.date ?? null;
+    },
+    [],
+  );
 
   const load = useCallback(async () => {
     if (!organisationId || !staffId) return;
@@ -105,19 +170,21 @@ export function PayrollAttendanceModal({
       }
       setSelection(initial);
       setDirty(false);
-      setSelectedDate((current) => {
-        if (current && period.days.some((day) => day.date === current)) return current;
-        const firstUnmarked = period.days.find((day) => !day.status)?.date;
-        return firstUnmarked ?? period.days[0]?.date ?? null;
-      });
+
+      const firstUnmarked = period.days.find((day) => !day.status)?.date;
+      const focusMonth = firstUnmarked?.slice(0, 7) ?? period.days[0]?.date?.slice(0, 7) ?? null;
+      setActiveMonthKey(focusMonth);
+      setSelectedDate(pickDefaultDate(period.days, focusMonth, initial));
     } catch (err) {
       setDays([]);
       setSelection({});
+      setActiveMonthKey(null);
+      setSelectedDate(null);
       setError(err instanceof Error ? err.message : t("dashboard.staff.payroll.attendanceLoadError"));
     } finally {
       setLoading(false);
     }
-  }, [organisationId, staffId, fromDate, toDate, t]);
+  }, [organisationId, staffId, fromDate, toDate, t, pickDefaultDate]);
 
   useEffect(() => {
     if (!open) return;
@@ -129,27 +196,53 @@ export function PayrollAttendanceModal({
     [days, selection],
   );
 
-  const calendarCells = useMemo(() => {
-    if (days.length === 0) return [];
-    const firstDate = days[0].date;
-    const [y, m, d] = firstDate.split("-").map(Number);
-    const startOffset = new Date(y, m - 1, d).getDay();
-    const blanks = Array.from({ length: startOffset }, (_, index) => ({
-      key: `blank-${index}`,
-      blank: true as const,
+  const monthsGrouped = useMemo(() => {
+    const map = new Map<string, DayRow[]>();
+    for (const day of days) {
+      const monthKey = day.date.slice(0, 7);
+      const list = map.get(monthKey) ?? [];
+      list.push(day);
+      map.set(monthKey, list);
+    }
+    return Array.from(map.entries()).map(([key, monthDays]) => ({
+      key,
+      label: formatMonthLabel(key),
+      days: monthDays,
+      incomplete: monthDays.filter((day) => !selection[day.date]).length,
     }));
-    const cells = days.map((day) => ({
-      key: day.date,
-      blank: false as const,
-      date: day.date,
-    }));
-    return [...blanks, ...cells];
-  }, [days]);
+  }, [days, selection]);
+
+  const activeMonth = useMemo(
+    () => monthsGrouped.find((month) => month.key === activeMonthKey) ?? monthsGrouped[0] ?? null,
+    [monthsGrouped, activeMonthKey],
+  );
+
+  const calendarCells = useMemo(
+    () => (activeMonth ? buildMonthCalendar(activeMonth.days) : []),
+    [activeMonth],
+  );
 
   const patchStatus = (date: string, status: AttendanceStatus) => {
     setSelection((prev) => ({ ...prev, [date]: status }));
     setDirty(true);
     setSelectedDate(date);
+  };
+
+  const markMonthPresent = (monthKey: string) => {
+    const monthDays = monthsGrouped.find((month) => month.key === monthKey)?.days ?? [];
+    setSelection((prev) => {
+      const next = { ...prev };
+      for (const day of monthDays) {
+        next[day.date] = "present";
+      }
+      return next;
+    });
+    setDirty(true);
+  };
+
+  const handleMonthChange = (monthKey: string) => {
+    setActiveMonthKey(monthKey);
+    setSelectedDate(pickDefaultDate(days, monthKey, selection));
   };
 
   const handleSave = async () => {
@@ -193,7 +286,7 @@ export function PayrollAttendanceModal({
       }}
     >
       <div
-        className="flex h-[min(92dvh,720px)] w-full max-w-3xl flex-col rounded-t-2xl border border-slate-200/90 bg-white shadow-xl sm:rounded-2xl"
+        className="flex w-full max-w-lg flex-col rounded-t-2xl border border-slate-200/90 bg-white shadow-xl sm:rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <header className="shrink-0 border-b border-slate-100 px-5 py-4 sm:px-6">
@@ -201,14 +294,14 @@ export function PayrollAttendanceModal({
             {t("dashboard.staff.payroll.attendanceModalTitle")}
           </h2>
           <p className="mt-1 text-sm text-brand-primary-muted">
-            {staffName} · {formatDayLabel(fromDate)} – {formatDayLabel(toDate)}
+            {staffName} · {formatPeriodLabel(fromDate)} – {formatPeriodLabel(toDate)}
           </p>
           <p className="mt-2 text-xs leading-relaxed text-brand-primary-muted">
             {t("dashboard.staff.payroll.attendanceModalHint")}
           </p>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 scrollbar-brand sm:px-6">
+        <div className="px-5 py-3 sm:px-6">
           {error ? (
             <p className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
               {error}
@@ -216,75 +309,131 @@ export function PayrollAttendanceModal({
           ) : null}
 
           {loading ? (
-            <p className="py-8 text-center text-sm text-brand-primary-muted">{t("common.pleaseWait")}</p>
-          ) : (
+            <p className="py-6 text-center text-sm text-brand-primary-muted">{t("common.pleaseWait")}</p>
+          ) : monthsGrouped.length > 0 ? (
             <>
-              <div className="mb-2 grid grid-cols-7 gap-1 text-center text-[10px] font-semibold uppercase tracking-wide text-brand-primary-muted">
-                {WEEKDAY_LABELS.map((label) => (
-                  <span key={label}>{label}</span>
-                ))}
-              </div>
-              <div className="grid grid-cols-7 gap-1">
-                {calendarCells.map((cell) => {
-                  if (cell.blank) {
-                    return <div key={cell.key} className="h-11" aria-hidden />;
-                  }
-                  const status = selection[cell.date];
-                  const ui = status ? getAttendanceStatusUi(status) : null;
-                  const isSelected = selectedDate === cell.date;
+              <div className="flex flex-wrap items-center gap-1.5">
+                {monthsGrouped.map((month) => {
+                  const active = month.key === activeMonth?.key;
+                  const shortLabel = formatMonthLabel(month.key).replace(/\s+\d{4}$/, "");
                   return (
                     <button
-                      key={cell.key}
+                      key={month.key}
                       type="button"
                       disabled={saving}
-                      onClick={() => setSelectedDate(cell.date)}
-                      className={`flex h-11 flex-col items-center justify-center rounded-md border text-xs transition-colors ${
-                        isSelected
-                          ? "border-brand-primary ring-2 ring-brand-primary/20"
-                          : "border-slate-200/90"
-                      } ${ui ? ui.row : "bg-white"} ${!status ? "bg-white text-brand-primary-muted" : "text-brand-primary"}`}
-                      aria-pressed={isSelected}
-                      aria-label={formatDayLabel(cell.date)}
+                      onClick={() => handleMonthChange(month.key)}
+                      className={`rounded-md border px-2.5 py-1 text-xs font-semibold transition-colors ${
+                        active
+                          ? "border-brand-primary bg-brand-primary text-white"
+                          : "border-slate-200/90 bg-white text-brand-primary hover:bg-slate-50"
+                      }`}
+                      aria-pressed={active}
                     >
-                      <span className="font-semibold tabular-nums">{cell.date.slice(8)}</span>
-                      <span className="text-[9px] font-semibold uppercase leading-none">
-                        {status ? statusLabel(status).slice(0, 1) : "—"}
-                      </span>
+                      {shortLabel}
+                      {month.incomplete > 0 ? (
+                        <span
+                          className={`ml-1 rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
+                            active ? "bg-white/20 text-white" : "bg-amber-100 text-amber-800"
+                          }`}
+                        >
+                          {month.incomplete}
+                        </span>
+                      ) : null}
                     </button>
                   );
                 })}
               </div>
 
-              {selectedDate ? (
-                <div className="mt-4 rounded-lg border border-slate-200/90 bg-slate-50/80 px-3 py-3">
-                  <p className="text-sm font-semibold text-brand-primary">
-                    {formatShortDate(selectedDate)}
-                  </p>
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {ATTENDANCE_STATUS_ORDER.map((status) => {
-                      const ui = getAttendanceStatusUi(status);
-                      const active = selectedStatus === status;
-                      return (
-                        <button
-                          key={status}
-                          type="button"
-                          disabled={saving}
-                          onClick={() => patchStatus(selectedDate, status)}
-                          className={`rounded-md px-2.5 py-1.5 text-xs font-semibold transition-colors ${
-                            active ? ui.chipActive : ui.chipIdle
-                          }`}
-                          aria-pressed={active}
-                        >
-                          {statusLabel(status)}
-                        </button>
-                      );
-                    })}
-                  </div>
+              {activeMonth ? (
+                <div className="mt-2 flex items-center justify-between gap-2">
+                  <p className="text-xs font-semibold text-brand-primary-muted">{activeMonth.label}</p>
+                  <button
+                    type="button"
+                    disabled={saving}
+                    onClick={() => markMonthPresent(activeMonth.key)}
+                    className="text-xs font-semibold text-brand-primary-light hover:text-brand-primary hover:underline"
+                  >
+                    {t("dashboard.staff.payroll.attendanceMarkMonthPresent")}
+                  </button>
                 </div>
               ) : null}
             </>
-          )}
+          ) : null}
         </div>
+
+        {!loading && activeMonth ? (
+          <div className="px-5 pb-3 sm:px-6">
+            <div className="mb-1 grid grid-cols-7 gap-1 text-center text-[10px] font-semibold uppercase tracking-wide text-brand-primary-muted">
+              {WEEKDAY_LABELS.map((label) => (
+                <span key={label}>{label}</span>
+              ))}
+            </div>
+            <div className="grid grid-cols-7 gap-1">
+              {calendarCells.map((cell) => {
+                if (cell.blank) {
+                  return <div key={cell.key} className="h-10" aria-hidden />;
+                }
+
+                const status = selection[cell.date];
+                const ui = status ? getAttendanceStatusUi(status) : null;
+                const isSelected = selectedDate === cell.date;
+                const dayNum = cell.date.slice(8);
+
+                return (
+                  <button
+                    key={cell.key}
+                    type="button"
+                    disabled={saving}
+                    onClick={() => setSelectedDate(cell.date)}
+                    title={`${formatWeekdayLong(cell.date)}, ${formatFullDate(cell.date)}${
+                      status ? ` — ${statusLabel(status)}` : ""
+                    }`}
+                    className={`flex h-10 flex-col items-center justify-center rounded-md border text-brand-primary transition-all ${
+                      isSelected
+                        ? "border-brand-primary ring-2 ring-brand-primary/25"
+                        : "border-slate-200/80"
+                    } ${ui ? ui.row : "bg-white"} ${!status ? "text-brand-primary-muted" : ""}`}
+                    aria-pressed={isSelected}
+                    aria-label={`${formatWeekdayLong(cell.date)}, ${formatFullDate(cell.date)}`}
+                  >
+                    <span className="text-[11px] font-bold leading-none tabular-nums">{dayNum}</span>
+                    <span className="mt-0.5 text-[8px] font-bold uppercase leading-none">
+                      {status ? statusShort(status) : "·"}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {selectedDate ? (
+              <div className="mt-3 rounded-lg border border-slate-200/90 bg-slate-50/80 px-3 py-2.5">
+                <p className="text-sm font-semibold text-brand-primary">
+                  {formatWeekdayLong(selectedDate)}, {formatFullDate(selectedDate)}
+                </p>
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {ATTENDANCE_STATUS_ORDER.map((statusOption) => {
+                    const optionUi = getAttendanceStatusUi(statusOption);
+                    const active = selectedStatus === statusOption;
+                    return (
+                      <button
+                        key={statusOption}
+                        type="button"
+                        disabled={saving}
+                        onClick={() => patchStatus(selectedDate, statusOption)}
+                        className={`rounded-md border px-2.5 py-1.5 text-xs font-semibold transition-colors ${
+                          active ? optionUi.chipActive : optionUi.chipIdle
+                        }`}
+                        aria-pressed={active}
+                      >
+                        {statusLabel(statusOption)}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
 
         <footer className="shrink-0 flex flex-col gap-2 border-t border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <p className="text-xs text-brand-primary-muted">

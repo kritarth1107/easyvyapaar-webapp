@@ -1811,6 +1811,7 @@ export const enMessages: MessageTree = {
         attendanceDirty: "Unsaved attendance changes.",
         attendanceAlreadyMarked: "Previously marked",
         attendanceLoadError: "Failed to load attendance for this period.",
+        attendanceMarkMonthPresent: "Mark all present",
         leaveAllowance: "allowance",
         customFromDate: "Pay from date",
         applyFromDate: "Apply from date",

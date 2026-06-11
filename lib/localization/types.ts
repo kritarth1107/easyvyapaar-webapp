@@ -1815,6 +1815,7 @@ export type MessageTree = {
         attendanceDirty: string;
         attendanceAlreadyMarked: string;
         attendanceLoadError: string;
+        attendanceMarkMonthPresent: string;
         leaveAllowance: string;
         customFromDate: string;
         applyFromDate: string;
