@@ -1,3 +1,5 @@
+export type SalesInvoiceType = "gst_invoice" | "cash_memo";
+
 export type SalesInvoiceStatus =
   | "paid"
   | "unpaid"
@@ -18,6 +20,9 @@ export type SalesInvoiceSummary = {
   balanceAmount: number;
   status: SalesInvoiceStatus;
   isCashSale: boolean;
+  invoiceType: SalesInvoiceType;
+  partyGstin?: string;
+  placeOfSupply?: string;
 };
 
 export type SalesInvoiceLineItem = {
@@ -84,9 +89,11 @@ export type SalesInvoiceDetail = SalesInvoiceSummary & {
 };
 
 export type CreateSalesInvoiceRequest = {
+  invoiceType?: SalesInvoiceType;
   isCashSale?: boolean;
   partyId?: string;
   partyName?: string;
+  partyGstin?: string;
   invoicePrefix?: string;
   invoiceNumber?: string;
   invoiceDate: string;

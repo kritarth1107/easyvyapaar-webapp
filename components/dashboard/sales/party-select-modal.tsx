@@ -5,6 +5,10 @@ import { createPortal } from "react-dom";
 import { WALK_IN_PARTY_ID } from "@/lib/parties/constants";
 import { PARTY_CATEGORIES } from "@/lib/parties/party-categories";
 import { lookupGstin } from "@/lib/gst/lookup-gst";
+import {
+  resolveBillingStateCodeFromGstLookup,
+  resolvePlaceOfSupplyFromGstLookup,
+} from "@/lib/gst/sync-party-from-gst";
 import { extractPanFromGstin } from "@/lib/parties/create-party-form";
 import { createParty, fetchParties } from "@/lib/parties/parties-api-client";
 import { isValidGstin, normalizeGstin } from "@/lib/validators/gstin";
@@ -22,6 +26,8 @@ export type SelectedInvoiceParty = {
   shippingAddress?: string;
   gstin?: string;
   pan?: string;
+  billingStateCode?: string;
+  placeOfSupply?: string;
 };
 
 export function mapPartySummaryToSelected(party: PartySummary): SelectedInvoiceParty {
@@ -41,6 +47,7 @@ type PartySelectModalProps = {
   organisationId: string | null;
   onClose: () => void;
   onSelect: (party: SelectedInvoiceParty) => void;
+  hideWalkIn?: boolean;
 };
 
 function CloseIcon() {
@@ -67,6 +74,7 @@ export function PartySelectModal({
   organisationId,
   onClose,
   onSelect,
+  hideWalkIn = false,
 }: PartySelectModalProps) {
   const { t } = useTranslation();
   const [mounted, setMounted] = useState(false);
@@ -79,6 +87,8 @@ export function PartySelectModal({
   const [createPhone, setCreatePhone] = useState("");
   const [createAddress, setCreateAddress] = useState("");
   const [createGstin, setCreateGstin] = useState("");
+  const [createBillingStateCode, setCreateBillingStateCode] = useState("");
+  const [createPlaceOfSupply, setCreatePlaceOfSupply] = useState("");
   const [gstVerified, setGstVerified] = useState(false);
   const [gstMismatchHint, setGstMismatchHint] = useState<string | null>(null);
   const [gstLoading, setGstLoading] = useState(false);
@@ -95,6 +105,8 @@ export function PartySelectModal({
       setCreatePhone("");
       setCreateAddress("");
       setCreateGstin("");
+      setCreateBillingStateCode("");
+      setCreatePlaceOfSupply("");
       setGstVerified(false);
       setGstMismatchHint(null);
       setGstLoading(false);
@@ -167,20 +179,23 @@ export function PartySelectModal({
       const data = await lookupGstin(gstin, { compareName: createName.trim() });
       const tradeName = (data.tradeName ?? data.legalName ?? "").trim();
       const billingAddress = data.billingAddress?.trim() ?? "";
+      const billingStateCode = resolveBillingStateCodeFromGstLookup(data, data.gstin);
+      const placeOfSupply = resolvePlaceOfSupplyFromGstLookup(data, data.gstin);
       const pan = extractPanFromGstin(data.gstin);
 
       setCreateGstin(data.gstin);
+      setCreateBillingStateCode(billingStateCode);
+      setCreatePlaceOfSupply(placeOfSupply);
       setGstVerified(true);
 
-      if (data.gstDataMatch === false && tradeName) {
-        setCreateName(tradeName);
-        if (billingAddress) setCreateAddress(billingAddress);
-        setGstMismatchHint(t("dashboard.salesInvoices.create.gstMismatchHint"));
-      } else if (!createName.trim() && tradeName) {
+      if (tradeName) {
         setCreateName(tradeName);
       }
-      if (!createAddress.trim() && billingAddress) {
+      if (billingAddress && (!createAddress.trim() || data.gstDataMatch === false)) {
         setCreateAddress(billingAddress);
+      }
+      if (data.gstDataMatch === false && tradeName) {
+        setGstMismatchHint(t("dashboard.salesInvoices.create.gstMismatchHint"));
       }
     } catch (err) {
       setGstVerified(false);
@@ -218,6 +233,7 @@ export function PartySelectModal({
         name,
         ...(createPhone.trim() ? { phone: createPhone.trim() } : {}),
         ...(createAddress.trim() ? { billingAddress: createAddress.trim() } : {}),
+        ...(createBillingStateCode ? { billingStateCode: createBillingStateCode } : {}),
         ...(gstin ? { gstin } : {}),
         ...(pan ? { pan } : {}),
       });
@@ -230,6 +246,12 @@ export function PartySelectModal({
         ...(createPhone.trim() ? { phone: createPhone.trim() } : {}),
         ...(gstin ? { gstin } : {}),
         ...(pan ? { pan } : {}),
+        ...(party.billingStateCode
+          ? { billingStateCode: party.billingStateCode }
+          : createBillingStateCode
+            ? { billingStateCode: createBillingStateCode }
+            : {}),
+        ...(createPlaceOfSupply ? { placeOfSupply: createPlaceOfSupply } : {}),
       });
       onClose();
     } catch (err) {
@@ -365,31 +387,33 @@ export function PartySelectModal({
               autoFocus
             />
 
-            <button
-              type="button"
-              onClick={() => {
-                onSelect({
-                  partyId: WALK_IN_PARTY_ID,
-                  name: t("dashboard.salesInvoices.create.cashWalkIn"),
-                  balance: 0,
-                  isCashSale: true,
-                });
-                onClose();
-              }}
-              className="flex w-full shrink-0 items-center gap-3 rounded-md border border-dashed border-brand-primary/35 bg-white px-4 py-3 text-left transition-all hover:border-brand-primary/55 hover:bg-brand-primary/[0.04] active:bg-brand-primary/[0.07]"
-            >
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-brand-primary/10 text-brand-primary">
-                <CashIcon />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-sm font-semibold text-brand-primary">
-                  {t("dashboard.salesInvoices.create.cashWalkIn")}
+            {!hideWalkIn ? (
+              <button
+                type="button"
+                onClick={() => {
+                  onSelect({
+                    partyId: WALK_IN_PARTY_ID,
+                    name: t("dashboard.salesInvoices.create.cashWalkIn"),
+                    balance: 0,
+                    isCashSale: true,
+                  });
+                  onClose();
+                }}
+                className="flex w-full shrink-0 items-center gap-3 rounded-md border border-dashed border-brand-primary/35 bg-white px-4 py-3 text-left transition-all hover:border-brand-primary/55 hover:bg-brand-primary/[0.04] active:bg-brand-primary/[0.07]"
+              >
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-brand-primary/10 text-brand-primary">
+                  <CashIcon />
                 </span>
-                <span className="mt-0.5 block text-xs text-brand-primary-muted">
-                  {formatInr(0)}
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-semibold text-brand-primary">
+                    {t("dashboard.salesInvoices.create.cashWalkIn")}
+                  </span>
+                  <span className="mt-0.5 block text-xs text-brand-primary-muted">
+                    {formatInr(0)}
+                  </span>
                 </span>
-              </span>
-            </button>
+              </button>
+            ) : null}
 
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-slate-200/90">
               <div className="grid shrink-0 grid-cols-2 border-b border-slate-100 bg-brand-surface/60 px-4 py-2.5 text-[11px] font-bold uppercase tracking-wide text-brand-primary-muted">

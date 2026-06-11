@@ -19,6 +19,7 @@ export type PartySummary = {
   pan?: string;
   partyCategory: string;
   billingAddress?: string;
+  billingStateCode?: string;
   balance: number;
   creditLimit: number;
   lastTransactionDate?: string;
@@ -54,6 +55,7 @@ export type CreatePartyRequest = {
   gstin?: string;
   pan?: string;
   billingAddress?: string;
+  billingStateCode?: string;
   shippingAddress?: string;
   creditPeriodDays?: number;
   creditLimit?: number;
@@ -121,6 +123,7 @@ export type PartyDetail = {
   gstin?: string;
   pan?: string;
   billingAddress?: string;
+  billingStateCode?: string;
   shippingAddress?: string;
   creditPeriodDays: number;
   creditLimit: number;
@@ -146,6 +149,7 @@ export type UpdatePartyRequest = {
   gstin?: string;
   pan?: string;
   billingAddress?: string;
+  billingStateCode?: string;
   shippingAddress?: string;
   creditPeriodDays?: number;
   creditLimit?: number;

@@ -271,8 +271,10 @@ export function buildLiveInvoicePreviewModel({
   const received = form.fullyPaid ? totals.totalAmount : form.amountReceived;
   const { lines, totalDisc, totalTax } = buildLinesFromForm(form);
 
+  const isGstInvoice = form.invoiceType === "gst_invoice";
   const partyName = party?.name ?? (form.cashSaleDefault ? "Cash / Walk-in Customer" : "—");
-  const partyTaxLine = party ? formatGstinOrPanLine(party.gstin, party.pan) : "";
+  const partyTaxLine =
+    isGstInvoice && party ? formatGstinOrPanLine(party.gstin, party.pan) : "";
 
   const termsText =
     form.showTerms && form.terms.trim()
@@ -322,7 +324,10 @@ export function buildLiveInvoicePreviewModel({
     businessAddress: organisation.businessAddress,
     businessTaxLine: organisation.businessTaxLine,
     businessPhone: organisation.businessPhone,
-    placeOfSupply: organisation.placeOfSupply,
+    placeOfSupply:
+      isGstInvoice && party?.placeOfSupply?.trim()
+        ? party.placeOfSupply.trim()
+        : organisation.placeOfSupply,
     displayNumber: `${form.invoicePrefix}${form.invoiceNumber}`,
     invoiceDate: formatDisplayDate(form.invoiceDate),
     ...(form.showPaymentTerms && form.dueDate ? { dueDate: formatDisplayDate(form.dueDate) } : {}),
@@ -404,16 +409,23 @@ export function buildLiveInvoicePreviewFromDetail(
 
   const gstRows = buildGstRowsFromStored(invoice.lineItems, invoice.additionalCharges, taxRatio);
 
-  const partyTaxLine = party
-    ? formatGstinOrPanLine(party.gstin, party.pan)
-    : "";
+  const invoiceType = invoice.invoiceType ?? "cash_memo";
+  const partyTaxLine =
+    invoiceType === "gst_invoice"
+      ? formatGstinOrPanLine(invoice.partyGstin ?? party?.gstin, party?.pan)
+      : "";
 
   return {
     businessName,
     businessAddress: organisation.businessAddress,
     businessTaxLine: organisation.businessTaxLine,
     businessPhone: organisation.businessPhone,
-    placeOfSupply: organisation.placeOfSupply,
+    placeOfSupply:
+      invoiceType === "gst_invoice"
+        ? (invoice.placeOfSupply?.trim() ||
+            party?.placeOfSupply?.trim() ||
+            organisation.placeOfSupply)
+        : organisation.placeOfSupply,
     displayNumber: invoice.displayNumber,
     invoiceDate: formatDisplayDate(invoice.invoiceDate),
     ...(invoice.dueDate ? { dueDate: formatDisplayDate(invoice.dueDate) } : {}),
@@ -435,5 +447,6 @@ export function buildLiveInvoicePreviewFromDetail(
     amountReceived: formatInr(invoice.amountReceived),
     balanceAmount: formatInr(invoice.balanceAmount),
     paymentMode: invoice.paymentMode.charAt(0).toUpperCase() + invoice.paymentMode.slice(1),
+    documentTitle: invoiceType === "gst_invoice" ? "TAX INVOICE" : "CASH MEMO",
   };
 }

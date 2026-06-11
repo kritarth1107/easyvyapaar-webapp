@@ -946,6 +946,11 @@ export type MessageTree = {
         decreaseQty: string;
         increaseQty: string;
         cashSaleDefault: string;
+        invoiceTypeCashMemo: string;
+        invoiceTypeGstInvoice: string;
+        partyGstRequired: string;
+        validationGstPartyRequired: string;
+        validationPartyGstRequired: string;
         invoicePrefix: string;
         invoiceNumber: string;
         salesDate: string;

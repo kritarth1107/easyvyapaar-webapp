@@ -77,6 +77,7 @@ export function normalizePartySummary(raw: unknown): PartySummary | null {
     ...(pickString(row.gstin) && { gstin: pickString(row.gstin) }),
     ...(pickString(row.pan) && { pan: pickString(row.pan) }),
     ...(pickString(row.billingAddress) && { billingAddress: pickString(row.billingAddress) }),
+    ...(pickString(row.billingStateCode) && { billingStateCode: pickString(row.billingStateCode) }),
     ...(pickString(row.lastTransactionDate) && {
       lastTransactionDate: pickString(row.lastTransactionDate),
     }),
@@ -223,6 +224,7 @@ export function normalizePartyDetail(raw: unknown): PartyDetail | null {
     ...(pickString(row.gstin) && { gstin: pickString(row.gstin) }),
     ...(pickString(row.pan) && { pan: pickString(row.pan) }),
     ...(pickString(row.billingAddress) && { billingAddress: pickString(row.billingAddress) }),
+    ...(pickString(row.billingStateCode) && { billingStateCode: pickString(row.billingStateCode) }),
     ...(pickString(row.shippingAddress) && { shippingAddress: pickString(row.shippingAddress) }),
     ...(pickString(row.contactPersonName) && { contactPersonName: pickString(row.contactPersonName) }),
     ...(pickString(row.contactPersonDob) && { contactPersonDob: pickString(row.contactPersonDob) }),

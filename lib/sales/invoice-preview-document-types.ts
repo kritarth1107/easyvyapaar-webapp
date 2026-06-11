@@ -44,6 +44,7 @@ export type LiveInvoicePreviewModel = {
   amountReceived: string;
   balanceAmount: string;
   paymentMode: string;
+  documentTitle?: string;
 };
 
 export type InvoicePreviewDocument = {

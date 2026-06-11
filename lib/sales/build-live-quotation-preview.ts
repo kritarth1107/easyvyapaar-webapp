@@ -56,6 +56,7 @@ function quotationAsInvoiceDetail(quotation: QuotationDetail): SalesInvoiceDetai
     balanceAmount: 0,
     status: "unpaid",
     isCashSale: false,
+    invoiceType: "cash_memo",
     organisationId: quotation.organisationId,
     invoicePrefix: quotation.quotationPrefix,
     invoiceNumber: quotation.quotationNumber,

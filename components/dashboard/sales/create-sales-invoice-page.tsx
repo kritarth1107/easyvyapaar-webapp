@@ -16,7 +16,13 @@ import type { InventoryBillPick } from "@/lib/types/inventory-ui";
 import { WALK_IN_PARTY_ID } from "@/lib/parties/constants";
 import { fetchOrganisationBankAccounts } from "@/lib/organisations/organisation-bank-api-client";
 import { fetchBusinessProfile } from "@/lib/business/business-profile-api-client";
+import { extractPanFromGstin } from "@/lib/parties/create-party-form";
 import { fetchPartyDetail } from "@/lib/parties/parties-api-client";
+import { lookupGstin } from "@/lib/gst/lookup-gst";
+import { placeOfSupplyFromGstin } from "@/lib/gst/gst-state";
+import { syncPartyFromGstLookup } from "@/lib/gst/sync-party-from-gst";
+import { isValidGstin, normalizeGstin } from "@/lib/validators/gstin";
+import { stateCodeToLabel } from "@/lib/constants/indian-state-codes";
 import { maskBankAccountNumber } from "@/lib/parties/party-detail-utils";
 import type { OrganisationBankAccount } from "@/lib/types/organisation-bank-api";
 import {
@@ -190,6 +196,9 @@ export function CreateSalesInvoicePage() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewModel, setPreviewModel] = useState<LiveInvoicePreviewModel | null>(null);
   const [saveSuccessMessage, setSaveSuccessMessage] = useState<string | null>(null);
+  const [partyGstinInput, setPartyGstinInput] = useState("");
+  const [partyGstinLoading, setPartyGstinLoading] = useState(false);
+  const [partyGstVerified, setPartyGstVerified] = useState(false);
   const [organisationSnapshot, setOrganisationSnapshot] = useState<InvoiceOrganisationSnapshot>({
     businessAddress: "",
     businessPhone: "",
@@ -225,13 +234,25 @@ export function CreateSalesInvoicePage() {
 
   const totals = useMemo(() => calcInvoiceTotals(form), [form]);
 
+  const isGstInvoice = form.invoiceType === "gst_invoice";
+  const hasRealParty =
+    selectedParty !== null &&
+    selectedParty.partyId !== WALK_IN_PARTY_ID &&
+    !selectedParty.isCashSale;
+  const partyGstReady =
+    Boolean(selectedParty?.gstin?.trim()) ||
+    (partyGstinInput.trim() && isValidGstin(normalizeGstin(partyGstinInput)));
+  const partyRequirementMet = isGstInvoice
+    ? hasRealParty && partyGstReady
+    : selectedParty !== null || form.cashSaleDefault;
+
   const canSave =
     !saving &&
     !loadingMeta &&
     Boolean(activeOrganisationId) &&
     form.lineItems.length > 0 &&
     form.lineItems.every((line) => !line.serialised || line.serialNumbers.length === 1) &&
-    (selectedParty !== null || form.cashSaleDefault);
+    partyRequirementMet;
 
   useEffect(() => {
     const orgId = activeOrganisationId?.trim();
@@ -428,7 +449,66 @@ export function CreateSalesInvoicePage() {
     });
   };
 
+  const handleInvoiceTypeChange = (invoiceType: "gst_invoice" | "cash_memo") => {
+    if (invoiceType === "gst_invoice") {
+      const walkInSelected =
+        selectedParty?.isCashSale || selectedParty?.partyId === WALK_IN_PARTY_ID;
+      if (walkInSelected) {
+        setSelectedParty(null);
+        patch({ invoiceType, cashSaleDefault: false, partyId: null });
+      } else {
+        patch({
+          invoiceType,
+          cashSaleDefault: false,
+          partyId: selectedParty?.partyId ?? null,
+        });
+      }
+      setPartyGstinInput("");
+      setPartyGstVerified(false);
+      return;
+    }
+
+    patch({ invoiceType, cashSaleDefault: form.cashSaleDefault });
+    setPartyGstinInput("");
+    setPartyGstVerified(false);
+  };
+
+  const handlePartyGstVerify = async () => {
+    const orgId = activeOrganisationId?.trim();
+    const gstin = normalizeGstin(partyGstinInput);
+    if (!isValidGstin(gstin)) {
+      setError(t("dashboard.salesInvoices.create.gstinInvalid"));
+      return;
+    }
+    if (!orgId || !selectedParty) {
+      setError(t("dashboard.salesInvoices.create.validationGstPartyRequired"));
+      return;
+    }
+
+    setPartyGstinLoading(true);
+    setError(null);
+    try {
+      const data = await lookupGstin(gstin);
+      const verifiedGstin = data.gstin?.trim().toUpperCase() || gstin;
+      const { selected } = await syncPartyFromGstLookup(
+        orgId,
+        selectedParty.partyId,
+        data,
+        verifiedGstin,
+      );
+      setPartyGstinInput(verifiedGstin);
+      setPartyGstVerified(true);
+      setSelectedParty(selected);
+    } catch (err) {
+      setPartyGstVerified(false);
+      setError(err instanceof Error ? err.message : t("dashboard.createParty.gstLookupError"));
+    } finally {
+      setPartyGstinLoading(false);
+    }
+  };
+
   const handleCashSaleToggle = (checked: boolean) => {
+    if (isGstInvoice) return;
     if (checked) {
       const walkIn: SelectedInvoiceParty = {
         partyId: WALK_IN_PARTY_ID,
@@ -451,9 +531,11 @@ export function CreateSalesInvoicePage() {
 
   const handlePartySelect = (party: SelectedInvoiceParty) => {
     setSelectedParty(party);
+    setPartyGstinInput("");
+    setPartyGstVerified(false);
     patch({
       partyId: party.partyId,
-      cashSaleDefault: Boolean(party.isCashSale),
+      cashSaleDefault: isGstInvoice ? false : Boolean(party.isCashSale),
     });
 
     const orgId = activeOrganisationId?.trim();
@@ -474,6 +556,14 @@ export function CreateSalesInvoicePage() {
               : {}),
             ...(detail.gstin?.trim() ? { gstin: detail.gstin.trim() } : {}),
             ...(detail.pan?.trim() ? { pan: detail.pan.trim().toUpperCase() } : {}),
+            ...(detail.billingStateCode?.trim()
+              ? {
+                  billingStateCode: detail.billingStateCode.trim(),
+                  placeOfSupply: stateCodeToLabel(detail.billingStateCode.trim()),
+                }
+              : detail.gstin?.trim()
+                ? { placeOfSupply: placeOfSupplyFromGstin(detail.gstin.trim()) }
+                : {}),
             balance: detail.currentBalance,
           };
         });
@@ -513,11 +603,27 @@ export function CreateSalesInvoicePage() {
         .join(" · ")
     : null;
 
+  const previewParty: SelectedInvoiceParty | null = useMemo(() => {
+    if (!selectedParty) return null;
+    if (form.invoiceType !== "gst_invoice") return selectedParty;
+    if (selectedParty.gstin?.trim()) return selectedParty;
+    const gstin = partyGstinInput.trim();
+    if (!gstin) return selectedParty;
+    const normalizedGstin = normalizeGstin(gstin);
+    const pan = extractPanFromGstin(normalizedGstin);
+    return {
+      ...selectedParty,
+      gstin: normalizedGstin,
+      placeOfSupply: placeOfSupplyFromGstin(normalizedGstin),
+      ...(pan ? { pan } : {}),
+    };
+  }, [selectedParty, form.invoiceType, partyGstinInput]);
+
   const livePreviewModel = useMemo(
     () =>
       buildLiveInvoicePreviewModel({
         form,
-        party: selectedParty,
+        party: previewParty,
         businessName,
         organisation: resolvedOrganisationSnapshot,
         bankAccount: selectedBank,
@@ -525,7 +631,7 @@ export function CreateSalesInvoicePage() {
       }),
     [
       form,
-      selectedParty,
+      previewParty,
       businessName,
       resolvedOrganisationSnapshot,
       selectedBank,
@@ -544,7 +650,16 @@ export function CreateSalesInvoicePage() {
       setError(t("dashboard.salesInvoices.create.noOrganisation"));
       return;
     }
-    if (!selectedParty && !form.cashSaleDefault) {
+    if (isGstInvoice) {
+      if (!hasRealParty) {
+        setError(t("dashboard.salesInvoices.create.validationGstPartyRequired"));
+        return;
+      }
+      if (!partyGstReady) {
+        setError(t("dashboard.salesInvoices.create.validationPartyGstRequired"));
+        return;
+      }
+    } else if (!selectedParty && !form.cashSaleDefault) {
       setError(t("dashboard.salesInvoices.create.validationParty"));
       return;
     }
@@ -564,6 +679,11 @@ export function CreateSalesInvoicePage() {
           selectedParty?.name,
           selectedBank,
           storedInvoiceSettings,
+          {
+            partyGstin:
+              selectedParty?.gstin?.trim() ||
+              (isGstInvoice ? partyGstinInput : undefined),
+          },
         ),
       );
       if (saveAndNew) {
@@ -596,6 +716,36 @@ export function CreateSalesInvoicePage() {
           </h1>
         </div>
         <div className="flex shrink-0 items-center gap-2">
+          <div
+            className="hidden items-center rounded-md border border-slate-200/90 p-0.5 text-xs font-semibold sm:flex"
+            role="group"
+            aria-label="Invoice type"
+          >
+            <button
+              type="button"
+              onClick={() => handleInvoiceTypeChange("cash_memo")}
+              className={`rounded px-3 py-1.5 transition-colors ${
+                form.invoiceType === "cash_memo"
+                  ? "bg-brand-primary text-white"
+                  : "text-brand-primary hover:bg-slate-50"
+              }`}
+              aria-pressed={form.invoiceType === "cash_memo"}
+            >
+              {t("dashboard.salesInvoices.create.invoiceTypeCashMemo")}
+            </button>
+            <button
+              type="button"
+              onClick={() => handleInvoiceTypeChange("gst_invoice")}
+              className={`rounded px-3 py-1.5 transition-colors ${
+                form.invoiceType === "gst_invoice"
+                  ? "bg-brand-primary text-white"
+                  : "text-brand-primary hover:bg-slate-50"
+              }`}
+              aria-pressed={form.invoiceType === "gst_invoice"}
+            >
+              {t("dashboard.salesInvoices.create.invoiceTypeGstInvoice")}
+            </button>
+          </div>
           <button
             type="button"
             disabled={form.lineItems.length === 0}
@@ -659,6 +809,11 @@ export function CreateSalesInvoicePage() {
                     {selectedParty.phone && (
                       <p className="text-xs text-brand-primary-muted">{selectedParty.phone}</p>
                     )}
+                    {isGstInvoice && selectedParty.gstin?.trim() ? (
+                      <p className="mt-1 text-xs font-medium text-brand-primary">
+                        GSTIN: {selectedParty.gstin.trim()}
+                      </p>
+                    ) : null}
                     <p className="mt-1 text-xs text-brand-primary-muted">
                       {t("dashboard.salesInvoices.create.balance")}: {formatInr(selectedParty.balance)}
                     </p>
@@ -681,6 +836,47 @@ export function CreateSalesInvoicePage() {
                 + {t("dashboard.salesInvoices.create.addParty")}
               </button>
             )}
+
+            {isGstInvoice &&
+            hasRealParty &&
+            !selectedParty?.gstin?.trim() ? (
+              <div className="mt-3 rounded-md border border-amber-200/90 bg-amber-50/80 px-3 py-3">
+                <p className="text-xs font-semibold text-amber-900">
+                  {t("dashboard.salesInvoices.create.partyGstRequired")}
+                </p>
+                <div className="mt-2 flex gap-2">
+                  <input
+                    type="text"
+                    value={partyGstinInput}
+                    onChange={(e) => {
+                      setPartyGstinInput(e.target.value.toUpperCase());
+                      setPartyGstVerified(false);
+                    }}
+                    placeholder="22AAAAA0000A1Z5"
+                    className="h-9 min-w-0 flex-1 rounded-sm border border-slate-200/90 bg-white px-2.5 font-mono text-sm uppercase text-brand-primary outline-none focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15"
+                  />
+                  <button
+                    type="button"
+                    disabled={
+                      partyGstinLoading ||
+                      !partyGstinInput.trim() ||
+                      !isValidGstin(normalizeGstin(partyGstinInput))
+                    }
+                    onClick={() => void handlePartyGstVerify()}
+                    className="h-9 shrink-0 rounded-md border border-brand-primary/20 bg-brand-primary/[0.04] px-3 text-xs font-semibold text-brand-primary hover:bg-brand-primary/[0.08] disabled:opacity-60"
+                  >
+                    {partyGstinLoading
+                      ? t("common.pleaseWait")
+                      : t("dashboard.salesInvoices.create.verifyGst")}
+                  </button>
+                </div>
+                {partyGstVerified ? (
+                  <p className="mt-1.5 text-[11px] font-medium text-emerald-700">
+                    {t("dashboard.salesInvoices.create.gstVerified")}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
           </div>
 
           <div className="min-w-0 space-y-3">
@@ -688,9 +884,10 @@ export function CreateSalesInvoicePage() {
               <label className="flex items-center gap-2 text-xs text-brand-primary-mid">
                 <input
                   type="checkbox"
-                  checked={form.cashSaleDefault}
+                  checked={isGstInvoice ? false : form.cashSaleDefault}
+                  disabled={isGstInvoice}
                   onChange={(e) => handleCashSaleToggle(e.target.checked)}
-                  className="h-3.5 w-3.5 rounded-sm accent-brand-primary"
+                  className="h-3.5 w-3.5 rounded-sm accent-brand-primary disabled:opacity-50"
                 />
                 {t("dashboard.salesInvoices.create.cashSaleDefault")}
               </label>
@@ -1335,6 +1532,7 @@ export function CreateSalesInvoicePage() {
         organisationId={activeOrganisationId}
         onClose={() => setPartyModalOpen(false)}
         onSelect={handlePartySelect}
+        hideWalkIn={isGstInvoice}
       />
     </div>
   );

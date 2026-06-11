@@ -82,8 +82,12 @@ export function normalizeSalesInvoiceSummary(raw: unknown): SalesInvoiceSummary 
     balanceAmount,
     status,
     isCashSale: Boolean(row.isCashSale),
+    invoiceType:
+      pickString(row.invoiceType) === "gst_invoice" ? "gst_invoice" : "cash_memo",
     ...(pickString(row.partyId) && { partyId: pickString(row.partyId) }),
     ...(pickString(row.dueDate) && { dueDate: pickString(row.dueDate) }),
+    ...(pickString(row.partyGstin) && { partyGstin: pickString(row.partyGstin) }),
+    ...(pickString(row.placeOfSupply) && { placeOfSupply: pickString(row.placeOfSupply) }),
   };
 }
 

@@ -57,6 +57,8 @@ export interface CheckGstSuccessData {
   tradeName?: string;
   legalName?: string;
   billingAddress?: string;
+  billingStateCode?: string;
+  placeOfSupply?: string;
   mappedOrganisationType?: string;
   constitutionType?: string;
   status?: string;

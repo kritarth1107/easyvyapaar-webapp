@@ -5,15 +5,20 @@ import type { StoredSalesInvoiceSettings } from "@/lib/sales/invoice-settings-co
 import type { CreateSalesInvoiceRequest } from "@/lib/types/sales-api";
 import type { OrganisationBankAccount } from "@/lib/types/organisation-bank-api";
 import { WALK_IN_PARTY_ID } from "@/lib/parties/constants";
+import { normalizeGstin } from "@/lib/validators/gstin";
 
 export function mapCreateInvoiceFormToRequest(
   form: CreateInvoiceFormState,
   partyName?: string,
   bankAccount?: OrganisationBankAccount | null,
   storedSettings?: StoredSalesInvoiceSettings | null,
+  options?: { partyGstin?: string },
 ): CreateSalesInvoiceRequest {
+  const isGstInvoice = form.invoiceType === "gst_invoice";
   const isCashSale =
-    form.cashSaleDefault || !form.partyId || form.partyId === WALK_IN_PARTY_ID;
+    !isGstInvoice &&
+    (form.cashSaleDefault || !form.partyId || form.partyId === WALK_IN_PARTY_ID);
+  const partyGstin = options?.partyGstin?.trim();
   const totals = calcInvoiceTotals(form);
   const notesText = form.showNotes ? form.notes.trim() : undefined;
   const termsText = form.showTerms
@@ -21,9 +26,13 @@ export function mapCreateInvoiceFormToRequest(
     : undefined;
 
   return {
+    invoiceType: form.invoiceType,
     isCashSale,
-    ...(!isCashSale && form.partyId ? { partyId: form.partyId } : {}),
+    ...(!isCashSale && form.partyId && form.partyId !== WALK_IN_PARTY_ID
+      ? { partyId: form.partyId }
+      : {}),
     ...(isCashSale && partyName ? { partyName } : {}),
+    ...(isGstInvoice && partyGstin ? { partyGstin: normalizeGstin(partyGstin) } : {}),
     invoicePrefix: form.invoicePrefix.trim(),
     invoiceNumber: form.invoiceNumber.trim(),
     invoiceDate: form.invoiceDate,

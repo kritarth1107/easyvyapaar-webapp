@@ -142,6 +142,7 @@ export function mapLivePreviewToDocument(model: LiveInvoicePreviewModel): Invoic
     notes: model.notes ?? "",
     terms: model.terms ?? "",
     bankDetails: model.bankLabel ?? "",
+    ...(model.documentTitle ? { documentTitle: model.documentTitle } : {}),
   };
 }
 

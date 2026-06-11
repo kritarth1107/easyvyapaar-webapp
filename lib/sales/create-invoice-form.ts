@@ -95,8 +95,11 @@ export type InvoiceSettings = {
   theme: string;
 };
 
+export type SalesInvoiceDocumentType = "gst_invoice" | "cash_memo";
+
 export type CreateInvoiceFormState = {
   partyId: string | null;
+  invoiceType: SalesInvoiceDocumentType;
   cashSaleDefault: boolean;
   invoicePrefix: string;
   invoiceNumber: string;
@@ -284,6 +287,7 @@ export function createInitialInvoiceForm(): CreateInvoiceFormState {
   const invoiceDate = todayIso();
   return {
     partyId: null,
+    invoiceType: "cash_memo",
     cashSaleDefault: false,
     invoicePrefix: "ME/2025-26/",
     invoiceNumber: "1490",

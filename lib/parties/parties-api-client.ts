@@ -177,7 +177,7 @@ export async function deletePartyBankAccount(
 export async function updateParty(
   organisationId: string,
   partyId: string,
-  payload: UpdatePartyRequest,
+  payload: Partial<UpdatePartyRequest>,
 ): Promise<PartyDetail> {
   const res = await fetch(
     `/api/parties/${encodeURIComponent(partyId)}?organisationId=${encodeURIComponent(organisationId)}`,
