@@ -154,7 +154,6 @@ export function DashboardOverview() {
     );
   }
 
-  const maxWeekly = Math.max(...shopStats.weeklySales.map((d) => d.amount), 1);
   const deltaPositive = shopStats.salesTodayDelta >= 0;
   const paymentSlices = toChartSlices(shopStats.salesByPaymentMode);
   const stockSlices = toChartSlices(shopStats.stockByCategory);
@@ -168,6 +167,11 @@ export function DashboardOverview() {
     day: row.monthLabel,
     units: row.purchases,
     value: row.sales,
+  }));
+  const weeklyTrendPoints = shopStats.weeklySales.map((row) => ({
+    day: t(`dashboard.weekdays.${row.dayKey}` as TranslationKey),
+    units: row.invoiceCount,
+    value: row.amount,
   }));
 
   return (
@@ -277,27 +281,25 @@ export function DashboardOverview() {
         <Panel
           title={t("dashboard.overview.weeklySalesChart")}
           action={
-            <Link href="/dashboard/reports" className="text-xs font-semibold text-brand-orange-2 hover:underline">
+            <Link
+              href="/dashboard/reports"
+              className="text-xs font-semibold text-brand-primary-light hover:text-brand-primary hover:underline"
+            >
               {t("dashboard.viewReports")}
             </Link>
           }
         >
-          <div className="flex h-44 items-end justify-between gap-2">
-            {shopStats.weeklySales.map((bar) => (
-              <div key={bar.date} className="flex flex-1 flex-col items-center gap-2">
-                <div className="flex w-full flex-1 items-end justify-center">
-                  <div
-                    className="w-full max-w-[2.25rem] rounded-t-lg bg-gradient-to-t from-brand-orange-2 to-brand-orange-1"
-                    style={{ height: `${Math.max(10, (bar.amount / maxWeekly) * 100)}%` }}
-                    title={formatInr(bar.amount)}
-                  />
-                </div>
-                <span className="text-[11px] font-medium text-slate-600">
-                  {t(`dashboard.weekdays.${bar.dayKey}` as TranslationKey)}
-                </span>
-              </div>
-            ))}
-          </div>
+          {weeklyTrendPoints.length === 0 ? (
+            <p className="py-8 text-center text-sm text-brand-primary-muted">{t("dashboard.overview.noChartData")}</p>
+          ) : (
+            <TrendLineChart
+              points={weeklyTrendPoints}
+              valueKey="value"
+              color="#0A4068"
+              gradientId="weeklySalesTrendFill"
+              valueFormatter={formatInr}
+            />
+          )}
         </Panel>
 
         <Panel title={t("dashboard.overview.salesTrend")} >

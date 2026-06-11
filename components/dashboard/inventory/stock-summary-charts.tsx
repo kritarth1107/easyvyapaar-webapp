@@ -118,47 +118,112 @@ export function HorizontalBarChart({
   );
 }
 
+const TREND_ORANGE = "#F63E16";
+
+function buildSmoothLinePath(coords: { x: number; y: number }[]): string {
+  if (coords.length === 0) return "";
+  if (coords.length === 1) return `M ${coords[0].x} ${coords[0].y}`;
+
+  let path = `M ${coords[0].x} ${coords[0].y}`;
+  for (let i = 0; i < coords.length - 1; i++) {
+    const p0 = coords[i - 1] ?? coords[i];
+    const p1 = coords[i];
+    const p2 = coords[i + 1];
+    const p3 = coords[i + 2] ?? p2;
+    const cp1x = p1.x + (p2.x - p0.x) / 6;
+    const cp1y = p1.y + (p2.y - p0.y) / 6;
+    const cp2x = p2.x - (p3.x - p1.x) / 6;
+    const cp2y = p2.y - (p3.y - p1.y) / 6;
+    path += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
+  }
+  return path;
+}
+
 export function TrendLineChart({
   points,
   valueKey,
+  color = TREND_ORANGE,
+  gradientId = "trendFill",
+  valueFormatter,
 }: {
   points: { day: string; units: number; value: number }[];
   valueKey: "units" | "value";
+  color?: string;
+  gradientId?: string;
+  valueFormatter?: (value: number) => string;
 }) {
   const values = points.map((p) => p[valueKey]);
   const max = Math.max(...values, 1);
   const w = 320;
-  const h = 120;
-  const pad = 8;
-  const step = (w - pad * 2) / Math.max(points.length - 1, 1);
+  const h = 132;
+  const padX = 12;
+  const padY = 14;
+  const chartBottom = h - padY;
+  const chartTop = padY;
+  const chartHeight = chartBottom - chartTop;
+  const step = (w - padX * 2) / Math.max(points.length - 1, 1);
+  const fmt = valueFormatter ?? ((n: number) => String(n));
 
   const coords = points.map((p, i) => {
-    const x = pad + i * step;
-    const y = h - pad - (p[valueKey] / max) * (h - pad * 2);
+    const x = padX + i * step;
+    const y = chartBottom - (p[valueKey] / max) * chartHeight;
     return { x, y, ...p };
   });
 
-  const line = coords.map((c, i) => `${i === 0 ? "M" : "L"} ${c.x} ${c.y}`).join(" ");
-  const area = `${line} L ${coords[coords.length - 1]?.x ?? 0} ${h - pad} L ${pad} ${h - pad} Z`;
+  const line = buildSmoothLinePath(coords);
+  const area = `${line} L ${coords[coords.length - 1]?.x ?? padX} ${chartBottom} L ${coords[0]?.x ?? padX} ${chartBottom} Z`;
+  const gridLines = [0.25, 0.5, 0.75].map((ratio) => chartTop + chartHeight * (1 - ratio));
 
   return (
     <div className="w-full overflow-x-auto">
       <svg viewBox={`0 0 ${w} ${h}`} className="w-full min-w-[280px]" preserveAspectRatio="none">
         <defs>
-          <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#F63E16" stopOpacity="0.25" />
-            <stop offset="100%" stopColor="#F63E16" stopOpacity="0" />
+          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity="0.28" />
+            <stop offset="55%" stopColor={color} stopOpacity="0.08" />
+            <stop offset="100%" stopColor={color} stopOpacity="0" />
           </linearGradient>
         </defs>
-        <path d={area} fill="url(#trendFill)" />
-        <path d={line} fill="none" stroke="#F63E16" strokeWidth="2" strokeLinecap="round" />
+        {gridLines.map((y) => (
+          <line
+            key={y}
+            x1={padX}
+            y1={y}
+            x2={w - padX}
+            y2={y}
+            stroke="#E2E8F0"
+            strokeWidth="1"
+            strokeDasharray="4 4"
+          />
+        ))}
+        <path d={area} fill={`url(#${gradientId})`} />
+        <path
+          d={line}
+          fill="none"
+          stroke={color}
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
         {coords.map((c) => (
-          <circle key={c.day} cx={c.x} cy={c.y} r="3.5" fill="#fff" stroke="#F63E16" strokeWidth="2" />
+          <g key={c.day}>
+            <circle cx={c.x} cy={c.y} r="8" fill={color} opacity="0.12" />
+            <circle
+              cx={c.x}
+              cy={c.y}
+              r="4"
+              fill="#fff"
+              stroke={color}
+              strokeWidth="2"
+            >
+              <title>{`${c.day}: ${fmt(c[valueKey])}`}</title>
+            </circle>
+          </g>
         ))}
       </svg>
-      <div className="mt-2 flex justify-between text-[11px] font-medium text-brand-primary-muted">
+      <div className="mt-2 flex justify-between gap-1 text-[11px] font-medium text-brand-primary-muted">
         {points.map((p) => (
-          <span key={p.day}>{p.day}</span>
+          <span key={p.day} className="min-w-0 truncate text-center">{p.day}</span>
         ))}
       </div>
     </div>
