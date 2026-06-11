@@ -1,2 +1,5 @@
-import { CreateExpensePage } from "@/components/dashboard/finance/create-expense-page";
-export default function Page() { return <CreateExpensePage />; }
+import { redirect } from "next/navigation";
+
+export default function Page() {
+  redirect("/dashboard/finance/expenses?add=1");
+}

@@ -56,21 +56,30 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "organisationId is required" }, { status: 400 });
     }
 
-    let payload: unknown;
-    try {
-      payload = await request.json();
-    } catch {
-      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    const contentType = request.headers.get("content-type") ?? "";
+    let init: RequestInit;
+
+    if (contentType.includes("multipart/form-data")) {
+      const formData = await request.formData();
+      init = { method: "POST", body: formData };
+    } else {
+      let payload: unknown;
+      try {
+        payload = await request.json();
+      } catch {
+        return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+      }
+      init = {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      };
     }
 
     const { response, body } = await proxyFinanceBackend(
       request,
       `finance/organisations/${encodeURIComponent(organisationId)}/expenses`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      },
+      init,
     );
 
     if (!response.ok) {

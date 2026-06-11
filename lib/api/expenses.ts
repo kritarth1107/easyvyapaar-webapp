@@ -1,5 +1,6 @@
 import { extractBackendError } from "@/lib/api/inventory";
 import type {
+  ExpenseAttachment,
   ExpenseCategory,
   ExpenseDetail,
   ExpenseListResponse,
@@ -71,6 +72,17 @@ export function normalizeNextExpenseNumber(raw: unknown): NextExpenseNumber | nu
   return { expensePrefix, expenseNumber, suggestedDisplay };
 }
 
+function normalizeExpenseAttachment(raw: unknown): ExpenseAttachment | null {
+  const row = asRecord(raw);
+  if (!row) return null;
+  const fileName = pickString(row.fileName);
+  const contentType = pickString(row.contentType);
+  const size = pickNumber(row.size);
+  const url = pickString(row.url);
+  if (!fileName || !contentType || size === undefined || !url) return null;
+  return { fileName, contentType, size, url };
+}
+
 function mapExpenseStatus(raw: string | undefined): ExpenseSummary["status"] | undefined {
   if (raw === "recorded" || raw === "completed") return "completed";
   if (raw === "cancelled") return "cancelled";
@@ -92,6 +104,11 @@ export function normalizeExpenseSummary(raw: unknown): ExpenseSummary | null {
     return null;
   }
 
+  const attachmentsRaw = Array.isArray(row.attachments) ? row.attachments : [];
+  const attachments = attachmentsRaw
+    .map((item) => normalizeExpenseAttachment(item))
+    .filter((item): item is ExpenseAttachment => item !== null);
+
   return {
     expenseId,
     displayNumber: pickString(row.displayNumber) ?? expenseId,
@@ -104,6 +121,7 @@ export function normalizeExpenseSummary(raw: unknown): ExpenseSummary | null {
     ...(pickString(row.notes, row.description) && {
       description: pickString(row.notes, row.description),
     }),
+    ...(attachments.length > 0 ? { attachments } : {}),
   };
 }
 

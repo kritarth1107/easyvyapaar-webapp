@@ -7,6 +7,13 @@ export type ExpenseCategory = {
   description?: string;
 };
 
+export type ExpenseAttachment = {
+  fileName: string;
+  contentType: string;
+  size: number;
+  url: string;
+};
+
 export type ExpenseSummary = {
   expenseId: string;
   displayNumber: string;
@@ -17,6 +24,7 @@ export type ExpenseSummary = {
   paymentMode: ExpensePaymentMode;
   status: ExpenseStatus;
   description?: string;
+  attachments?: ExpenseAttachment[];
 };
 
 export type ExpenseDetail = ExpenseSummary & {

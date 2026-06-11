@@ -507,13 +507,19 @@ function parseProfitAndLoss(row: Record<string, unknown>): ReportData {
 }
 
 function parseBalanceSheet(row: Record<string, unknown>): ReportData {
-  if (isBalanceSheetReport(row)) {
-    const bs = row as BalanceSheetReport;
+  const nested = row.balanceSheet;
+  const bs = isBalanceSheetReport(nested)
+    ? (nested as BalanceSheetReport)
+    : isBalanceSheetReport(row)
+      ? (row as BalanceSheetReport)
+      : null;
+
+  if (bs) {
     return {
       reportType: "balance-sheet",
-      title: "Balance Sheet",
-      toDate: bs.asOfDate,
-      asOfDate: bs.asOfDate,
+      title: pickString(row.title) ?? "Balance Sheet",
+      toDate: pickString(row.toDate, row.asOfDate, bs.asOfDate),
+      asOfDate: pickString(row.asOfDate, bs.asOfDate),
       balanceSheet: bs,
       sections: [],
       columns: [],
@@ -844,7 +850,11 @@ const PARSERS: Record<ReportSlug, (row: Record<string, unknown>) => ReportData> 
 
 export function isParsedReport(data: unknown): data is ReportData {
   const row = asRecord(data);
-  return !!row && Array.isArray(row.sections) && typeof row.reportType === "string";
+  if (!row || typeof row.reportType !== "string") return false;
+  if (Array.isArray(row.sections) && row.sections.length > 0) return true;
+  if (row.profitLoss && isProfitLossReport(row.profitLoss)) return true;
+  if (row.balanceSheet && isBalanceSheetReport(row.balanceSheet)) return true;
+  return Array.isArray(row.sections);
 }
 
 export function parseReportData(body: unknown, reportType: ReportSlug): ReportData {

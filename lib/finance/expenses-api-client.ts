@@ -89,6 +89,7 @@ export async function fetchExpenseDetail(
 export async function createExpense(
   organisationId: string,
   payload: CreateExpenseRequest,
+  attachmentFiles?: File[],
 ): Promise<ExpenseDetail> {
   const backendPayload = {
     category: payload.categoryId,
@@ -99,14 +100,30 @@ export async function createExpense(
     ...(payload.description?.trim() ? { notes: payload.description.trim() } : {}),
     ...(payload.referenceNumber?.trim() ? { notes: payload.referenceNumber.trim() } : {}),
   };
-  const res = await fetch(
-    `/api/finance/expenses?organisationId=${encodeURIComponent(organisationId)}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(backendPayload),
-    },
-  );
+
+  const files = attachmentFiles?.filter((file) => file.size > 0) ?? [];
+  let res: Response;
+
+  if (files.length > 0) {
+    const formData = new FormData();
+    formData.append("payload", JSON.stringify(backendPayload));
+    for (const file of files) {
+      formData.append("attachments", file);
+    }
+    res = await fetch(
+      `/api/finance/expenses?organisationId=${encodeURIComponent(organisationId)}`,
+      { method: "POST", body: formData },
+    );
+  } else {
+    res = await fetch(
+      `/api/finance/expenses?organisationId=${encodeURIComponent(organisationId)}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(backendPayload),
+      },
+    );
+  }
   const body = await parseJsonResponse(res);
   if (!res.ok) throw new Error(extractBackendError(body) ?? "Failed to create expense");
   const expense = normalizeExpenseDetailResponse(body);

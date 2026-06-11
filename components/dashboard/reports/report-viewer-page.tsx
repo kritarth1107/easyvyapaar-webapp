@@ -80,7 +80,9 @@ export function ReportViewerPage() {
     void load();
   }, [load]);
 
-  const hasContent = report && (report.sections.length > 0 || Boolean(report.profitLoss));
+  const hasContent =
+    report &&
+    (report.sections.length > 0 || Boolean(report.profitLoss) || Boolean(report.balanceSheet));
 
   if (!validSlug) {
     return (

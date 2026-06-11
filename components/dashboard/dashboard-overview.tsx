@@ -127,7 +127,7 @@ const QUICK_LINKS: { labelKey: TranslationKey; href: string; icon: DashboardNavI
   { labelKey: "dashboard.newInvoice", href: "/dashboard/sales/invoices/new", icon: "document" },
   { labelKey: "dashboard.actionPayment", href: "/dashboard/finance/payments/new", icon: "payments" },
   { labelKey: "dashboard.actionPurchase", href: "/dashboard/purchases/new", icon: "purchases" },
-  { labelKey: "dashboard.actionExpense", href: "/dashboard/finance/expenses/new", icon: "expenses" },
+  { labelKey: "dashboard.actionExpense", href: "/dashboard/finance/expenses?add=1", icon: "expenses" },
   { labelKey: "dashboard.actionParty", href: "/dashboard/parties/create", icon: "parties" },
   { labelKey: "dashboard.actionItem", href: "/dashboard/inventory/items", icon: "inventory" },
   { labelKey: "dashboard.viewReports", href: "/dashboard/reports", icon: "reports" },

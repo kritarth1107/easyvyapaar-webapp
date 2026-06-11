@@ -1586,6 +1586,15 @@ export type MessageTree = {
         modeCash: string;
         modeUpi: string;
         modeBank: string;
+        attachments: string;
+        attachmentsHint: string;
+        dropFiles: string;
+        browseFiles: string;
+        addFiles: string;
+        attachmentsInvalidType: string;
+        attachmentsTooMany: string;
+        attachmentsTooLarge: string;
+        removeFile: string;
         save: string;
         saving: string;
         validation: string;
