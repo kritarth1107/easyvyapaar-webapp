@@ -15,13 +15,13 @@ import {
   tableHeadRowClass,
   tablePanelClass,
 } from "@/lib/dashboard/page-utils";
+import { PayrollAttendanceModal } from "@/components/dashboard/staff/payroll-attendance-modal";
 import { generatePayroll, previewPayroll } from "@/lib/staff/staff-api-client";
 import type { PayrollPreviewEntry } from "@/lib/types/staff-api";
 import { useTranslation } from "@/lib/localization";
 
 type EditableRow = PayrollPreviewEntry & {
   rowKey: string;
-  attendanceOverride: boolean;
   customFromDate?: string;
 };
 
@@ -52,6 +52,7 @@ export function PayrollGeneratePage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [attendanceModalStaffId, setAttendanceModalStaffId] = useState<string | null>(null);
 
   const buildStaffFromDates = useCallback((source: EditableRow[]) => {
     const map: Record<string, string> = {};
@@ -71,7 +72,6 @@ export function PayrollGeneratePage() {
         preview.items.map((item) => ({
           ...item,
           rowKey: item.staffId,
-          attendanceOverride: false,
           customFromDate: item.proration?.payPeriodFrom,
         })),
       );
@@ -93,11 +93,14 @@ export function PayrollGeneratePage() {
     () =>
       rows.some(
         (row) =>
-          row.editable &&
-          (row.attendanceMismatch || row.proration?.attendanceMismatch) &&
-          !row.attendanceOverride,
+          row.editable && (row.attendanceMismatch || row.proration?.attendanceMismatch),
       ),
     [rows],
+  );
+
+  const attendanceModalRow = useMemo(
+    () => rows.find((row) => row.staffId === attendanceModalStaffId) ?? null,
+    [rows, attendanceModalStaffId],
   );
 
   const patchRow = (staffId: string, patch: Partial<EditableRow>) => {
@@ -136,7 +139,6 @@ export function PayrollGeneratePage() {
               ? {
                   ...updated,
                   rowKey: staffId,
-                  attendanceOverride: row.attendanceOverride,
                   customFromDate,
                 }
               : row,
@@ -167,7 +169,6 @@ export function PayrollGeneratePage() {
             allowances: row.allowances,
             deductions: row.deductions,
             notes: row.notes,
-            ...(row.attendanceOverride ? { attendanceOverride: true } : {}),
           })),
       });
       router.push("/dashboard/staff-payroll/payroll");
@@ -178,8 +179,46 @@ export function PayrollGeneratePage() {
     }
   };
 
+  const refreshAfterAttendance = useCallback(async () => {
+    if (!orgId || !toDate) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const staffFromDates = buildStaffFromDates(rows);
+      const preview = await previewPayroll(orgId, {
+        toDate,
+        ...(staffFromDates ? { staffFromDates } : {}),
+      });
+      setRows(
+        preview.items.map((item) => ({
+          ...item,
+          rowKey: item.staffId,
+          customFromDate:
+            rows.find((r) => r.staffId === item.staffId)?.customFromDate ??
+            item.proration?.payPeriodFrom,
+        })),
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("dashboard.staff.payroll.previewError"));
+    } finally {
+      setLoading(false);
+    }
+  }, [orgId, toDate, rows, buildStaffFromDates, t]);
+
   return (
     <div className="p-4 lg:p-6">
+      {attendanceModalRow?.proration ? (
+        <PayrollAttendanceModal
+          open={Boolean(attendanceModalStaffId)}
+          organisationId={orgId}
+          staffId={attendanceModalRow.staffId}
+          staffName={attendanceModalRow.staffName}
+          fromDate={attendanceModalRow.proration.payPeriodFrom}
+          toDate={attendanceModalRow.proration.payPeriodTo}
+          onClose={() => setAttendanceModalStaffId(null)}
+          onSaved={() => void refreshAfterAttendance()}
+        />
+      ) : null}
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
           <Link
@@ -271,16 +310,13 @@ export function PayrollGeneratePage() {
                             .replace("{total}", String(proration?.daysInPeriod ?? 0))
                             .replace("{unmarked}", String(proration?.unmarkedDays ?? 0))}
                         </p>
-                        <label className="mt-3 flex items-center gap-2 text-sm font-medium text-amber-900">
-                          <input
-                            type="checkbox"
-                            checked={row.attendanceOverride}
-                            onChange={(e) =>
-                              patchRow(row.staffId, { attendanceOverride: e.target.checked })
-                            }
-                          />
-                          {t("dashboard.staff.payroll.attendanceOverride")}
-                        </label>
+                        <button
+                          type="button"
+                          className="mt-3 rounded-md bg-amber-900 px-3 py-2 text-sm font-semibold text-white hover:bg-amber-950"
+                          onClick={() => setAttendanceModalStaffId(row.staffId)}
+                        >
+                          {t("dashboard.staff.payroll.attendanceUpdateButton")}
+                        </button>
                       </div>
                     ) : null}
 

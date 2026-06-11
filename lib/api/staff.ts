@@ -1,9 +1,12 @@
 import { extractBackendError } from "@/lib/api/inventory";
 import type {
   AttendanceListResponse,
+  AttendancePeriodResponse,
   AttendanceRecord,
   AttendanceReportResponse,
+  AttendanceStatus,
   CreateStaffRequest,
+  LeaveRequest,
   MarkAttendanceRequest,
   PayrollDetail,
   PayrollListResponse,
@@ -305,13 +308,16 @@ export function normalizeAttendanceRecord(raw: unknown): AttendanceRecord | null
   const row = asRecord(raw);
   if (!row) return null;
 
-  const attendanceId = pickString(row.attendanceId, row.id);
   const staffId = pickString(row.staffId);
-  const staffName = pickString(row.staffName);
   const attendanceDate = pickString(row.attendanceDate, row.date);
   const status = pickString(row.status) as AttendanceRecord["status"] | undefined;
+  const attendanceId =
+    pickString(row.attendanceId, row.id) ??
+    (staffId && attendanceDate ? `${staffId}-${attendanceDate}` : undefined);
 
-  if (!attendanceId || !staffId || !staffName || !attendanceDate || !status) return null;
+  if (!attendanceId || !staffId || !attendanceDate || !status) return null;
+
+  const staffName = pickString(row.staffName, row.name) ?? staffId;
 
   return {
     attendanceId,
@@ -342,6 +348,48 @@ export function normalizeAttendanceListResponse(body: unknown): AttendanceListRe
       .filter((item): item is AttendanceRecord => item !== null),
     pagination,
   };
+}
+
+const ATTENDANCE_STATUSES: AttendanceStatus[] = ["present", "absent", "half_day", "leave"];
+
+function normalizeAttendanceStatus(value: unknown): AttendanceStatus | undefined {
+  const status = pickString(value);
+  if (status && ATTENDANCE_STATUSES.includes(status as AttendanceStatus)) {
+    return status as AttendanceStatus;
+  }
+  return undefined;
+}
+
+export function normalizeAttendancePeriodResponse(body: unknown): AttendancePeriodResponse | null {
+  const data = unwrapData(body);
+  const row = asRecord(data);
+  if (!row) return null;
+
+  const staffId = pickString(row.staffId);
+  const staffName = pickString(row.staffName);
+  const fromDate = pickString(row.fromDate);
+  const toDate = pickString(row.toDate);
+  const daysRaw = Array.isArray(row.days) ? row.days : [];
+
+  if (!staffId || !staffName || !fromDate || !toDate) return null;
+
+  const days = daysRaw
+    .map((item) => {
+      const day = asRecord(item);
+      if (!day) return null;
+      const date = pickString(day.date);
+      if (!date) return null;
+      const status = normalizeAttendanceStatus(day.status);
+      const attendanceId = pickString(day.attendanceId);
+      return {
+        date,
+        ...(status ? { status } : {}),
+        ...(attendanceId ? { attendanceId } : {}),
+      };
+    })
+    .filter((day): day is NonNullable<typeof day> => day !== null);
+
+  return { staffId, staffName, fromDate, toDate, days };
 }
 
 export function normalizeAttendanceReportResponse(body: unknown): AttendanceReportResponse {
@@ -375,6 +423,73 @@ export function normalizeAttendanceReportResponse(body: unknown): AttendanceRepo
         return { staffId, staffName, presentDays, absentDays, halfDays, leaveDays, totalDays };
       })
       .filter((item): item is NonNullable<typeof item> => item !== null),
+  };
+}
+
+const LEAVE_REQUEST_STATUSES: LeaveRequest["status"][] = [
+  "pending",
+  "approved",
+  "rejected",
+  "cancelled",
+];
+
+export function normalizeLeaveRequest(raw: unknown): LeaveRequest | null {
+  const r = asRecord(raw);
+  if (!r) return null;
+  const leaveRequestId = pickString(r.leaveRequestId, r.id);
+  const staffId = pickString(r.staffId);
+  const staffName = pickString(r.staffName, r.name);
+  const fromDate = pickString(r.fromDate);
+  const toDate = pickString(r.toDate);
+  const status = pickString(r.status);
+  const createdAt = pickString(r.createdAt);
+  if (
+    !leaveRequestId ||
+    !staffId ||
+    !fromDate ||
+    !toDate ||
+    !createdAt ||
+    !status ||
+    !LEAVE_REQUEST_STATUSES.includes(status as LeaveRequest["status"])
+  ) {
+    return null;
+  }
+  const source = pickString(r.source);
+  return {
+    leaveRequestId,
+    staffId,
+    staffName: staffName ?? staffId,
+    fromDate,
+    toDate,
+    status: status as LeaveRequest["status"],
+    createdAt,
+    ...(source === "admin" || source === "staff_app" ? { source } : {}),
+    ...(pickString(r.reason) && { reason: pickString(r.reason) }),
+    ...(pickString(r.reviewedAt) && { reviewedAt: pickString(r.reviewedAt) }),
+    ...(pickString(r.reviewNotes) && { reviewNotes: pickString(r.reviewNotes) }),
+  };
+}
+
+export function normalizeLeaveRequestListResponse(body: unknown): {
+  items: LeaveRequest[];
+  pagination: { page: number; limit: number; total: number; totalPages: number };
+} {
+  const data = unwrapData(body);
+  const row = asRecord(data);
+  const itemsRaw = Array.isArray(data) ? data : Array.isArray(row?.items) ? row.items : [];
+  const pagination =
+    normalizePagination(row?.pagination) ?? {
+      page: 1,
+      limit: itemsRaw.length,
+      total: itemsRaw.length,
+      totalPages: itemsRaw.length > 0 ? 1 : 0,
+    };
+
+  return {
+    items: itemsRaw
+      .map((item) => normalizeLeaveRequest(item))
+      .filter((item): item is LeaveRequest => item !== null),
+    pagination,
   };
 }
 

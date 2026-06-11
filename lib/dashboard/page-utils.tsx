@@ -23,7 +23,7 @@ export function StatCard({
 }: {
   label: string;
   value: string;
-  accent?: "navy" | "green" | "amber" | "blue";
+  accent?: "navy" | "green" | "amber" | "blue" | "rose" | "sky";
 }) {
   const ring =
     accent === "green"
@@ -32,9 +32,13 @@ export function StatCard({
         ? "border-amber-200/80 bg-amber-50/30"
         : accent === "blue"
           ? "border-blue-200/80 bg-blue-50/30"
-          : accent === "navy"
-            ? "border-brand-primary/15 bg-brand-primary/[0.03]"
-            : "border-slate-200/90 bg-white";
+          : accent === "rose"
+            ? "border-red-200/80 bg-red-50/30"
+            : accent === "sky"
+              ? "border-sky-200/80 bg-sky-50/30"
+              : accent === "navy"
+                ? "border-brand-primary/15 bg-brand-primary/[0.03]"
+                : "border-slate-200/90 bg-white";
 
   return (
     <div className={`rounded-md border px-3.5 py-3 ${ring}`}>

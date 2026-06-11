@@ -14,6 +14,7 @@ import type { DashboardNavIconId } from "@/lib/dashboard/navigation-types";
 import type { DashboardSlice } from "@/lib/dashboard/shop-workspace";
 import { formatInrBrief } from "@/lib/dashboard/stock-summary-analytics";
 import type { NamedSlice } from "@/lib/dashboard/stock-summary-analytics";
+import { DashboardTodayAttendancePanel } from "@/components/dashboard/staff/dashboard-today-attendance-panel";
 import { useTranslation, type TranslationKey } from "@/lib/localization";
 
 const CHART_COLORS = ["#031F49", "#F63E16", "#0A4068", "#10B981", "#F59E0B", "#6366F1", "#EC4899"];
@@ -307,47 +308,7 @@ export function DashboardOverview() {
           )}
         </Panel>
 
-        <Panel title={t("dashboard.pendingActions")}>
-          <ul className="space-y-2">
-            {shopStats.alerts.length === 0 && (
-              <li className="rounded-xl bg-brand-surface px-3 py-3 text-sm text-brand-primary">
-                All clear — no urgent actions right now.
-              </li>
-            )}
-            {shopStats.alerts.map((alert) => (
-              <li key={alert.id}>
-                {alert.href ? (
-                  <Link
-                    href={alert.href}
-                    className={`flex gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors hover:opacity-90 ${
-                      alert.type === "warning" ? "bg-amber-50 text-amber-950" : "bg-brand-surface text-brand-primary"
-                    }`}
-                  >
-                    <span
-                      className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
-                        alert.type === "warning" ? "bg-amber-500" : "bg-brand-orange-1"
-                      }`}
-                    />
-                    {alert.message}
-                  </Link>
-                ) : (
-                  <div
-                    className={`flex gap-3 rounded-xl px-3 py-2.5 text-sm ${
-                      alert.type === "warning" ? "bg-amber-50 text-amber-950" : "bg-brand-surface text-brand-primary"
-                    }`}
-                  >
-                    <span
-                      className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
-                        alert.type === "warning" ? "bg-amber-500" : "bg-brand-orange-1"
-                      }`}
-                    />
-                    {alert.message}
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
-        </Panel>
+        <DashboardTodayAttendancePanel />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">

@@ -105,6 +105,7 @@ export const DASHBOARD_NAV_GROUPS: NavGroupConfig[] = [
       { id: "payroll", href: "/dashboard/staff-payroll/payroll", icon: "wallet" },
       { id: "attendance", href: "/dashboard/staff-payroll/attendance", icon: "document" },
       { id: "attendance-report", href: "/dashboard/staff-payroll/attendance/report", icon: "chart" },
+      { id: "leave-requests", href: "/dashboard/staff-payroll/leave-requests", icon: "document" },
     ],
   },
 ];

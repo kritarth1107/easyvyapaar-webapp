@@ -1,13 +1,12 @@
 "use client";
 
-import { formatDateIndian } from "@/lib/dashboard/date-format";
+import { formatMonthIndian } from "@/lib/dashboard/date-format";
 
-type CompactDateFieldProps = {
+type CompactMonthFieldProps = {
   value: string;
-  onChange: (isoDate: string) => void;
+  onChange: (month: string) => void;
   label?: string;
   className?: string;
-  fullWidth?: boolean;
 };
 
 function CalendarIcon() {
@@ -19,33 +18,28 @@ function CalendarIcon() {
   );
 }
 
-export function CompactDateField({
+export function CompactMonthField({
   value,
   onChange,
   label,
   className = "",
-  fullWidth = false,
-}: CompactDateFieldProps) {
+}: CompactMonthFieldProps) {
   return (
-    <label className={`flex flex-col gap-1 ${fullWidth ? "w-full" : "inline-flex"} ${className}`}>
+    <label className={`inline-flex flex-col gap-1 ${className}`}>
       {label ? (
         <span className="text-[11px] font-semibold uppercase tracking-wide text-brand-primary-muted">
           {label}
         </span>
       ) : null}
-      <span
-        className={`relative inline-flex h-9 items-center gap-2 rounded-sm border border-slate-200/90 bg-white px-2.5 text-sm text-brand-primary shadow-sm ${
-          fullWidth ? "w-full" : "w-[10.75rem]"
-        }`}
-      >
-        <span className="pointer-events-none flex-1 truncate tabular-nums">{formatDateIndian(value)}</span>
+      <span className="relative inline-flex h-9 w-[10.75rem] items-center gap-2 rounded-sm border border-slate-200/90 bg-white px-2.5 text-sm text-brand-primary shadow-sm">
+        <span className="pointer-events-none flex-1 truncate tabular-nums">{formatMonthIndian(value)}</span>
         <CalendarIcon />
         <input
-          type="date"
+          type="month"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           className="absolute inset-0 cursor-pointer opacity-0"
-          aria-label={label ?? "Select date"}
+          aria-label={label ?? "Select month"}
         />
       </span>
     </label>

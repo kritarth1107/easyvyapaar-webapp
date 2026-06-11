@@ -42,6 +42,7 @@ const NAV_ITEM_KEYS: Record<string, TranslationKey> = {
   payroll: "dashboard.nav.payroll",
   attendance: "dashboard.nav.attendance",
   "attendance-report": "dashboard.nav.attendanceReport",
+  "leave-requests": "dashboard.nav.leaveRequests",
   "business-profile": "dashboard.nav.businessProfile",
   "business-bank-accounts": "dashboard.nav.businessBankAccounts",
   "invoice-themes": "dashboard.nav.invoiceThemes",

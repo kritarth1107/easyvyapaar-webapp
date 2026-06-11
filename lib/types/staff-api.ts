@@ -99,6 +99,40 @@ export type AttendanceReportEntry = {
   totalDays: number;
 };
 
+export type LeaveRequestStatus = "pending" | "approved" | "rejected" | "cancelled";
+
+export type LeaveRequest = {
+  leaveRequestId: string;
+  staffId: string;
+  staffName: string;
+  fromDate: string;
+  toDate: string;
+  reason?: string;
+  status: LeaveRequestStatus;
+  source?: "admin" | "staff_app";
+  createdAt: string;
+  reviewedAt?: string;
+  reviewNotes?: string;
+};
+
+export type LeaveRequestListParams = {
+  staffId?: string;
+  status?: LeaveRequestStatus | "all";
+  page?: number;
+  limit?: number;
+};
+
+export type CreateLeaveRequestPayload = {
+  staffId: string;
+  fromDate: string;
+  toDate: string;
+  reason?: string;
+};
+
+export type ReviewLeaveRequestPayload = {
+  reviewNotes?: string;
+};
+
 export type PayrollAdjustmentLine = {
   adjustmentId?: string;
   label: string;
@@ -237,6 +271,7 @@ export type PaginatedStaffResponse<T> = {
 
 export type StaffListResponse = PaginatedStaffResponse<StaffSummary>;
 export type AttendanceListResponse = PaginatedStaffResponse<AttendanceRecord>;
+export type LeaveRequestListResponse = PaginatedStaffResponse<LeaveRequest>;
 export type AttendanceReportResponse = {
   month: string;
   items: AttendanceReportEntry[];
@@ -271,6 +306,28 @@ export type MarkAttendanceRequest = {
   checkIn?: string;
   checkOut?: string;
   notes?: string;
+};
+
+export type AttendancePeriodDay = {
+  date: string;
+  status?: AttendanceStatus;
+  attendanceId?: string;
+};
+
+export type AttendancePeriodResponse = {
+  staffId: string;
+  staffName: string;
+  fromDate: string;
+  toDate: string;
+  days: AttendancePeriodDay[];
+};
+
+export type BulkMarkAttendanceRequest = {
+  staffId: string;
+  entries: Array<{
+    date: string;
+    status: AttendanceStatus;
+  }>;
 };
 
 export type ChangeSalaryRequest = {

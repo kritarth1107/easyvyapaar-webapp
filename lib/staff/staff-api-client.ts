@@ -1,7 +1,10 @@
 import {
   extractBackendError,
   normalizeAttendanceListResponse,
+  normalizeAttendancePeriodResponse,
   normalizeAttendanceReportResponse,
+  normalizeLeaveRequest,
+  normalizeLeaveRequestListResponse,
   normalizePayrollDetailResponse,
   normalizePayrollListResponse,
   normalizePayrollMonthDetailResponse,
@@ -20,8 +23,15 @@ import {
 import type {
   AttendanceListParams,
   AttendanceListResponse,
+  AttendancePeriodResponse,
   AttendanceReportParams,
   AttendanceReportResponse,
+  CreateLeaveRequestPayload,
+  LeaveRequest,
+  LeaveRequestListParams,
+  LeaveRequestListResponse,
+  ReviewLeaveRequestPayload,
+  BulkMarkAttendanceRequest,
   ChangeSalaryRequest,
   CreateStaffAdjustmentRequest,
   CreateStaffRequest,
@@ -124,9 +134,11 @@ export async function updateStaff(
   return staff;
 }
 
-export async function fetchAttendance(
+const ATTENDANCE_LIST_MAX_LIMIT = 100;
+
+async function fetchAttendancePage(
   organisationId: string,
-  params: AttendanceListParams = {},
+  params: AttendanceListParams,
 ): Promise<AttendanceListResponse> {
   const res = await fetch(
     `/api/staff/attendance?${buildQuery(organisationId, {
@@ -134,12 +146,41 @@ export async function fetchAttendance(
       fromDate: params.fromDate,
       toDate: params.toDate,
       page: params.page,
-      limit: params.limit ?? 100,
+      limit: params.limit ?? ATTENDANCE_LIST_MAX_LIMIT,
     })}`,
   );
   const body = await parseJsonResponse(res);
   if (!res.ok) throw new Error(extractBackendError(body) ?? "Failed to load attendance");
   return normalizeAttendanceListResponse(body);
+}
+
+export async function fetchAttendance(
+  organisationId: string,
+  params: AttendanceListParams = {},
+): Promise<AttendanceListResponse> {
+  const limit = Math.min(params.limit ?? ATTENDANCE_LIST_MAX_LIMIT, ATTENDANCE_LIST_MAX_LIMIT);
+  const firstPage = await fetchAttendancePage(organisationId, { ...params, limit, page: 1 });
+  const totalPages = firstPage.pagination.totalPages;
+
+  if (totalPages <= 1 || params.page !== undefined) {
+    return firstPage;
+  }
+
+  const items = [...firstPage.items];
+  for (let page = 2; page <= totalPages; page += 1) {
+    const nextPage = await fetchAttendancePage(organisationId, { ...params, limit, page });
+    items.push(...nextPage.items);
+  }
+
+  return {
+    items,
+    pagination: {
+      page: 1,
+      limit: items.length,
+      total: firstPage.pagination.total,
+      totalPages: 1,
+    },
+  };
 }
 
 export async function markAttendance(
@@ -159,6 +200,42 @@ export async function markAttendance(
   return normalizeAttendanceListResponse(body);
 }
 
+export async function fetchAttendancePeriod(
+  organisationId: string,
+  staffId: string,
+  fromDate: string,
+  toDate: string,
+): Promise<AttendancePeriodResponse> {
+  const res = await fetch(
+    `/api/staff/attendance/period?${buildQuery(organisationId, {
+      staffId,
+      fromDate,
+      toDate,
+    })}`,
+  );
+  const body = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(extractBackendError(body) ?? "Failed to load attendance period");
+  const period = normalizeAttendancePeriodResponse(body);
+  if (!period) throw new Error("Failed to load attendance period");
+  return period;
+}
+
+export async function bulkMarkAttendance(
+  organisationId: string,
+  payload: BulkMarkAttendanceRequest,
+): Promise<void> {
+  const res = await fetch(
+    `/api/staff/attendance/bulk?organisationId=${encodeURIComponent(organisationId)}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    },
+  );
+  const body = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(extractBackendError(body) ?? "Failed to save attendance");
+}
+
 export async function fetchAttendanceReport(
   organisationId: string,
   params: AttendanceReportParams,
@@ -169,6 +246,113 @@ export async function fetchAttendanceReport(
   const body = await parseJsonResponse(res);
   if (!res.ok) throw new Error(extractBackendError(body) ?? "Failed to load attendance report");
   return normalizeAttendanceReportResponse(body);
+}
+
+export async function fetchLeaveRequests(
+  organisationId: string,
+  params: LeaveRequestListParams = {},
+): Promise<LeaveRequestListResponse> {
+  const res = await fetch(
+    `/api/staff/leave-requests?${buildQuery(organisationId, {
+      staffId: params.staffId,
+      status: params.status,
+      page: params.page,
+      limit: params.limit ?? 50,
+    })}`,
+  );
+  const body = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(extractBackendError(body) ?? "Failed to load leave requests");
+  return normalizeLeaveRequestListResponse(body);
+}
+
+export async function createLeaveRequest(
+  organisationId: string,
+  payload: CreateLeaveRequestPayload,
+): Promise<LeaveRequest> {
+  const res = await fetch(
+    `/api/staff/leave-requests?organisationId=${encodeURIComponent(organisationId)}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    },
+  );
+  const body = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(extractBackendError(body) ?? "Failed to create leave request");
+  const row = normalizeLeaveRequest(
+    typeof body === "object" && body !== null && "data" in body
+      ? (body as { data: unknown }).data
+      : body,
+  );
+  if (!row) throw new Error("Failed to create leave request");
+  return row;
+}
+
+export async function approveLeaveRequest(
+  organisationId: string,
+  leaveRequestId: string,
+  payload: ReviewLeaveRequestPayload = {},
+): Promise<LeaveRequest> {
+  const res = await fetch(
+    `/api/staff/leave-requests/${encodeURIComponent(leaveRequestId)}/approve?organisationId=${encodeURIComponent(organisationId)}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    },
+  );
+  const body = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(extractBackendError(body) ?? "Failed to approve leave request");
+  const row = normalizeLeaveRequest(
+    typeof body === "object" && body !== null && "data" in body
+      ? (body as { data: unknown }).data
+      : body,
+  );
+  if (!row) throw new Error("Failed to approve leave request");
+  return row;
+}
+
+export async function rejectLeaveRequest(
+  organisationId: string,
+  leaveRequestId: string,
+  payload: ReviewLeaveRequestPayload = {},
+): Promise<LeaveRequest> {
+  const res = await fetch(
+    `/api/staff/leave-requests/${encodeURIComponent(leaveRequestId)}/reject?organisationId=${encodeURIComponent(organisationId)}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    },
+  );
+  const body = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(extractBackendError(body) ?? "Failed to reject leave request");
+  const row = normalizeLeaveRequest(
+    typeof body === "object" && body !== null && "data" in body
+      ? (body as { data: unknown }).data
+      : body,
+  );
+  if (!row) throw new Error("Failed to reject leave request");
+  return row;
+}
+
+export async function cancelLeaveRequest(
+  organisationId: string,
+  leaveRequestId: string,
+): Promise<LeaveRequest> {
+  const res = await fetch(
+    `/api/staff/leave-requests/${encodeURIComponent(leaveRequestId)}/cancel?organisationId=${encodeURIComponent(organisationId)}`,
+    { method: "POST" },
+  );
+  const body = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(extractBackendError(body) ?? "Failed to cancel leave request");
+  const row = normalizeLeaveRequest(
+    typeof body === "object" && body !== null && "data" in body
+      ? (body as { data: unknown }).data
+      : body,
+  );
+  if (!row) throw new Error("Failed to cancel leave request");
+  return row;
 }
 
 export async function fetchPayrollList(

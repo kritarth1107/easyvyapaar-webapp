@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
-import { extractBackendError, normalizeAttendanceListResponse } from "@/lib/api/staff";
+import {
+  extractBackendError,
+  normalizeLeaveRequest,
+  normalizeLeaveRequestListResponse,
+} from "@/lib/api/staff";
 import { proxyStaffBackend, requireOrganisationId } from "@/lib/api/staff-proxy";
 
-function buildBackendListQuery(searchParams: URLSearchParams): string {
+function buildListQuery(searchParams: URLSearchParams): string {
   const params = new URLSearchParams();
-  for (const key of ["staffId", "fromDate", "toDate", "page", "limit"] as const) {
+  for (const key of ["staffId", "status", "page", "limit"] as const) {
     const value = searchParams.get(key)?.trim();
     if (value) params.set(key, value);
   }
@@ -20,26 +24,26 @@ export async function GET(request: Request) {
     }
 
     const { searchParams } = new URL(request.url);
-    const listQuery = buildBackendListQuery(searchParams);
+    const listQuery = buildListQuery(searchParams);
 
     const { response, body } = await proxyStaffBackend(
       request,
-      `staff/organisations/${encodeURIComponent(organisationId)}/attendance${listQuery}`,
+      `staff/organisations/${encodeURIComponent(organisationId)}/leave-requests${listQuery}`,
       { method: "GET" },
     );
 
     if (!response.ok) {
       return NextResponse.json(
-        { error: extractBackendError(body) ?? "Failed to load attendance" },
+        { error: extractBackendError(body) ?? "Failed to load leave requests" },
         { status: response.status },
       );
     }
 
-    const data = normalizeAttendanceListResponse(body);
+    const data = normalizeLeaveRequestListResponse(body);
     return NextResponse.json({ success: true, data });
   } catch (error) {
-    console.error("Attendance list error:", error);
-    return NextResponse.json({ error: "Failed to load attendance" }, { status: 500 });
+    console.error("Leave requests list error:", error);
+    return NextResponse.json({ error: "Failed to load leave requests" }, { status: 500 });
   }
 }
 
@@ -59,7 +63,7 @@ export async function POST(request: Request) {
 
     const { response, body } = await proxyStaffBackend(
       request,
-      `staff/organisations/${encodeURIComponent(organisationId)}/attendance`,
+      `staff/organisations/${encodeURIComponent(organisationId)}/leave-requests`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -69,15 +73,19 @@ export async function POST(request: Request) {
 
     if (!response.ok) {
       return NextResponse.json(
-        { error: extractBackendError(body) ?? "Failed to mark attendance" },
+        { error: extractBackendError(body) ?? "Failed to create leave request" },
         { status: response.status },
       );
     }
 
-    const data = normalizeAttendanceListResponse(body);
-    return NextResponse.json({ ...(body as object), data }, { status: response.status });
+    const data = normalizeLeaveRequest(
+      typeof body === "object" && body !== null && "data" in body
+        ? (body as { data: unknown }).data
+        : body,
+    );
+    return NextResponse.json({ success: true, data }, { status: response.status });
   } catch (error) {
-    console.error("Attendance mark error:", error);
-    return NextResponse.json({ error: "Failed to mark attendance" }, { status: 500 });
+    console.error("Leave request create error:", error);
+    return NextResponse.json({ error: "Failed to create leave request" }, { status: 500 });
   }
 }

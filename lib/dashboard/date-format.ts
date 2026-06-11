@@ -10,6 +10,16 @@ export function formatDateIndian(iso: string): string {
   return `${day}-${mon}-${year}`;
 }
 
+/** Format YYYY-MM as JUN 2026 */
+export function formatMonthIndian(month: string): string {
+  const trimmed = month.trim();
+  if (!/^\d{4}-\d{2}$/.test(trimmed)) return trimmed;
+  const [year, mo] = trimmed.split("-");
+  const monthIdx = Number(mo) - 1;
+  const mon = MONTHS_SHORT[monthIdx] ?? mo;
+  return `${mon} ${year}`;
+}
+
 export function parseIsoDate(value: string): string | null {
   const trimmed = value.trim();
   if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
