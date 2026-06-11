@@ -299,23 +299,49 @@ export function PayrollGeneratePage() {
 
                 {isOpen ? (
                   <div className="border-t border-slate-200/90 px-4 py-4">
-                    {mismatch && row.editable ? (
-                      <div className="mb-4 rounded-md border border-amber-300 bg-amber-50 px-4 py-3">
-                        <p className="text-sm font-semibold text-amber-900">
-                          {t("dashboard.staff.payroll.attendanceMismatchTitle")}
+                    {row.editable && proration ? (
+                      <div
+                        className={`mb-4 rounded-md border px-4 py-3 ${
+                          mismatch
+                            ? "border-amber-300 bg-amber-50"
+                            : "border-emerald-200 bg-emerald-50/70"
+                        }`}
+                      >
+                        <p
+                          className={`text-sm font-semibold ${
+                            mismatch ? "text-amber-900" : "text-emerald-900"
+                          }`}
+                        >
+                          {mismatch
+                            ? t("dashboard.staff.payroll.attendanceMismatchTitle")
+                            : t("dashboard.staff.payroll.attendanceCompleteTitle")}
                         </p>
-                        <p className="mt-1 text-sm text-amber-800">
-                          {t("dashboard.staff.payroll.attendanceMismatchHint")
-                            .replace("{marked}", String(proration?.attendanceMarkedDays ?? 0))
-                            .replace("{total}", String(proration?.daysInPeriod ?? 0))
-                            .replace("{unmarked}", String(proration?.unmarkedDays ?? 0))}
+                        <p
+                          className={`mt-1 text-sm ${
+                            mismatch ? "text-amber-800" : "text-emerald-800"
+                          }`}
+                        >
+                          {mismatch
+                            ? t("dashboard.staff.payroll.attendanceMismatchHint")
+                                .replace("{marked}", String(proration.attendanceMarkedDays))
+                                .replace("{total}", String(proration.daysInPeriod))
+                                .replace("{unmarked}", String(proration.unmarkedDays))
+                            : t("dashboard.staff.payroll.attendanceCompleteHint")
+                                .replace("{marked}", String(proration.attendanceMarkedDays))
+                                .replace("{total}", String(proration.daysInPeriod))}
                         </p>
                         <button
                           type="button"
-                          className="mt-3 rounded-md bg-amber-900 px-3 py-2 text-sm font-semibold text-white hover:bg-amber-950"
+                          className={`mt-3 rounded-md px-3 py-2 text-sm font-semibold text-white ${
+                            mismatch
+                              ? "bg-amber-900 hover:bg-amber-950"
+                              : "bg-brand-primary hover:brightness-105"
+                          }`}
                           onClick={() => setAttendanceModalStaffId(row.staffId)}
                         >
-                          {t("dashboard.staff.payroll.attendanceUpdateButton")}
+                          {mismatch
+                            ? t("dashboard.staff.payroll.attendanceUpdateButton")
+                            : t("dashboard.staff.payroll.attendanceShowCalendar")}
                         </button>
                       </div>
                     ) : null}
@@ -327,7 +353,7 @@ export function PayrollGeneratePage() {
                         <StatPill label={t("dashboard.staff.payroll.leaveDays")} value={String(proration.leaveDays)} />
                         <StatPill
                           label={t("dashboard.staff.payroll.paidLeave")}
-                          value={`${proration.paidLeaveUsed} / ${proration.paidLeaveAllowedForPeriod.toFixed(1)}`}
+                          value={`${proration.leaveDays} (${t("dashboard.staff.payroll.leaveAllowance")}: ${proration.paidLeaveAllowedForPeriod.toFixed(1)})`}
                         />
                         <StatPill label={t("dashboard.staff.payroll.halfDays")} value={String(proration.halfDays)} />
                         <StatPill

@@ -7,6 +7,11 @@ export type StaffBankAccountForm = {
   ifscCode: string;
 };
 
+import {
+  getOptionalIndianMobileError,
+  normalizeOptionalIndianMobileForSave,
+} from "@/lib/validators/indian-mobile";
+
 export type CreateStaffFormState = {
   name: string;
   phone: string;
@@ -77,7 +82,7 @@ export function mapCreateStaffFormToRequest(form: CreateStaffFormState) {
 
   return {
     name: form.name.trim(),
-    phone: form.phone.trim() || undefined,
+    phone: normalizeOptionalIndianMobileForSave(form.phone),
     email: form.email.trim() || undefined,
     role: form.role.trim() || undefined,
     department: form.department.trim() || undefined,
@@ -98,6 +103,7 @@ export function validateCreateStaffForm(
   form: CreateStaffFormState,
   messages: {
     required: string;
+    phoneInvalid: string;
     idTypeRequired: string;
     idNumberRequired: string;
   },
@@ -105,6 +111,8 @@ export function validateCreateStaffForm(
   const errors: Record<string, string> = {};
   if (!form.name.trim()) errors.name = messages.required;
   if (!form.monthlySalary || Number(form.monthlySalary) < 0) errors.monthlySalary = messages.required;
+  const phoneError = getOptionalIndianMobileError(form.phone);
+  if (phoneError) errors.phone = messages.phoneInvalid;
   if (form.idNumber.trim() && !form.idType) errors.idType = messages.idTypeRequired;
   if (form.idType && !form.idNumber.trim()) errors.idNumber = messages.idNumberRequired;
   return errors;

@@ -1651,6 +1651,8 @@ export type MessageTree = {
         name: string;
         namePlaceholder: string;
         phone: string;
+        phonePlaceholder: string;
+        phoneInvalid: string;
         email: string;
         role: string;
         rolePlaceholder: string;
@@ -1790,6 +1792,10 @@ export type MessageTree = {
         noStaffForPeriod: string;
         attendanceMismatchTitle: string;
         attendanceMismatchHint: string;
+        attendanceCompleteTitle: string;
+        attendanceCompleteHint: string;
+        attendanceShowCalendar: string;
+        attendanceHideCalendar: string;
         attendanceUpdateButton: string;
         attendanceModalTitle: string;
         attendanceModalHint: string;
@@ -1797,8 +1803,10 @@ export type MessageTree = {
         attendanceIncomplete: string;
         attendanceIncompleteCount: string;
         attendanceReady: string;
+        attendanceDirty: string;
         attendanceAlreadyMarked: string;
         attendanceLoadError: string;
+        leaveAllowance: string;
         customFromDate: string;
         applyFromDate: string;
         segmentPeriod: string;
@@ -2067,6 +2075,8 @@ export type MessageTree = {
       chatSupport: string;
       closeFinancialYear: string;
       uploadLogo: string;
+      logoUploading: string;
+      logoUploadError: string;
       change: string;
       businessName: string;
       businessNamePlaceholder: string;

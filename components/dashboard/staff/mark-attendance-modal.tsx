@@ -95,11 +95,8 @@ export function MarkAttendanceModal({
     };
 
     document.addEventListener("keydown", onKeyDown);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
     return () => {
       document.removeEventListener("keydown", onKeyDown);
-      document.body.style.overflow = prev;
     };
   }, [open, saving, onClose]);
 
@@ -154,16 +151,17 @@ export function MarkAttendanceModal({
             </p>
           ) : null}
 
-          <label className="block">
+          <div className="block">
             <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-brand-primary-muted">
               {t("dashboard.staff.attendance.colDate")}
             </span>
             <CompactDateField
+              id="mark-attendance-date"
               value={attendanceDate}
               onChange={setAttendanceDate}
               fullWidth
             />
-          </label>
+          </div>
 
           <div className="block">
             <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-brand-primary-muted">

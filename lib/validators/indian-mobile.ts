@@ -74,3 +74,16 @@ export function normalizeIndianMobileInput(value: string): string {
 
   return digits.slice(0, 10);
 }
+
+/** Returns an error message when a non-empty phone value is invalid; empty is allowed. */
+export function getOptionalIndianMobileError(phone: string): string | null {
+  const normalized = normalizeIndianMobileInput(phone);
+  if (!normalized) return null;
+  const parsed = parseIndianMobile(normalized);
+  return parsed.valid ? null : parsed.error;
+}
+
+export function normalizeOptionalIndianMobileForSave(phone: string): string | undefined {
+  const normalized = normalizeIndianMobileInput(phone);
+  return normalized || undefined;
+}

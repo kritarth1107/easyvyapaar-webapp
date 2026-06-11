@@ -4,12 +4,14 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "@/lib/localization";
 import {
+  ATTENDANCE_STATUS_ORDER,
+  getAttendanceStatusUi,
+} from "@/lib/staff/attendance-status-ui";
+import {
   bulkMarkAttendance,
   fetchAttendancePeriod,
 } from "@/lib/staff/staff-api-client";
 import type { AttendanceStatus } from "@/lib/types/staff-api";
-
-const STATUS_OPTIONS: AttendanceStatus[] = ["present", "absent", "half_day", "leave"];
 
 type PayrollAttendanceModalProps = {
   open: boolean;
@@ -32,6 +34,13 @@ function formatDayLabel(date: string) {
   });
 }
 
+function formatShortDate(date: string) {
+  const [y, m, d] = date.split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+}
+
+const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
+
 export function PayrollAttendanceModal({
   open,
   organisationId,
@@ -49,6 +58,8 @@ export function PayrollAttendanceModal({
   const [error, setError] = useState<string | null>(null);
   const [days, setDays] = useState<Array<{ date: string; status?: AttendanceStatus; attendanceId?: string }>>([]);
   const [selection, setSelection] = useState<Record<string, AttendanceStatus | "">>({});
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [dirty, setDirty] = useState(false);
 
   const statusLabel = useCallback(
     (status: AttendanceStatus) => {
@@ -74,57 +85,72 @@ export function PayrollAttendanceModal({
 
   useEffect(() => {
     if (!open) return;
-
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && !saving) onClose();
     };
-
     document.addEventListener("keydown", onKeyDown);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKeyDown);
-      document.body.style.overflow = prev;
-    };
+    return () => document.removeEventListener("keydown", onKeyDown);
   }, [open, saving, onClose]);
 
-  useEffect(() => {
-    if (!open || !organisationId || !staffId) return;
-
-    let cancelled = false;
+  const load = useCallback(async () => {
+    if (!organisationId || !staffId) return;
     setLoading(true);
     setError(null);
-
-    void fetchAttendancePeriod(organisationId, staffId, fromDate, toDate)
-      .then((period) => {
-        if (cancelled) return;
-        setDays(period.days);
-        const initial: Record<string, AttendanceStatus | ""> = {};
-        for (const day of period.days) {
-          initial[day.date] = day.status ?? "";
-        }
-        setSelection(initial);
-      })
-      .catch((err) => {
-        if (!cancelled) {
-          setDays([]);
-          setSelection({});
-          setError(err instanceof Error ? err.message : t("dashboard.staff.payroll.attendanceLoadError"));
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
+    try {
+      const period = await fetchAttendancePeriod(organisationId, staffId, fromDate, toDate);
+      setDays(period.days);
+      const initial: Record<string, AttendanceStatus | ""> = {};
+      for (const day of period.days) {
+        initial[day.date] = day.status ?? "";
+      }
+      setSelection(initial);
+      setDirty(false);
+      setSelectedDate((current) => {
+        if (current && period.days.some((day) => day.date === current)) return current;
+        const firstUnmarked = period.days.find((day) => !day.status)?.date;
+        return firstUnmarked ?? period.days[0]?.date ?? null;
       });
+    } catch (err) {
+      setDays([]);
+      setSelection({});
+      setError(err instanceof Error ? err.message : t("dashboard.staff.payroll.attendanceLoadError"));
+    } finally {
+      setLoading(false);
+    }
+  }, [organisationId, staffId, fromDate, toDate, t]);
 
-    return () => {
-      cancelled = true;
-    };
-  }, [open, organisationId, staffId, fromDate, toDate, t]);
+  useEffect(() => {
+    if (!open) return;
+    void load();
+  }, [open, load]);
 
   const incompleteCount = useMemo(
     () => days.filter((day) => !selection[day.date]).length,
     [days, selection],
   );
+
+  const calendarCells = useMemo(() => {
+    if (days.length === 0) return [];
+    const firstDate = days[0].date;
+    const [y, m, d] = firstDate.split("-").map(Number);
+    const startOffset = new Date(y, m - 1, d).getDay();
+    const blanks = Array.from({ length: startOffset }, (_, index) => ({
+      key: `blank-${index}`,
+      blank: true as const,
+    }));
+    const cells = days.map((day) => ({
+      key: day.date,
+      blank: false as const,
+      date: day.date,
+    }));
+    return [...blanks, ...cells];
+  }, [days]);
+
+  const patchStatus = (date: string, status: AttendanceStatus) => {
+    setSelection((prev) => ({ ...prev, [date]: status }));
+    setDirty(true);
+    setSelectedDate(date);
+  };
 
   const handleSave = async () => {
     if (incompleteCount > 0) {
@@ -142,6 +168,7 @@ export function PayrollAttendanceModal({
           status: selection[day.date] as AttendanceStatus,
         })),
       });
+      setDirty(false);
       onSaved();
       onClose();
     } catch (err) {
@@ -150,6 +177,8 @@ export function PayrollAttendanceModal({
       setSaving(false);
     }
   };
+
+  const selectedStatus = selectedDate ? selection[selectedDate] : "";
 
   if (!mounted || !open) return null;
 
@@ -189,54 +218,71 @@ export function PayrollAttendanceModal({
           {loading ? (
             <p className="py-8 text-center text-sm text-brand-primary-muted">{t("common.pleaseWait")}</p>
           ) : (
-            <div className="space-y-2">
-              {days.map((day) => {
-                const selected = selection[day.date];
-                const wasMarked = Boolean(day.attendanceId || day.status);
-                return (
-                  <div
-                    key={day.date}
-                    className={`rounded-lg border px-3 py-2.5 sm:px-4 ${
-                      wasMarked ? "border-emerald-200 bg-emerald-50/40" : "border-slate-200/90 bg-white"
-                    }`}
-                  >
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-brand-primary">{formatDayLabel(day.date)}</p>
-                        {wasMarked ? (
-                          <p className="text-[11px] text-emerald-700">
-                            {t("dashboard.staff.payroll.attendanceAlreadyMarked")}
-                          </p>
-                        ) : null}
-                      </div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {STATUS_OPTIONS.map((status) => {
-                          const active = selected === status;
-                          return (
-                            <button
-                              key={status}
-                              type="button"
-                              disabled={saving}
-                              onClick={() =>
-                                setSelection((prev) => ({ ...prev, [day.date]: status }))
-                              }
-                              className={`rounded-md px-2.5 py-1.5 text-xs font-semibold transition-colors ${
-                                active
-                                  ? "bg-brand-primary text-white"
-                                  : "border border-slate-200 bg-white text-brand-primary hover:bg-slate-50"
-                              }`}
-                              aria-pressed={active}
-                            >
-                              {statusLabel(status)}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
+            <>
+              <div className="mb-2 grid grid-cols-7 gap-1 text-center text-[10px] font-semibold uppercase tracking-wide text-brand-primary-muted">
+                {WEEKDAY_LABELS.map((label) => (
+                  <span key={label}>{label}</span>
+                ))}
+              </div>
+              <div className="grid grid-cols-7 gap-1">
+                {calendarCells.map((cell) => {
+                  if (cell.blank) {
+                    return <div key={cell.key} className="h-11" aria-hidden />;
+                  }
+                  const status = selection[cell.date];
+                  const ui = status ? getAttendanceStatusUi(status) : null;
+                  const isSelected = selectedDate === cell.date;
+                  return (
+                    <button
+                      key={cell.key}
+                      type="button"
+                      disabled={saving}
+                      onClick={() => setSelectedDate(cell.date)}
+                      className={`flex h-11 flex-col items-center justify-center rounded-md border text-xs transition-colors ${
+                        isSelected
+                          ? "border-brand-primary ring-2 ring-brand-primary/20"
+                          : "border-slate-200/90"
+                      } ${ui ? ui.row : "bg-white"} ${!status ? "bg-white text-brand-primary-muted" : "text-brand-primary"}`}
+                      aria-pressed={isSelected}
+                      aria-label={formatDayLabel(cell.date)}
+                    >
+                      <span className="font-semibold tabular-nums">{cell.date.slice(8)}</span>
+                      <span className="text-[9px] font-semibold uppercase leading-none">
+                        {status ? statusLabel(status).slice(0, 1) : "—"}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {selectedDate ? (
+                <div className="mt-4 rounded-lg border border-slate-200/90 bg-slate-50/80 px-3 py-3">
+                  <p className="text-sm font-semibold text-brand-primary">
+                    {formatShortDate(selectedDate)}
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {ATTENDANCE_STATUS_ORDER.map((status) => {
+                      const ui = getAttendanceStatusUi(status);
+                      const active = selectedStatus === status;
+                      return (
+                        <button
+                          key={status}
+                          type="button"
+                          disabled={saving}
+                          onClick={() => patchStatus(selectedDate, status)}
+                          className={`rounded-md px-2.5 py-1.5 text-xs font-semibold transition-colors ${
+                            active ? ui.chipActive : ui.chipIdle
+                          }`}
+                          aria-pressed={active}
+                        >
+                          {statusLabel(status)}
+                        </button>
+                      );
+                    })}
                   </div>
-                );
-              })}
-            </div>
+                </div>
+              ) : null}
+            </>
           )}
         </div>
 
@@ -247,7 +293,9 @@ export function PayrollAttendanceModal({
                   "{count}",
                   String(incompleteCount),
                 )
-              : t("dashboard.staff.payroll.attendanceReady")}
+              : dirty
+                ? t("dashboard.staff.payroll.attendanceDirty")
+                : t("dashboard.staff.payroll.attendanceReady")}
           </p>
           <div className="flex gap-2">
             <button
@@ -260,7 +308,7 @@ export function PayrollAttendanceModal({
             </button>
             <button
               type="button"
-              disabled={saving || loading || days.length === 0}
+              disabled={saving || loading || days.length === 0 || incompleteCount > 0 || !dirty}
               onClick={() => void handleSave()}
               className="h-10 flex-1 rounded-lg bg-brand-primary px-4 text-sm font-semibold text-white disabled:opacity-60 sm:flex-none sm:min-w-[140px]"
             >

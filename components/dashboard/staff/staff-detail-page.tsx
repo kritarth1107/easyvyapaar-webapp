@@ -37,6 +37,11 @@ import type {
   StaffIdType,
   StaffStatus,
 } from "@/lib/types/staff-api";
+import {
+  getOptionalIndianMobileError,
+  normalizeIndianMobileInput,
+  normalizeOptionalIndianMobileForSave,
+} from "@/lib/validators/indian-mobile";
 import { useTranslation } from "@/lib/localization";
 
 const textareaClass =
@@ -70,6 +75,7 @@ export function StaffDetailPage() {
   const [staff, setStaff] = useState<StaffDetail | null>(null);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [phoneError, setPhoneError] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("");
   const [department, setDepartment] = useState("");
@@ -135,7 +141,8 @@ export function StaffDetailPage() {
       const data = await fetchStaffDetail(orgId, params.staffId);
       setStaff(data);
       setName(data.name);
-      setPhone(data.phone ?? "");
+      setPhone(normalizeIndianMobileInput(data.phone ?? ""));
+      setPhoneError(null);
       setEmail(data.email ?? "");
       setRole(data.role ?? "");
       setDepartment(data.department ?? "");
@@ -168,12 +175,19 @@ export function StaffDetailPage() {
 
   const handleSaveDetails = async () => {
     if (!orgId || !params.staffId) return;
+    const phoneValidationError = getOptionalIndianMobileError(phone);
+    if (phoneValidationError) {
+      setPhoneError(t("dashboard.staff.create.phoneInvalid"));
+      return;
+    }
+
     setSaving(true);
     setError(null);
+    setPhoneError(null);
     try {
       const updated = await updateStaff(orgId, params.staffId, {
         name: name.trim(),
-        phone: phone.trim() || undefined,
+        phone: normalizeOptionalIndianMobileForSave(phone),
         email: email.trim() || undefined,
         role: role.trim() || undefined,
         department: department.trim() || undefined,
@@ -280,7 +294,26 @@ export function StaffDetailPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <FieldLabel>{t("dashboard.staff.create.phone")}</FieldLabel>
-              <input value={phone} onChange={(e) => setPhone(e.target.value)} className={inputClass} />
+              <input
+                type="tel"
+                inputMode="numeric"
+                autoComplete="tel-national"
+                value={phone}
+                onChange={(e) => {
+                  setPhone(normalizeIndianMobileInput(e.target.value));
+                  setPhoneError(null);
+                }}
+                onPaste={(e) => {
+                  e.preventDefault();
+                  setPhone(normalizeIndianMobileInput(e.clipboardData.getData("text")));
+                  setPhoneError(null);
+                }}
+                placeholder={t("dashboard.staff.create.phonePlaceholder")}
+                className={phoneError ? `${inputClass} border-red-300` : inputClass}
+              />
+              {phoneError ? (
+                <p className="mt-1 text-xs font-medium text-red-600">{phoneError}</p>
+              ) : null}
             </div>
             <div>
               <FieldLabel>{t("dashboard.staff.create.email")}</FieldLabel>

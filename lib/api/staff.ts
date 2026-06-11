@@ -60,7 +60,6 @@ export function toBackendUpdateStaffBody(payload: UpdateStaffRequest): Record<st
   if (payload.email !== undefined) body.email = payload.email;
   if (payload.role !== undefined) body.designation = payload.role;
   if (payload.department !== undefined) body.department = payload.department;
-  if (payload.monthlySalary !== undefined) body.monthlySalary = payload.monthlySalary;
   if (payload.monthlyWorkingDays !== undefined) body.monthlyWorkingDays = payload.monthlyWorkingDays;
   if (payload.paidLeaveAllowed !== undefined) body.paidLeaveAllowed = payload.paidLeaveAllowed;
   if (payload.joinDate !== undefined) body.joiningDate = payload.joinDate;

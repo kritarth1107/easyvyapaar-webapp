@@ -55,7 +55,7 @@ export function LeaveRequestsPage() {
   const { activeOrganisationId, isWorkspaceLoading } = useUserMe();
   const orgId = activeOrganisationId?.trim() ?? "";
 
-  const [filter, setFilter] = useState<LeaveFilter>("pending");
+  const [filter, setFilter] = useState<LeaveFilter>("all");
   const [requests, setRequests] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(false);
   const [actionId, setActionId] = useState<string | null>(null);

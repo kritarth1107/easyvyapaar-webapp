@@ -54,11 +54,8 @@ export function CreateLeaveRequestModal({
       if (e.key === "Escape" && !saving) onClose();
     };
     document.addEventListener("keydown", onKeyDown);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
     return () => {
       document.removeEventListener("keydown", onKeyDown);
-      document.body.style.overflow = prev;
     };
   }, [open, saving, onClose]);
 
@@ -86,6 +83,7 @@ export function CreateLeaveRequestModal({
         fromDate,
         toDate,
         reason: reason.trim() || undefined,
+        source: "admin",
       });
       onSaved();
       onClose();
@@ -149,18 +147,20 @@ export function CreateLeaveRequestModal({
           </label>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <label className="block">
-              <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-brand-primary-muted">
-                {t("dashboard.staff.attendance.leaveFrom")}
-              </span>
-              <CompactDateField value={fromDate} onChange={handleFromChange} fullWidth />
-            </label>
-            <label className="block">
-              <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-brand-primary-muted">
-                {t("dashboard.staff.attendance.leaveTo")}
-              </span>
-              <CompactDateField value={toDate} onChange={handleToChange} fullWidth />
-            </label>
+            <CompactDateField
+              id="leave-from-date"
+              label={t("dashboard.staff.attendance.leaveFrom")}
+              value={fromDate}
+              onChange={handleFromChange}
+              fullWidth
+            />
+            <CompactDateField
+              id="leave-to-date"
+              label={t("dashboard.staff.attendance.leaveTo")}
+              value={toDate}
+              onChange={handleToChange}
+              fullWidth
+            />
           </div>
 
           <label className="block">

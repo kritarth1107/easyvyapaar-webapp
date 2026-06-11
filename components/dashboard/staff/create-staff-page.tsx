@@ -15,6 +15,7 @@ import {
   type CreateStaffFormState,
 } from "@/lib/staff/create-staff-form";
 import { createStaff } from "@/lib/staff/staff-api-client";
+import { normalizeIndianMobileInput } from "@/lib/validators/indian-mobile";
 import { useTranslation } from "@/lib/localization";
 
 const inputClass =
@@ -80,6 +81,7 @@ export function CreateStaffPage() {
   const handleSave = async () => {
     const nextErrors = validateCreateStaffForm(form, {
       required: t("dashboard.staff.create.validation"),
+      phoneInvalid: t("dashboard.staff.create.phoneInvalid"),
       idTypeRequired: t("dashboard.staff.create.idTypeRequired"),
       idNumberRequired: t("dashboard.staff.create.idNumberRequired"),
     });
@@ -171,11 +173,20 @@ export function CreateStaffPage() {
                 <FieldLabel>{t("dashboard.staff.create.phone")}</FieldLabel>
                 <input
                   type="tel"
+                  inputMode="numeric"
+                  autoComplete="tel-national"
                   value={form.phone}
-                  onChange={(e) => patch({ phone: e.target.value })}
-                  placeholder="9876543210"
-                  className={inputClass}
+                  onChange={(e) => patch({ phone: normalizeIndianMobileInput(e.target.value) })}
+                  onPaste={(e) => {
+                    e.preventDefault();
+                    patch({ phone: normalizeIndianMobileInput(e.clipboardData.getData("text")) });
+                  }}
+                  placeholder={t("dashboard.staff.create.phonePlaceholder")}
+                  className={errors.phone ? `${inputClass} border-red-300` : inputClass}
                 />
+                {errors.phone ? (
+                  <p className="mt-1 text-xs font-medium text-red-600">{errors.phone}</p>
+                ) : null}
               </div>
               <div>
                 <FieldLabel>{t("dashboard.staff.create.email")}</FieldLabel>

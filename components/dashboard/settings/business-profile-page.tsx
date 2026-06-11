@@ -21,6 +21,7 @@ import {
   REGISTRATION_OPTIONS,
   STATE_OPTIONS,
 } from "@/lib/dashboard/business-profile-form";
+import { uploadBusinessLogo } from "@/lib/api/business-profile-client";
 import type { BusinessProfileSuccessResponse } from "@/lib/types/business-profile-api";
 import { useTranslation } from "@/lib/localization";
 
@@ -174,6 +175,8 @@ export function BusinessProfilePage() {
   const [profileLoading, setProfileLoading] = useState(true);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [saveLoading, setSaveLoading] = useState(false);
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [logoError, setLogoError] = useState<string | null>(null);
   const [saveFeedback, setSaveFeedback] = useState<{
     type: "success" | "error";
     message: string;
@@ -263,15 +266,27 @@ export function BusinessProfilePage() {
     });
   };
 
-  const handleLogoUpload = (file: File | undefined) => {
+  const handleLogoUpload = async (file: File | undefined) => {
     if (!file || !file.type.startsWith("image/")) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        patch({ logoDataUrl: reader.result });
-      }
-    };
-    reader.readAsDataURL(file);
+    const organisationId = activeOrganisationId?.trim();
+    if (!organisationId || logoUploading) return;
+
+    setLogoUploading(true);
+    setLogoError(null);
+    try {
+      const profile = await uploadBusinessLogo(organisationId, file);
+      const next = mapProfileToForm(profile);
+      setForm((prev) => ({ ...prev, logoDataUrl: next.logoDataUrl }));
+      setSaved((prev) => ({ ...prev, logoDataUrl: next.logoDataUrl }));
+      await refresh();
+    } catch (error) {
+      setLogoError(
+        error instanceof Error ? error.message : t("dashboard.businessProfile.logoUploadError"),
+      );
+    } finally {
+      setLogoUploading(false);
+      if (logoInputRef.current) logoInputRef.current.value = "";
+    }
   };
 
   const addDetail = () => {
@@ -444,10 +459,12 @@ export function BusinessProfilePage() {
             {/* Left column */}
             <div className="space-y-4 rounded-xl border border-slate-200/90 bg-white p-5 shadow-sm">
               <div className="flex gap-4">
+                <div className="shrink-0">
                 <button
                   type="button"
+                  disabled={logoUploading}
                   onClick={() => logoInputRef.current?.click()}
-                  className="group relative flex h-[88px] w-[88px] shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200/90 bg-slate-50 transition-colors hover:border-brand-primary/30"
+                  className="group relative flex h-[88px] w-[88px] items-center justify-center overflow-hidden rounded-lg border border-slate-200/90 bg-slate-50 transition-colors hover:border-brand-primary/30 disabled:opacity-70"
                   title={t("dashboard.businessProfile.uploadLogo")}
                 >
                   {form.logoDataUrl ? (
@@ -465,16 +482,22 @@ export function BusinessProfilePage() {
                     </span>
                   )}
                   <span className="absolute inset-x-0 bottom-0 bg-black/50 py-0.5 text-[9px] font-medium text-white opacity-0 transition-opacity group-hover:opacity-100">
-                    {t("dashboard.businessProfile.change")}
+                    {logoUploading
+                      ? t("dashboard.businessProfile.logoUploading")
+                      : t("dashboard.businessProfile.change")}
                   </span>
                 </button>
                 <input
                   ref={logoInputRef}
                   type="file"
-                  accept="image/*"
+                  accept="image/png,image/jpeg,image/webp"
                   className="hidden"
-                  onChange={(e) => handleLogoUpload(e.target.files?.[0])}
+                  onChange={(e) => void handleLogoUpload(e.target.files?.[0])}
                 />
+                {logoError ? (
+                  <p className="mt-2 max-w-[11rem] text-xs text-red-600">{logoError}</p>
+                ) : null}
+                </div>
                 <div className="min-w-0 flex-1">
                   <FieldLabel required verifiedTitle={gstVerifiedTitle}>
                     {t("dashboard.businessProfile.businessName")}

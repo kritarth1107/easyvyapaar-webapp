@@ -127,6 +127,8 @@ export type CreateLeaveRequestPayload = {
   fromDate: string;
   toDate: string;
   reason?: string;
+  /** Dashboard creates admin-sourced requests (auto-approved on backend). */
+  source?: "admin" | "staff_app";
 };
 
 export type ReviewLeaveRequestPayload = {
