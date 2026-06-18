@@ -287,8 +287,11 @@ export type MessageTree = {
     aiChat: {
       title: string;
       subtitle: string;
+      brandLabel: string;
       languageHint: string;
       placeholder: string;
+      heroPlaceholder: string;
+      heroSubtitle: string;
       send: string;
       typing: string;
       emptyState: string;
