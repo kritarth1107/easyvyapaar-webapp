@@ -547,10 +547,14 @@ export function normalizePayrollSummary(raw: unknown): PayrollSummary | null {
     deductions,
     netPay,
     status,
+    ...(pickString(row.payPeriodFrom) && { payPeriodFrom: pickString(row.payPeriodFrom) }),
+    ...(pickString(row.payPeriodTo) && { payPeriodTo: pickString(row.payPeriodTo) }),
     ...normalizeAdjustmentBreakdown(row.adjustmentBreakdown)
       ? { adjustmentBreakdown: normalizeAdjustmentBreakdown(row.adjustmentBreakdown) }
       : {},
     ...(pickString(row.notes) && { notes: pickString(row.notes) }),
+    ...(pickString(row.paymentDate) && { paymentDate: pickString(row.paymentDate) }),
+    ...(pickString(row.paymentRemark) && { paymentRemark: pickString(row.paymentRemark) }),
     ...(normalizePayrollProration(row.proration) ? { proration: normalizePayrollProration(row.proration) } : {}),
   };
 }
@@ -574,7 +578,10 @@ export function normalizePayrollDetail(raw: unknown): PayrollDetail | null {
     createdAt,
     updatedAt,
     ...(pickString(row.notes) && { notes: pickString(row.notes) }),
-    ...(pickString(row.paidDate) && { paidDate: pickString(row.paidDate) }),
+    ...(pickString(row.paymentDate, row.paidDate) && {
+      paymentDate: pickString(row.paymentDate, row.paidDate),
+    }),
+    ...(pickString(row.paymentRemark) && { paymentRemark: pickString(row.paymentRemark) }),
   };
 }
 
@@ -769,6 +776,9 @@ export function normalizePayrollPreviewResponse(body: unknown): PayrollPreviewRe
     month,
     toDate,
     ...(pickString(row.fromDate) ? { fromDate: pickString(row.fromDate) } : {}),
+    ...(pickString(row.generatedThroughDate)
+      ? { generatedThroughDate: pickString(row.generatedThroughDate) }
+      : {}),
     items,
   };
 }
@@ -792,6 +802,8 @@ export function normalizePayrollMonthSummary(raw: unknown) {
     totalBasic,
     paidCount,
     processedCount,
+    ...(pickString(row.payPeriodFrom) && { payPeriodFrom: pickString(row.payPeriodFrom) }),
+    ...(pickString(row.payPeriodThrough) && { payPeriodThrough: pickString(row.payPeriodThrough) }),
     ...(pickString(row.lastUpdatedAt) && { lastUpdatedAt: pickString(row.lastUpdatedAt) }),
   };
 }
@@ -799,7 +811,13 @@ export function normalizePayrollMonthSummary(raw: unknown) {
 export function normalizePayrollMonthSummariesResponse(body: unknown) {
   const data = unwrapData(body);
   const row = asRecord(data);
-  const itemsRaw = Array.isArray(row?.items) ? row.items : [];
+  const itemsRaw = Array.isArray(row?.items)
+    ? row.items
+    : Array.isArray(data)
+      ? data
+      : Array.isArray(body)
+        ? body
+        : [];
   return itemsRaw
     .map((item) => normalizePayrollMonthSummary(item))
     .filter((item): item is NonNullable<typeof item> => item !== null);

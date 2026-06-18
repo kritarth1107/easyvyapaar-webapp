@@ -22,8 +22,8 @@ export async function GET(request: Request) {
       );
     }
 
-    const data = normalizePayrollMonthSummariesResponse(body);
-    return NextResponse.json({ ...(body as object), data });
+    const items = normalizePayrollMonthSummariesResponse(body);
+    return NextResponse.json({ ...(body as object), data: { items } });
   } catch (error) {
     console.error("Payroll month summaries error:", error);
     return NextResponse.json({ error: "Failed to load payroll months" }, { status: 500 });

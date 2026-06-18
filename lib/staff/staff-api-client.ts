@@ -37,6 +37,7 @@ import type {
   CreateStaffRequest,
   GeneratePayrollRequest,
   MarkAttendanceRequest,
+  MarkPayrollPaidRequest,
   PayrollDetail,
   PayrollListParams,
   PayrollListResponse,
@@ -512,5 +513,25 @@ export async function fetchPayrollDetail(
   if (!res.ok) throw new Error(extractBackendError(body) ?? "Failed to load payroll detail");
   const payroll = normalizePayrollDetailResponse(body);
   if (!payroll) throw new Error("Failed to load payroll detail");
+  return payroll;
+}
+
+export async function markPayrollPaid(
+  organisationId: string,
+  payrollId: string,
+  payload: MarkPayrollPaidRequest,
+): Promise<PayrollDetail> {
+  const res = await fetch(
+    `/api/staff/payroll/${encodeURIComponent(payrollId)}/mark-paid?organisationId=${encodeURIComponent(organisationId)}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    },
+  );
+  const body = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(extractBackendError(body) ?? "Failed to mark payroll as paid");
+  const payroll = normalizePayrollDetailResponse(body);
+  if (!payroll) throw new Error("Failed to mark payroll as paid");
   return payroll;
 }

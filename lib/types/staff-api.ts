@@ -147,6 +147,8 @@ export type PayrollSummary = {
   staffId: string;
   staffName: string;
   month: string;
+  payPeriodFrom?: string;
+  payPeriodTo?: string;
   baseSalary: number;
   allowances: number;
   deductions: number;
@@ -155,6 +157,8 @@ export type PayrollSummary = {
   proration?: PayrollProration;
   notes?: string;
   status: PayrollStatus;
+  paymentDate?: string;
+  paymentRemark?: string;
 };
 
 export type PayrollMonthSummary = {
@@ -164,6 +168,8 @@ export type PayrollMonthSummary = {
   totalBasic: number;
   paidCount: number;
   processedCount: number;
+  payPeriodFrom?: string;
+  payPeriodThrough?: string;
   lastUpdatedAt?: string;
 };
 
@@ -222,16 +228,19 @@ export type PayrollPreviewResponse = {
   month: string;
   toDate: string;
   fromDate?: string;
+  generatedThroughDate?: string;
   items: PayrollPreviewEntry[];
 };
 
 export type PayrollDetail = PayrollSummary & {
   organisationId: string;
-  allowances: number;
-  notes?: string;
-  paidDate?: string;
   createdAt: string;
   updatedAt: string;
+};
+
+export type MarkPayrollPaidRequest = {
+  paymentDate: string;
+  paymentRemark?: string;
 };
 
 export type StaffListParams = {

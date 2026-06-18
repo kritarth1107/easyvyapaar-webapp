@@ -53,11 +53,14 @@ export function PayrollGeneratePage() {
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [attendanceModalStaffId, setAttendanceModalStaffId] = useState<string | null>(null);
+  /** Only dates confirmed via "Apply from date" — not the in-progress date field value. */
+  const [appliedStaffFromDates, setAppliedStaffFromDates] = useState<Record<string, string>>({});
+  const [generatedThroughDate, setGeneratedThroughDate] = useState<string | null>(null);
 
-  const buildStaffFromDates = useCallback((source: EditableRow[]) => {
+  const buildStaffFromDates = useCallback((source: Record<string, string>) => {
     const map: Record<string, string> = {};
-    for (const row of source) {
-      if (row.customFromDate?.trim()) map[row.staffId] = row.customFromDate.trim();
+    for (const [staffId, fromDate] of Object.entries(source)) {
+      if (fromDate.trim()) map[staffId] = fromDate.trim();
     }
     return Object.keys(map).length > 0 ? map : undefined;
   }, []);
@@ -68,6 +71,8 @@ export function PayrollGeneratePage() {
     setError(null);
     try {
       const preview = await previewPayroll(orgId, { toDate });
+      setAppliedStaffFromDates({});
+      setGeneratedThroughDate(preview.generatedThroughDate ?? null);
       setRows(
         preview.items.map((item) => ({
           ...item,
@@ -77,6 +82,7 @@ export function PayrollGeneratePage() {
       );
     } catch (err) {
       setRows([]);
+      setGeneratedThroughDate(null);
       setError(err instanceof Error ? err.message : t("dashboard.staff.payroll.previewError"));
     } finally {
       setLoading(false);
@@ -97,6 +103,25 @@ export function PayrollGeneratePage() {
       ),
     [rows],
   );
+
+  const hasPendingFromDateChange = useMemo(
+    () =>
+      rows.some(
+        (row) =>
+          row.editable &&
+          row.proration &&
+          row.customFromDate &&
+          row.customFromDate !== row.proration.payPeriodFrom,
+      ),
+    [rows],
+  );
+
+  const editableRows = useMemo(() => rows.filter((row) => row.editable), [rows]);
+
+  const alreadyGeneratedThroughSelectedDate = useMemo(() => {
+    if (!generatedThroughDate || editableRows.length > 0) return false;
+    return generatedThroughDate >= toDate;
+  }, [generatedThroughDate, editableRows.length, toDate]);
 
   const attendanceModalRow = useMemo(
     () => rows.find((row) => row.staffId === attendanceModalStaffId) ?? null,
@@ -133,6 +158,7 @@ export function PayrollGeneratePage() {
       });
       const updated = preview.items.find((item) => item.staffId === staffId);
       if (updated) {
+        setAppliedStaffFromDates((prev) => ({ ...prev, [staffId]: customFromDate }));
         setRows((prev) =>
           prev.map((row) =>
             row.staffId === staffId
@@ -153,24 +179,37 @@ export function PayrollGeneratePage() {
   };
 
   const handleSubmit = async () => {
-    if (hasUnresolvedMismatch) return;
+    if (hasPendingFromDateChange) {
+      setError(t("dashboard.staff.payroll.applyFromDatePending"));
+      return;
+    }
+    if (hasUnresolvedMismatch) {
+      setError(t("dashboard.staff.payroll.attendanceMismatchBlocked"));
+      return;
+    }
+    if (editableRows.length === 0) {
+      setError(t("dashboard.staff.payroll.noEditableStaff"));
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
-      const staffFromDates = buildStaffFromDates(rows);
-      await generatePayroll(orgId, {
+      const staffFromDates = buildStaffFromDates(appliedStaffFromDates);
+      const result = await generatePayroll(orgId, {
         toDate,
         ...(staffFromDates ? { staffFromDates } : {}),
-        entries: rows
-          .filter((row) => row.editable)
-          .map((row) => ({
-            staffId: row.staffId,
-            basicSalary: row.basicSalary,
-            allowances: row.allowances,
-            deductions: row.deductions,
-            notes: row.notes,
-          })),
+        entries: editableRows.map((row) => ({
+          staffId: row.staffId,
+          basicSalary: row.basicSalary,
+          allowances: row.allowances,
+          deductions: row.deductions,
+          notes: row.notes,
+        })),
       });
+      if (result.items.length === 0) {
+        setError(t("dashboard.staff.payroll.generateNoRecords"));
+        return;
+      }
       router.push("/dashboard/staff-payroll/payroll");
     } catch (err) {
       setError(err instanceof Error ? err.message : t("dashboard.staff.payroll.generateError"));
@@ -184,18 +223,17 @@ export function PayrollGeneratePage() {
     setLoading(true);
     setError(null);
     try {
-      const staffFromDates = buildStaffFromDates(rows);
+      const staffFromDates = buildStaffFromDates(appliedStaffFromDates);
       const preview = await previewPayroll(orgId, {
         toDate,
         ...(staffFromDates ? { staffFromDates } : {}),
       });
+      setGeneratedThroughDate(preview.generatedThroughDate ?? null);
       setRows(
         preview.items.map((item) => ({
           ...item,
           rowKey: item.staffId,
-          customFromDate:
-            rows.find((r) => r.staffId === item.staffId)?.customFromDate ??
-            item.proration?.payPeriodFrom,
+          customFromDate: item.proration?.payPeriodFrom,
         })),
       );
     } catch (err) {
@@ -203,7 +241,7 @@ export function PayrollGeneratePage() {
     } finally {
       setLoading(false);
     }
-  }, [orgId, toDate, rows, buildStaffFromDates, t]);
+  }, [orgId, toDate, appliedStaffFromDates, buildStaffFromDates, t]);
 
   return (
     <div className="p-4 lg:p-6">
@@ -248,6 +286,15 @@ export function PayrollGeneratePage() {
         </div>
       </div>
 
+      {generatedThroughDate && !loading ? (
+        <div className="mb-4 rounded-sm border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900">
+          {t("dashboard.staff.payroll.lastGeneratedThrough").replace(
+            "{date}",
+            formatDateLabel(generatedThroughDate),
+          )}
+        </div>
+      ) : null}
+
       {error ? (
         <div className="mb-4 rounded-sm border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
@@ -257,7 +304,14 @@ export function PayrollGeneratePage() {
       {loading && rows.length === 0 ? (
         <p className="py-12 text-center text-brand-primary-muted">{t("common.pleaseWait")}</p>
       ) : rows.length === 0 ? (
-        <p className="py-12 text-center text-brand-primary-muted">{t("dashboard.staff.payroll.noStaffForPeriod")}</p>
+        <p className="py-12 text-center text-brand-primary-muted">
+          {alreadyGeneratedThroughSelectedDate && generatedThroughDate
+            ? t("dashboard.staff.payroll.alreadyGeneratedThrough").replace(
+                "{date}",
+                formatDateLabel(generatedThroughDate),
+              )
+            : t("dashboard.staff.payroll.noStaffForPeriod")}
+        </p>
       ) : (
         <div className="space-y-4">
           {rows.map((row) => {
@@ -292,7 +346,11 @@ export function PayrollGeneratePage() {
                       {formatInr(row.netPay)}
                     </p>
                     {!row.editable ? (
-                      <p className="text-xs text-brand-primary-muted">{t("dashboard.staff.payroll.lockedPaid")}</p>
+                      <p className="text-xs text-brand-primary-muted">
+                        {row.existingStatus === "paid"
+                          ? t("dashboard.staff.payroll.lockedPaid")
+                          : t("dashboard.staff.payroll.lockedGenerated")}
+                      </p>
                     ) : null}
                   </div>
                 </button>
@@ -485,9 +543,25 @@ export function PayrollGeneratePage() {
       )}
 
       <div className="sticky bottom-0 mt-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200/90 bg-white px-4 py-3 shadow-md">
-        <p className="text-sm font-semibold text-brand-primary">
-          {t("dashboard.staff.payroll.totalNet")}: {formatInr(totalNet)}
-        </p>
+        <div className="space-y-1">
+          <p className="text-sm font-semibold text-brand-primary">
+            {t("dashboard.staff.payroll.totalNet")}: {formatInr(totalNet)}
+          </p>
+          {hasPendingFromDateChange ? (
+            <p className="text-xs text-amber-800">{t("dashboard.staff.payroll.applyFromDatePending")}</p>
+          ) : alreadyGeneratedThroughSelectedDate ? (
+            <p className="text-xs text-amber-800">
+              {generatedThroughDate
+                ? t("dashboard.staff.payroll.alreadyGeneratedThrough").replace(
+                    "{date}",
+                    formatDateLabel(generatedThroughDate),
+                  )
+                : t("dashboard.staff.payroll.noEditableStaff")}
+            </p>
+          ) : hasUnresolvedMismatch ? (
+            <p className="text-xs text-amber-800">{t("dashboard.staff.payroll.attendanceMismatchBlocked")}</p>
+          ) : null}
+        </div>
         <div className="flex gap-2">
           <Link
             href="/dashboard/staff-payroll/payroll"
@@ -497,7 +571,15 @@ export function PayrollGeneratePage() {
           </Link>
           <button
             type="button"
-            disabled={submitting || loading || rows.length === 0 || hasUnresolvedMismatch}
+            disabled={
+              submitting ||
+              loading ||
+              rows.length === 0 ||
+              editableRows.length === 0 ||
+              hasUnresolvedMismatch ||
+              hasPendingFromDateChange ||
+              alreadyGeneratedThroughSelectedDate
+            }
             onClick={() => void handleSubmit()}
             className="rounded-md bg-brand-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
           >
