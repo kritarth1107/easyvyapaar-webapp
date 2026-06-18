@@ -32,6 +32,7 @@ export function DashboardShell({ children, hasSession = false }: DashboardShellP
   const router = useRouter();
   const pathname = usePathname();
   const isPosFullscreen = pathname?.startsWith("/dashboard/pos");
+  const isAiChatFullscreen = pathname?.startsWith("/dashboard/ai-chat");
   const isMobileOrTablet = useIsMobileOrTablet();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [businessSwitchOpen, setBusinessSwitchOpen] = useState(false);
@@ -113,7 +114,11 @@ export function DashboardShell({ children, hasSession = false }: DashboardShellP
             />
             <main
               ref={mainScrollRef}
-              className="dashboard-content scrollbar-brand flex-1 overflow-y-auto text-brand-primary"
+              className={`dashboard-content text-brand-primary ${
+                isAiChatFullscreen
+                  ? "flex min-h-0 flex-1 flex-col overflow-hidden"
+                  : "scrollbar-brand flex-1 overflow-y-auto"
+              }`}
             >
               <PendingInvitesBanner />
               {children}

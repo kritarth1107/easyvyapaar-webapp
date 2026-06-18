@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useCallback, useState } from "react";
+import { GlobalSearchDialog, useGlobalSearchShortcut } from "@/components/dashboard/global-search-dialog";
 import { NotificationsPopover } from "@/components/dashboard/notifications-popover";
 import { NavIcon } from "@/components/dashboard/nav-icon";
 import { UserAccountMenu } from "@/components/dashboard/user-account-menu";
@@ -93,6 +95,10 @@ export function DashboardTopbar({
   const { user } = useUserMe();
   const canOpenBusinessModal = (user?.organisations.length ?? 0) >= 1;
   const isHome = pathname === "/dashboard";
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  const openSearch = useCallback(() => setSearchOpen(true), []);
+  useGlobalSearchShortcut(openSearch);
 
   return (
     <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-3 border-b border-slate-200/80 bg-white/90 px-3 backdrop-blur-md lg:gap-4 lg:px-6">
@@ -164,21 +170,24 @@ export function DashboardTopbar({
 
       {/* Center — search */}
       <div className="hidden flex-1 justify-center px-2 md:flex">
-        <label className="relative w-full max-w-md">
+        <button
+          type="button"
+          onClick={openSearch}
+          className="relative w-full max-w-md text-left"
+          aria-label={t("dashboard.globalSearch.title")}
+        >
           <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-brand-primary-muted">
             <SearchIcon />
           </span>
-          <input
-            type="search"
-            placeholder={t("dashboard.searchPlaceholder")}
-            className="h-10 w-full rounded-xl border border-slate-200/90 bg-slate-50/80 pl-10 pr-4 text-sm text-brand-primary outline-none transition-all placeholder:text-brand-primary-muted/70 focus:border-brand-primary/25 focus:bg-white focus:ring-2 focus:ring-brand-primary/[0.08]"
-            disabled
-            aria-label={t("dashboard.searchPlaceholder")}
-          />
+          <span
+            className="flex h-10 w-full items-center rounded-xl border border-slate-200/90 bg-slate-50/80 pl-10 pr-16 text-sm text-brand-primary-muted/70 transition-all hover:border-brand-primary/25 hover:bg-white"
+          >
+            {t("dashboard.searchPlaceholder")}
+          </span>
           <kbd className="pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-medium text-brand-primary-muted lg:inline">
             ⌘K
           </kbd>
-        </label>
+        </button>
       </div>
 
       {/* Right — Sales Invoice, POS, alerts, user */}
@@ -214,12 +223,23 @@ export function DashboardTopbar({
         </Link>
         ) : null}
 
+        <button
+          type="button"
+          onClick={openSearch}
+          className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200/90 text-brand-primary transition-colors hover:bg-slate-50 md:hidden"
+          aria-label={t("dashboard.globalSearch.title")}
+        >
+          <SearchIcon />
+        </button>
+
         <NotificationsPopover />
 
         <UserAccountMenu
           onOpenSwitchBusiness={canOpenBusinessModal ? onOpenBusinessSwitch : undefined}
         />
       </div>
+
+      <GlobalSearchDialog open={searchOpen} onClose={() => setSearchOpen(false)} />
     </header>
   );
 }

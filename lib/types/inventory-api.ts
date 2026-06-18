@@ -46,6 +46,18 @@ export type InventoryItemSummary = {
   imageUrl?: string;
 };
 
+export type InventorySerialSearchResult = {
+  serialNumber: string;
+  status: InventorySerialNumber["status"];
+  itemId: string;
+  itemName: string;
+  sku: string;
+};
+
+export type InventorySerialSearchResponse = {
+  items: InventorySerialSearchResult[];
+};
+
 export type InventoryCategory = {
   categoryId: string;
   organisationId: string;

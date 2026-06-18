@@ -1,15 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { AiRichCardView } from "@/components/dashboard/ai-chat/rich-card-view";
+import type { AiRichCard } from "@/lib/types/ai-chat-api";
 
-type RichCard =
-  | { kind: "summary"; total: string; bills: string; trend: string; rows: { label: string; value: string }[] }
-  | { kind: "stock"; name: string; qty: string; status: "ok" | "low"; hint: string }
-  | { kind: "invoice"; id: string; party: string; total: string; actions: string[] }
-  | { kind: "ledger"; party: string; amount: string; overdue: string }
-  | { kind: "list"; title: string; items: string[]; action: string };
+type RichCard = AiRichCard;
 
 type ChatTurn = { user: string; assistant: string; card?: RichCard };
+
+type VisibleMessage = { id: number; role: "user" | "assistant"; text: string; card?: RichCard };
 
 const CHAT_SCRIPT: ChatTurn[] = [
   {
@@ -60,93 +59,7 @@ const CHAT_SCRIPT: ChatTurn[] = [
   },
 ];
 
-type VisibleMessage = { id: number; role: "user" | "assistant"; text: string; card?: RichCard };
-
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
-
-function RichCardView({ card }: { card: RichCard }) {
-  if (card.kind === "summary") {
-    return (
-      <div className="mt-2 rounded-sm border border-slate-200 bg-brand-surface/80">
-        <div className="flex items-end justify-between border-b border-slate-200 px-2.5 py-2">
-          <div>
-            <p className="text-[9px] font-semibold uppercase text-brand-primary-muted">Today</p>
-            <p className="text-base font-bold tabular-nums text-brand-primary">{card.total}</p>
-          </div>
-          <div className="text-right text-[10px]">
-            <p className="text-brand-primary-muted">{card.bills}</p>
-            <p className="font-semibold text-emerald-600">{card.trend}</p>
-          </div>
-        </div>
-        <div className="space-y-1 px-2.5 py-2">
-          {card.rows.map((row) => (
-            <div key={row.label} className="flex justify-between text-[10px]">
-              <span className="text-brand-primary-muted">{row.label}</span>
-              <span className="font-semibold tabular-nums">{row.value}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (card.kind === "stock") {
-    return (
-      <div className="mt-2 rounded-sm border border-emerald-200 bg-emerald-50 px-2.5 py-2">
-        <div className="flex justify-between gap-2 text-[10px]">
-          <span className="font-bold text-brand-primary">{card.name}</span>
-          <span className="font-bold text-emerald-700">{card.qty}</span>
-        </div>
-        <p className="mt-0.5 text-[9px] text-emerald-800/70">{card.hint}</p>
-      </div>
-    );
-  }
-
-  if (card.kind === "invoice") {
-    return (
-      <div className="mt-2 rounded-sm border border-slate-200 bg-white">
-        <div className="flex justify-between border-b border-slate-100 px-2.5 py-1.5 text-[10px]">
-          <span className="font-bold text-brand-primary">{card.id}</span>
-          <span className="font-bold text-brand-orange-2">{card.total}</span>
-        </div>
-        <p className="px-2.5 py-1 text-[10px] text-brand-primary-muted">{card.party}</p>
-        <div className="flex gap-1 border-t border-slate-100 p-1.5">
-          {card.actions.map((a) => (
-            <span key={a} className="flex-1 rounded bg-brand-surface py-1 text-center text-[9px] font-semibold">
-              {a}
-            </span>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (card.kind === "ledger") {
-    return (
-      <div className="mt-2 rounded-sm border border-rose-200 bg-rose-50 px-2.5 py-2">
-        <p className="text-[10px] font-bold">{card.party}</p>
-        <p className="text-base font-bold tabular-nums text-rose-600">{card.amount}</p>
-        <p className="text-[9px] text-rose-700/80">{card.overdue}</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="mt-2 rounded-sm border border-slate-200 bg-white px-2.5 py-2">
-      <p className="text-[9px] font-semibold uppercase text-brand-primary-muted">{card.title}</p>
-      <ul className="mt-1 space-y-0.5">
-        {card.items.map((item) => (
-          <li key={item} className="text-[10px] text-brand-primary">
-            · {item}
-          </li>
-        ))}
-      </ul>
-      <p className="mt-1.5 rounded brand-gradient-orange py-1 text-center text-[9px] font-bold text-white">
-        {card.action}
-      </p>
-    </div>
-  );
-}
 
 export function HeroAiChatDemo() {
   const [messages, setMessages] = useState<VisibleMessage[]>([]);
@@ -218,7 +131,7 @@ export function HeroAiChatDemo() {
                 }`}
               >
                 {msg.text}
-                {msg.card && <RichCardView card={msg.card} />}
+                {msg.card && <AiRichCardView card={msg.card} />}
               </div>
             </div>
           ))}

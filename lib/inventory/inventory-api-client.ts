@@ -5,6 +5,7 @@ import {
   normalizeCategoryListResponse,
   normalizeInventoryDetailResponse,
   normalizeInventoryPaginatedResponse,
+  normalizeInventorySerialSearchResponse,
   normalizeInventoryStockStats,
   normalizeItemDetailList,
   normalizeStockAdjustmentListResponse,
@@ -18,6 +19,7 @@ import type {
   InventoryItemDetail,
   InventoryItemListParams,
   InventoryItemListResponse,
+  InventorySerialSearchResponse,
   InventoryStockAdjustment,
   InventoryStockStats,
   StockAdjustmentResult,
@@ -114,6 +116,24 @@ export async function fetchAllInventoryItems(
   }
 
   return all;
+}
+
+export async function fetchInventorySerialSearch(
+  organisationId: string,
+  params: { search: string; limit?: number },
+): Promise<InventorySerialSearchResponse> {
+  const search = new URLSearchParams({
+    organisationId,
+    search: params.search.trim(),
+  });
+  if (params.limit) search.set("limit", String(params.limit));
+
+  const res = await fetch(`/api/inventory/serial-search?${search.toString()}`);
+  const body = await parseJsonResponse(res);
+  if (!res.ok) {
+    throw new Error(extractBackendError(body) ?? "Failed to search serial numbers");
+  }
+  return normalizeInventorySerialSearchResponse(body);
 }
 
 export async function fetchInventoryStockStats(organisationId: string): Promise<InventoryStockStats> {

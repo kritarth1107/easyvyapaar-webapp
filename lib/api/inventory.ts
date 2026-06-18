@@ -6,6 +6,8 @@ import type {
   InventoryItemDetail,
   InventoryItemListResponse,
   InventoryItemSummary,
+  InventorySerialSearchResponse,
+  InventorySerialSearchResult,
   InventoryStockAdjustment,
   InventoryStockStats,
   PaginationMeta,
@@ -487,4 +489,47 @@ export function normalizeStockAdjustmentResult(body: unknown): StockAdjustmentRe
   const item = normalizeItemDetail(data.item);
   if (!adjustment || !item) return null;
   return { adjustment, item };
+}
+
+const SERIAL_STATUSES = new Set([
+  "in_stock",
+  "sold",
+  "returned",
+  "damaged",
+  "reserved",
+] as const);
+
+export function normalizeInventorySerialSearchResult(raw: unknown): InventorySerialSearchResult | null {
+  const row = asRecord(raw);
+  if (!row) return null;
+
+  const serialNumber = pickString(row.serialNumber);
+  const itemId = pickString(row.itemId);
+  const itemName = pickString(row.itemName);
+  const sku = pickString(row.sku);
+  const status = pickString(row.status);
+
+  if (!serialNumber || !itemId || !itemName || !sku || !status || !SERIAL_STATUSES.has(status as never)) {
+    return null;
+  }
+
+  return {
+    serialNumber,
+    status: status as InventorySerialSearchResult["status"],
+    itemId,
+    itemName,
+    sku,
+  };
+}
+
+export function normalizeInventorySerialSearchResponse(body: unknown): InventorySerialSearchResponse {
+  const root = asRecord(body);
+  if (!root || root.success !== true) return { items: [] };
+  const data = asRecord(root.data);
+  if (!data || !Array.isArray(data.items)) return { items: [] };
+  return {
+    items: data.items
+      .map((entry) => normalizeInventorySerialSearchResult(entry))
+      .filter((entry): entry is InventorySerialSearchResult => entry !== null),
+  };
 }

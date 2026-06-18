@@ -228,6 +228,30 @@ export type MessageTree = {
     loadingWorkspaceHint: string;
     breadcrumbHome: string;
     searchPlaceholder: string;
+    globalSearch: {
+      title: string;
+      placeholder: string;
+      typeToSearch: string;
+      noResults: string;
+      noOrganisation: string;
+      hintNavigate: string;
+      hintTap: string;
+      categoryPages: string;
+      categoryParties: string;
+      categoryItems: string;
+      categorySerials: string;
+      categorySalesInvoices: string;
+      categoryPurchaseBills: string;
+      categoryPurchaseOrders: string;
+      categoryPurchaseReturns: string;
+      categoryQuotations: string;
+      categoryDeliveryChallans: string;
+      categoryCreditNotes: string;
+      categorySalesReturns: string;
+      categoryExpenses: string;
+      categoryPayments: string;
+      categoryStaff: string;
+    };
     accountMenu: string;
     accountSettings: string;
     accountBusinessSettings: string;
@@ -259,6 +283,25 @@ export type MessageTree = {
       aiChatDesc: string;
       whatsappTitle: string;
       whatsappDesc: string;
+    };
+    aiChat: {
+      title: string;
+      subtitle: string;
+      languageHint: string;
+      placeholder: string;
+      send: string;
+      typing: string;
+      emptyState: string;
+      noOrganisation: string;
+      error: string;
+      newChat: string;
+      historyTitle: string;
+      emptyHistory: string;
+      loadingHistory: string;
+      loadingConversation: string;
+      welcomeTitle: string;
+      footerHint: string;
+      inputHint: string;
     };
     inventory: {
       subtitle: string;

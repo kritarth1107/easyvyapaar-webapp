@@ -1,10 +1,9 @@
-import { DeferredFeaturePage } from "@/components/dashboard/deferred-feature-page";
+import { AiChatPage } from "@/components/dashboard/ai-chat/ai-chat-page";
 
-export default function AiChatPage() {
+export default function DashboardAiChatPage() {
   return (
-    <DeferredFeaturePage
-      titleKey="dashboard.deferred.aiChatTitle"
-      descriptionKey="dashboard.deferred.aiChatDesc"
-    />
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <AiChatPage />
+    </div>
   );
 }

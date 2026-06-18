@@ -602,3 +602,15 @@ body {
 .chat-msg-in {
   animation: chat-msg-in 0.35s ease-out both;
 }
+
+/* AI Chat */
+.ai-chat-greeting {
+  font-family: Georgia, "Times New Roman", Times, serif;
+  letter-spacing: -0.02em;
+  font-weight: 400;
+}
+
+.ai-chat-root {
+  overflow-x: hidden;
+  max-width: 100%;
+}
