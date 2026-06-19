@@ -325,6 +325,7 @@ export type MessageTree = {
       emptyState: string;
       noOrganisation: string;
       error: string;
+      rateLimitError: string;
       newChat: string;
       historyTitle: string;
       emptyHistory: string;

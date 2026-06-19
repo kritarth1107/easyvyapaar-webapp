@@ -207,8 +207,12 @@ export function AiChatPage({ conversationIdFromRoute }: { conversationIdFromRout
         }
         void refreshConversations();
       } catch (err) {
-        setError(err instanceof Error ? err.message : t("dashboard.aiChat.error"));
-        setMessages((prev) => prev.filter((msg) => msg.id !== optimisticUser.id));
+        const message = err instanceof Error ? err.message : t("dashboard.aiChat.error");
+        setError(
+          /too many requests/i.test(message)
+            ? t("dashboard.aiChat.rateLimitError")
+            : message,
+        );
       } finally {
         setLoading(false);
       }

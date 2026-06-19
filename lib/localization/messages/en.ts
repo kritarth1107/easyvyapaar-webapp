@@ -319,6 +319,7 @@ export const enMessages: MessageTree = {
         "I can create sales invoices, purchase bills, parties, expenses, mark attendance, generate payroll, and answer any business question. Tell me what you need — I'll ask for anything missing.",
       noOrganisation: "Select a business to use AI chat.",
       error: "Could not get AI reply. Please try again.",
+      rateLimitError: "Too many messages in a short time. Wait a few seconds, then send once — do not tap repeatedly.",
       newChat: "New chat",
       historyTitle: "Chat history",
       emptyHistory: "No past chats yet. Start a conversation!",
