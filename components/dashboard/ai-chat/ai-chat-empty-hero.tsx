@@ -1,6 +1,7 @@
 "use client";
 
-import { AiSparkleIcon } from "@/components/dashboard/ai-chat/ai-chat-avatars";
+import Image from "next/image";
+import { BRAND_ICON } from "@/lib/brand/assets";
 import { useTranslation } from "@/lib/localization";
 
 const PROMPT_ICONS = ["₹", "📦", "👥", "📊"] as const;
@@ -19,8 +20,15 @@ export function AiChatEmptyHero({ greeting, onPromptClick, prompts }: AiChatEmpt
       <div className="ai-chat-hero-glow pointer-events-none absolute inset-x-0 top-8 mx-auto h-48 w-[min(100%,28rem)] rounded-full" />
 
       <div className="relative z-10 flex flex-col items-center text-center">
-        <div className="ai-chat-orb mb-5 flex h-14 w-14 items-center justify-center rounded-2xl brand-gradient-orange text-white shadow-lg shadow-orange-500/30">
-          <AiSparkleIcon className="h-7 w-7" />
+        <div className="ai-chat-orb mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-white p-2 shadow-lg shadow-orange-500/15 ring-1 ring-slate-200/80">
+          <Image
+            src={BRAND_ICON}
+            alt="Mahajaan"
+            width={48}
+            height={48}
+            className="h-full w-full object-contain"
+            priority
+          />
         </div>
 
         <span className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-brand-orange-2/20 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-brand-orange-2 shadow-sm">

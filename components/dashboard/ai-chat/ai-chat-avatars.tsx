@@ -1,3 +1,6 @@
+import Image from "next/image";
+import { BRAND_ICON } from "@/lib/brand/assets";
+
 export function AiSparkleIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
@@ -22,13 +25,20 @@ export function AiSparkleIcon({ className }: { className?: string }) {
 export function AiAssistantAvatar({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
   const dim =
     size === "lg" ? "h-11 w-11" : size === "sm" ? "h-8 w-8" : "h-9 w-9";
-  const icon =
-    size === "lg" ? "h-5 w-5" : size === "sm" ? "h-3.5 w-3.5" : "h-4 w-4";
+  const imageSize = size === "lg" ? 40 : size === "sm" ? 28 : 32;
+
   return (
     <div
-      className={`${dim} relative flex shrink-0 items-center justify-center rounded-full brand-gradient-orange text-white shadow-md shadow-orange-500/20 ring-2 ring-white`}
+      className={`${dim} relative flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-white shadow-md ring-2 ring-white`}
     >
-      <AiSparkleIcon className={icon} />
+      <Image
+        src={BRAND_ICON}
+        alt="Mahajaan AI"
+        width={imageSize}
+        height={imageSize}
+        className="h-[88%] w-[88%] object-contain"
+        priority={size === "lg"}
+      />
     </div>
   );
 }
