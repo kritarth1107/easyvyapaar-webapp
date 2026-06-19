@@ -26,26 +26,37 @@ export function AiAssistantAvatar({ size = "md" }: { size?: "sm" | "md" | "lg" }
     size === "lg" ? "h-5 w-5" : size === "sm" ? "h-3.5 w-3.5" : "h-4 w-4";
   return (
     <div
-      className={`${dim} relative flex shrink-0 items-center justify-center rounded-xl brand-gradient-orange text-white shadow-lg shadow-orange-500/25 ring-1 ring-white/20`}
+      className={`${dim} relative flex shrink-0 items-center justify-center rounded-full brand-gradient-orange text-white shadow-md shadow-orange-500/20 ring-2 ring-white`}
     >
       <AiSparkleIcon className={icon} />
     </div>
   );
 }
 
-export function UserAvatar({ size = "md" }: { size?: "sm" | "md" }) {
+export function UserAvatar({
+  size = "md",
+  initial,
+}: {
+  size?: "sm" | "md";
+  initial?: string;
+}) {
   const dim = size === "sm" ? "h-8 w-8" : "h-9 w-9";
+  const letter = initial?.trim().charAt(0).toUpperCase() || "";
   return (
     <div
-      className={`${dim} flex shrink-0 items-center justify-center rounded-xl bg-brand-primary text-white shadow-md ring-1 ring-white/30`}
+      className={`${dim} flex shrink-0 items-center justify-center rounded-full bg-brand-primary text-sm font-semibold text-white shadow-md ring-2 ring-white`}
     >
-      <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 opacity-90" aria-hidden>
-        <path
-          fillRule="evenodd"
-          d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
-          clipRule="evenodd"
-        />
-      </svg>
+      {letter ? (
+        <span aria-hidden>{letter}</span>
+      ) : (
+        <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 opacity-90" aria-hidden>
+          <path
+            fillRule="evenodd"
+            d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+            clipRule="evenodd"
+          />
+        </svg>
+      )}
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useUserMe } from "@/components/providers/user-me-provider";
+import { AiChatEmptyHero } from "@/components/dashboard/ai-chat/ai-chat-empty-hero";
 import { AiChatInput } from "@/components/dashboard/ai-chat/ai-chat-input";
 import { AiChatHistorySidebar } from "@/components/dashboard/ai-chat/ai-chat-history-sidebar";
 import { AiChatMessageRow, AiChatTypingRow } from "@/components/dashboard/ai-chat/ai-chat-message-row";
@@ -27,6 +28,7 @@ function mapDetailToMessages(
     role: "user" | "assistant";
     content: string;
     card?: AiChatMessage["card"];
+    feedback?: "up" | "down";
     createdAt: string;
   }>,
 ): AiChatMessage[] {
@@ -36,6 +38,7 @@ function mapDetailToMessages(
     text: row.content,
     createdAt: row.createdAt,
     ...(row.card ? { card: row.card } : {}),
+    ...(row.feedback ? { feedback: row.feedback } : {}),
   }));
 }
 
@@ -58,6 +61,7 @@ export function AiChatPage() {
   const shopLabel = activeOrganisation?.name ?? "";
   const userName = user?.name ?? "";
   const userId = user?.userId ?? "guest";
+  const userInitial = userName.trim().charAt(0) || user?.mobile?.trim().charAt(0) || "";
 
   const personalizedGreeting = useMemo(
     () =>
@@ -151,7 +155,7 @@ export function AiChatPage() {
         setMessages((prev) => [
           ...prev,
           {
-            id: `assistant-${Date.now()}`,
+            id: response.messageId,
             role: "assistant",
             text: response.reply,
             ...(response.card ? { card: response.card } : {}),
@@ -169,6 +173,13 @@ export function AiChatPage() {
     [activeConversationId, loading, orgId, refreshConversations, t],
   );
 
+  const handleFeedbackChange = useCallback((messageId: string, feedback: "up" | "down" | null) => {
+    if (!feedback) return;
+    setMessages((prev) =>
+      prev.map((msg) => (msg.id === messageId ? { ...msg, feedback } : msg)),
+    );
+  }, []);
+
   const sidebarProps = {
     conversations,
     activeConversationId,
@@ -181,6 +192,17 @@ export function AiChatPage() {
     loadingLabel: t("dashboard.aiChat.loadingHistory"),
   };
 
+  const inputSharedProps = {
+    value: input,
+    onChange: setInput,
+    onSubmit: () => void sendMessage(input),
+    sendLabel: t("dashboard.aiChat.send"),
+    disabled: loadingConversation,
+    loading,
+    quickPrompts: QUICK_PROMPTS,
+    browsePromptsLabel: t("dashboard.aiChat.browsePrompts"),
+  };
+
   if (!orgId) {
     return (
       <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center text-sm text-brand-primary-muted">
@@ -190,23 +212,26 @@ export function AiChatPage() {
   }
 
   return (
-    <div className="ai-chat-root flex h-full min-h-0 w-full overflow-hidden bg-white">
+    <div className="ai-chat-root flex h-full min-h-0 w-full overflow-hidden bg-[#f0f2f5]">
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <div className="flex shrink-0 items-center justify-end gap-2 px-4 py-2 lg:hidden">
-          <button
-            type="button"
-            onClick={startNewChat}
-            className="text-[12px] text-brand-primary-muted"
-          >
-            + {t("dashboard.aiChat.newChat")}
-          </button>
-          <button
-            type="button"
-            onClick={() => setHistoryOpen(true)}
-            className="rounded-md px-2 py-1 text-[12px] text-brand-primary-muted hover:bg-slate-50"
-          >
-            {t("dashboard.aiChat.historyTitle")}
-          </button>
+        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-slate-200/80 bg-white px-4 py-2.5 lg:hidden">
+          <p className="text-sm font-semibold text-brand-primary">{t("dashboard.aiChat.brandLabel")}</p>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={startNewChat}
+              className="text-[12px] font-medium text-brand-orange-2"
+            >
+              + {t("dashboard.aiChat.newChat")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setHistoryOpen(true)}
+              className="rounded-lg px-2 py-1 text-[12px] text-brand-primary-muted hover:bg-slate-50"
+            >
+              {t("dashboard.aiChat.historyTitle")}
+            </button>
+          </div>
         </div>
 
         <div
@@ -215,46 +240,36 @@ export function AiChatPage() {
         >
           {loadingConversation ? (
             <div className="flex flex-1 items-center justify-center">
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-200 border-t-brand-orange-2" />
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-200 border-t-brand-orange-2" />
             </div>
           ) : isEmptyState ? (
-            <div className="flex flex-1 flex-col items-center justify-center px-4 pb-8 pt-6">
-              <h1 className="ai-chat-greeting text-center text-[1.65rem] text-brand-primary">
-                {personalizedGreeting}
-              </h1>
-
-              <div className="mt-8 w-full max-w-xl">
+            <>
+              <AiChatEmptyHero
+                greeting={personalizedGreeting}
+                prompts={QUICK_PROMPTS}
+                onPromptClick={(prompt) => void sendMessage(prompt)}
+              />
+              <div className="shrink-0 px-4 pb-6">
                 <AiChatInput
-                  value={input}
-                  onChange={setInput}
-                  onSubmit={() => void sendMessage(input)}
+                  {...inputSharedProps}
                   placeholder={t("dashboard.aiChat.heroPlaceholder")}
-                  sendLabel={t("dashboard.aiChat.send")}
                   footerHint={t("dashboard.aiChat.footerHint")}
-                  inputHint={t("dashboard.aiChat.inputHint")}
-                  disabled={loadingConversation}
-                  loading={loading}
                   variant="hero"
                 />
               </div>
-
-              <div className="mt-4 flex flex-wrap justify-center gap-2">
-                {QUICK_PROMPTS.map((prompt) => (
-                  <button
-                    key={prompt}
-                    type="button"
-                    onClick={() => void sendMessage(prompt)}
-                    className="rounded-full border border-slate-200 px-3 py-1 text-[12px] text-brand-primary-muted transition hover:border-slate-300 hover:text-brand-primary"
-                  >
-                    {prompt}
-                  </button>
-                ))}
-              </div>
-            </div>
+            </>
           ) : (
-            <div className="mx-auto w-full max-w-2xl space-y-6 px-4 py-6">
-              {messages.map((msg) => <AiChatMessageRow key={msg.id} message={msg} />)}
-              {loading && <AiChatTypingRow />}
+            <div className="mx-auto w-full max-w-3xl space-y-6 px-4 py-6 lg:px-6">
+              {messages.map((msg) => (
+                <AiChatMessageRow
+                  key={msg.id}
+                  message={msg}
+                  organisationId={orgId}
+                  userInitial={userInitial}
+                  onFeedbackChange={handleFeedbackChange}
+                />
+              ))}
+              {loading ? <AiChatTypingRow /> : null}
             </div>
           )}
         </div>
@@ -264,23 +279,17 @@ export function AiChatPage() {
         ) : null}
 
         {!isEmptyState ? (
-          <div className="shrink-0 bg-gradient-to-t from-white via-white to-white/80 px-4 py-4">
+          <div className="shrink-0 border-t border-slate-200/80 bg-white px-4 py-3">
             <AiChatInput
-              value={input}
-              onChange={setInput}
-              onSubmit={() => void sendMessage(input)}
+              {...inputSharedProps}
               placeholder={t("dashboard.aiChat.placeholder")}
-              sendLabel={t("dashboard.aiChat.send")}
               footerHint={t("dashboard.aiChat.footerHint")}
-              inputHint={t("dashboard.aiChat.inputHint")}
-              disabled={loadingConversation}
-              loading={loading}
             />
           </div>
         ) : null}
       </div>
 
-      <aside className="hidden min-h-0 w-[12.5rem] shrink-0 lg:flex lg:flex-col xl:w-[13.5rem]">
+      <aside className="hidden min-h-0 w-[15rem] shrink-0 xl:w-[17rem] lg:flex lg:flex-col">
         <AiChatHistorySidebar {...sidebarProps} />
       </aside>
 
@@ -288,11 +297,11 @@ export function AiChatPage() {
         <div className="fixed inset-0 z-50 lg:hidden">
           <button
             type="button"
-            className="absolute inset-0 bg-black/20"
+            className="absolute inset-0 bg-black/25 backdrop-blur-[1px]"
             onClick={() => setHistoryOpen(false)}
             aria-label="Close history overlay"
           />
-          <aside className="absolute right-0 top-0 flex h-full w-[min(100%,14rem)] flex-col bg-white shadow-lg">
+          <aside className="absolute right-0 top-0 flex h-full w-[min(100%,17rem)] flex-col bg-white shadow-2xl">
             <AiChatHistorySidebar {...sidebarProps} onClose={() => setHistoryOpen(false)} />
           </aside>
         </div>

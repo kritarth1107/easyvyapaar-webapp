@@ -135,12 +135,14 @@ export function normalizeAiChatResponse(body: unknown): AiChatResponse | null {
 
   const reply = pickString(data.reply);
   const conversationId = pickString(data.conversationId);
-  if (!reply || !conversationId) return null;
+  const messageId = pickString(data.messageId);
+  if (!reply || !conversationId || !messageId) return null;
 
   const card = normalizeRichCard(data.card);
   return {
     reply,
     conversationId,
+    messageId,
     ...(card ? { card } : {}),
   };
 }
@@ -196,12 +198,14 @@ export function normalizeAiConversationDetail(body: unknown): AiConversationDeta
       const createdAt = pickString(row.createdAt);
       if (!messageId || !role || !content || !createdAt) return null;
       const card = normalizeRichCard(row.card);
+      const feedback = row.feedback === "up" || row.feedback === "down" ? row.feedback : undefined;
       return {
         messageId,
         role,
         content,
         createdAt,
         ...(card ? { card } : {}),
+        ...(feedback ? { feedback } : {}),
       };
     })
     .filter((entry): entry is AiConversationDetail["messages"][number] => entry !== null);

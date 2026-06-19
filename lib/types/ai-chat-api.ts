@@ -23,6 +23,7 @@ export type AiChatMessage = {
   role: AiChatRole;
   text: string;
   card?: AiRichCard;
+  feedback?: "up" | "down";
   createdAt: string;
 };
 
@@ -42,6 +43,7 @@ export type AiChatResponse = {
   reply: string;
   card?: AiRichCard;
   conversationId: string;
+  messageId: string;
 };
 
 export type AiConversationSummary = {
@@ -65,6 +67,7 @@ export type AiConversationDetail = {
     role: AiChatRole;
     content: string;
     card?: AiRichCard;
+    feedback?: "up" | "down";
     createdAt: string;
   }>;
 };

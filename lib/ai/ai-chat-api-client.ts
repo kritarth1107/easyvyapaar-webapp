@@ -64,3 +64,26 @@ export async function sendAiChatMessage(payload: AiChatRequest): Promise<AiChatR
   }
   return data;
 }
+
+export async function submitAiMessageFeedback(
+  organisationId: string,
+  messageId: string,
+  feedback: "up" | "down",
+): Promise<{ messageId: string; feedback: "up" | "down" }> {
+  const res = await fetch(`/api/ai/messages/${encodeURIComponent(messageId)}/feedback`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ organisationId, feedback }),
+  });
+  const body = await parseJsonResponse(res);
+  if (!res.ok) {
+    throw new Error(extractAiBackendError(body) ?? "Failed to save feedback");
+  }
+  const root = body as { data?: { messageId?: string; feedback?: string } };
+  const messageIdOut = root.data?.messageId ?? messageId;
+  const feedbackOut = root.data?.feedback;
+  if (feedbackOut !== "up" && feedbackOut !== "down") {
+    throw new Error("Invalid feedback response");
+  }
+  return { messageId: messageIdOut, feedback: feedbackOut };
+}

@@ -1,57 +1,89 @@
 "use client";
 
 import { AiRichCardView } from "@/components/dashboard/ai-chat/rich-card-view";
-import { AiSparkleIcon } from "@/components/dashboard/ai-chat/ai-chat-avatars";
+import { AiChatMessageActions } from "@/components/dashboard/ai-chat/ai-chat-message-actions";
+import { AiAssistantAvatar, UserAvatar } from "@/components/dashboard/ai-chat/ai-chat-avatars";
 import type { AiChatMessage } from "@/lib/types/ai-chat-api";
 
-export function AiChatMessageRow({ message }: { message: AiChatMessage }) {
+function formatMessageBody(text: string) {
+  return text.split("\n").map((line, index) => {
+    const trimmed = line.trim();
+    if (!trimmed) return <br key={`br-${index}`} />;
+    if (trimmed.startsWith("•") || trimmed.startsWith("-")) {
+      return (
+        <p key={`${index}-${trimmed}`} className="text-[14px] leading-relaxed text-brand-primary/90">
+          {trimmed}
+        </p>
+      );
+    }
+    return (
+      <p
+        key={`${index}-${trimmed}`}
+        className={
+          index === 0
+            ? "text-[15px] font-medium leading-relaxed text-brand-primary"
+            : "text-[14px] leading-relaxed text-brand-primary/90"
+        }
+      >
+        {line}
+      </p>
+    );
+  });
+}
+
+type AiChatMessageRowProps = {
+  message: AiChatMessage;
+  organisationId: string;
+  userInitial?: string;
+  onFeedbackChange?: (messageId: string, feedback: "up" | "down" | null) => void;
+};
+
+export function AiChatMessageRow({
+  message,
+  organisationId,
+  userInitial,
+  onFeedbackChange,
+}: AiChatMessageRowProps) {
   const isUser = message.role === "user";
+  const hasText = message.text.trim().length > 0;
+  const copyText = message.text.trim();
 
   if (isUser) {
     return (
-      <div className="chat-msg-in flex w-full justify-end">
-        <div className="max-w-[82%] rounded-[1.25rem] rounded-br-md bg-brand-primary px-4 py-2.5 text-[14px] leading-relaxed text-white shadow-sm">
-          <p className="whitespace-pre-wrap break-words">{message.text}</p>
+      <div className="chat-msg-in flex gap-3">
+        <UserAvatar size="sm" initial={userInitial} />
+        <div className="min-w-0 flex-1">
+          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm">
+            <p className="whitespace-pre-wrap break-words text-[14px] leading-relaxed text-brand-primary">
+              {message.text}
+            </p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="chat-msg-in flex w-full gap-3">
-      <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full brand-gradient-orange text-white shadow-sm">
-        <AiSparkleIcon className="h-3.5 w-3.5" />
-      </div>
-      <div className="min-w-0 max-w-[88%] flex-1">
-        {message.text.trim() ? (
-          <div className="rounded-[1.25rem] rounded-tl-md border border-slate-200/80 bg-slate-50/80 px-4 py-3 text-[14px] leading-relaxed text-brand-primary shadow-sm">
-            <div className="space-y-1.5 whitespace-pre-wrap break-words">
-              {message.text.split("\n").map((line, index) => {
-                const trimmed = line.trim();
-                if (trimmed.startsWith("•") || trimmed.startsWith("-")) {
-                  return (
-                    <p key={`${index}-${trimmed}`} className="text-[13px] text-brand-primary/90">
-                      {trimmed}
-                    </p>
-                  );
-                }
-                return (
-                  <p
-                    key={`${index}-${trimmed}`}
-                    className={index === 0 ? "font-medium text-brand-primary" : "text-brand-primary/90"}
-                  >
-                    {line}
-                  </p>
-                );
-              })}
+    <div className="chat-msg-in flex gap-3">
+      <AiAssistantAvatar size="sm" />
+      <div className="min-w-0 flex-1">
+        <div className="ai-chat-response-panel rounded-2xl border border-slate-200/60 px-4 py-4 shadow-sm">
+          {hasText ? <div className="space-y-1">{formatMessageBody(message.text)}</div> : null}
+          {message.card ? (
+            <div className={hasText ? "mt-4 border-t border-slate-200/50 pt-4" : ""}>
+              <AiRichCardView card={message.card} />
             </div>
-          </div>
-        ) : null}
-        {message.card ? (
-          <div className={message.text.trim() ? "mt-3" : ""}>
-            <AiRichCardView card={message.card} />
-          </div>
-        ) : null}
+          ) : null}
+          {copyText ? (
+            <AiChatMessageActions
+              text={copyText}
+              messageId={message.id}
+              organisationId={organisationId}
+              initialFeedback={message.feedback ?? null}
+              onFeedbackChange={(feedback) => onFeedbackChange?.(message.id, feedback)}
+            />
+          ) : null}
+        </div>
       </div>
     </div>
   );
@@ -60,13 +92,11 @@ export function AiChatMessageRow({ message }: { message: AiChatMessage }) {
 export function AiChatTypingRow() {
   return (
     <div className="chat-msg-in flex gap-3">
-      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full brand-gradient-orange text-white opacity-80">
-        <AiSparkleIcon className="h-3.5 w-3.5" />
-      </div>
-      <div className="flex items-center gap-1.5 rounded-[1.25rem] rounded-tl-md border border-slate-200/80 bg-slate-50/80 px-4 py-3 shadow-sm">
-        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-brand-orange-2/70 [animation-delay:0ms]" />
-        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-brand-orange-2/70 [animation-delay:120ms]" />
-        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-brand-orange-2/70 [animation-delay:240ms]" />
+      <AiAssistantAvatar size="sm" />
+      <div className="ai-chat-response-panel flex items-center gap-2 rounded-2xl border border-slate-200/60 px-4 py-4 shadow-sm">
+        <span className="h-2 w-2 animate-bounce rounded-full bg-brand-orange-2/80 [animation-delay:0ms]" />
+        <span className="h-2 w-2 animate-bounce rounded-full bg-brand-orange-2/80 [animation-delay:120ms]" />
+        <span className="h-2 w-2 animate-bounce rounded-full bg-brand-orange-2/80 [animation-delay:240ms]" />
       </div>
     </div>
   );

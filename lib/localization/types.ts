@@ -305,6 +305,14 @@ export type MessageTree = {
       welcomeTitle: string;
       footerHint: string;
       inputHint: string;
+      copy: string;
+      copied: string;
+      share: string;
+      regenerate: string;
+      browsePrompts: string;
+      feedbackHelpful: string;
+      feedbackNotHelpful: string;
+      modelLabel: string;
     };
     inventory: {
       subtitle: string;
