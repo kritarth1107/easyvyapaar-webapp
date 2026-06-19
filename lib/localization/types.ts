@@ -284,6 +284,34 @@ export type MessageTree = {
       whatsappTitle: string;
       whatsappDesc: string;
     };
+    whatsappIntegration: {
+      title: string;
+      subtitle: string;
+      liveBadge: string;
+      liveHint: string;
+      webhookTitle: string;
+      webhookDesc: string;
+      stepMetaApp: string;
+      stepCallback: string;
+      stepVerifyToken: string;
+      stepSubscribe: string;
+      stepAppSecret: string;
+      envTitle: string;
+      userFlowTitle: string;
+      flowUnregistered: string;
+      flowRegistered: string;
+      flowMultiOrg: string;
+      flowAi: string;
+      cmdHi: string;
+      cmdChangeShop: string;
+      cmdNewChat: string;
+      cmdHelp: string;
+      testTitle: string;
+      testDesc: string;
+      testStep1: string;
+      testStep2: string;
+      testStep3: string;
+    };
     aiChat: {
       title: string;
       subtitle: string;

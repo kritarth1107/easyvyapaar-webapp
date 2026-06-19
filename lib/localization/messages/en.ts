@@ -268,7 +268,42 @@ export const enMessages: MessageTree = {
       aiChatTitle: "AI assistant",
       aiChatDesc: "Your AI business partner for insights and quick answers — launching soon.",
       whatsappTitle: "WhatsApp integration",
-      whatsappDesc: "Send invoices and payment reminders on WhatsApp — coming in a future release.",
+      whatsappDesc: "Mahajaan AI and business messaging on WhatsApp — configure Meta webhook on your API.",
+    },
+    whatsappIntegration: {
+      title: "WhatsApp + Mahajaan AI",
+      subtitle:
+        "Let shop owners chat with Mahajaan AI on WhatsApp — same powers as dashboard AI chat (sales, stock, invoices, payroll).",
+      liveBadge: "Backend ready",
+      liveHint:
+        "Webhook endpoint is live on your Mahajaan API. Complete Meta Developer setup below to receive messages.",
+      webhookTitle: "Meta webhook (Facebook Developer)",
+      webhookDesc:
+        "In Meta for Developers → your app → WhatsApp → Configuration → Webhook, use this callback URL:",
+      stepMetaApp: "Create or open a Business app and add the WhatsApp product.",
+      stepCallback: "Paste the callback URL below and click Verify and save.",
+      stepVerifyToken:
+        "Verify token must match WHATSAPP_WEBHOOK_VERIFY_TOKEN on the API server (any random secret string).",
+      stepSubscribe: "Subscribe to the messages field.",
+      stepAppSecret: "Copy App secret from App Settings → Basic into WHATSAPP_APP_SECRET on the API.",
+      envTitle: "Required API environment variables",
+      userFlowTitle: "How it works for users",
+      flowUnregistered:
+        "Unknown mobile → Mahajaan intro + link to register on the web app.",
+      flowRegistered:
+        "Registered user, one shop → welcome menu with example questions.",
+      flowMultiOrg:
+        "Multiple shops → numbered list; reply 1, 2, or shop name. Type change shop anytime.",
+      flowAi: "Business questions → same Mahajaan AI with tools (Hindi, English, Hinglish).",
+      cmdHi: "Greeting / shop setup / services menu",
+      cmdChangeShop: "Pick another linked shop",
+      cmdNewChat: "Start a fresh AI conversation",
+      cmdHelp: "Show services menu again",
+      testTitle: "Test after setup",
+      testDesc: "Message your WhatsApp Business number from a phone registered on Mahajaan.",
+      testStep1: "Send Hi — you should get the welcome or shop picker.",
+      testStep2: "Ask “Aaj kitna sale hua?” — AI should reply with shop data.",
+      testStep3: "Type change shop to switch organisation.",
     },
     aiChat: {
       title: "AI Chat",

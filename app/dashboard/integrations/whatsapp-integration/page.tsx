@@ -1,10 +1,5 @@
-import { DeferredFeaturePage } from "@/components/dashboard/deferred-feature-page";
+import { WhatsAppIntegrationPage } from "@/components/dashboard/integrations/whatsapp-integration-page";
 
-export default function WhatsappIntegrationPage() {
-  return (
-    <DeferredFeaturePage
-      titleKey="dashboard.deferred.whatsappTitle"
-      descriptionKey="dashboard.deferred.whatsappDesc"
-    />
-  );
+export default function WhatsappIntegrationRoutePage() {
+  return <WhatsAppIntegrationPage />;
 }
