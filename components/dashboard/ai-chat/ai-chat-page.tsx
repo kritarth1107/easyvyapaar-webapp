@@ -1,12 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useUserMe } from "@/components/providers/user-me-provider";
 import { AiChatEmptyHero } from "@/components/dashboard/ai-chat/ai-chat-empty-hero";
 import { AiChatInput } from "@/components/dashboard/ai-chat/ai-chat-input";
 import { AiChatHistorySidebar } from "@/components/dashboard/ai-chat/ai-chat-history-sidebar";
 import { AiChatMessageRow, AiChatTypingRow } from "@/components/dashboard/ai-chat/ai-chat-message-row";
 import { getPersonalizedAiGreeting } from "@/lib/ai/ai-chat-greeting";
+import {
+  AI_CHAT_BASE_PATH,
+  aiChatConversationPath,
+} from "@/lib/ai/ai-chat-routes";
 import {
   fetchAiConversation,
   fetchAiConversations,
@@ -42,10 +47,12 @@ function mapDetailToMessages(
   }));
 }
 
-export function AiChatPage() {
+export function AiChatPage({ conversationIdFromRoute }: { conversationIdFromRoute?: string } = {}) {
   const { t } = useTranslation();
+  const router = useRouter();
   const { user, activeOrganisationId, activeOrganisation } = useUserMe();
   const orgId = activeOrganisationId?.trim() ?? "";
+  const routeConversationId = conversationIdFromRoute?.trim() || null;
 
   const [messages, setMessages] = useState<AiChatMessage[]>([]);
   const [conversations, setConversations] = useState<AiConversationSummary[]>([]);
@@ -57,6 +64,7 @@ export function AiChatPage() {
   const [error, setError] = useState<string | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const skipRouteLoadRef = useRef<string | null>(null);
 
   const shopLabel = activeOrganisation?.name ?? "";
   const userName = user?.name ?? "";
@@ -98,20 +106,16 @@ export function AiChatPage() {
   }, [messages, loading]);
 
   const startNewChat = useCallback(() => {
-    setActiveConversationId(null);
-    setMessages([]);
-    setInput("");
-    setError(null);
     setHistoryOpen(false);
-  }, []);
+    router.push(AI_CHAT_BASE_PATH);
+  }, [router]);
 
-  const openConversation = useCallback(
+  const loadConversation = useCallback(
     async (conversationId: string) => {
-      if (!orgId || loadingConversation) return;
+      if (!orgId) return;
       setLoadingConversation(true);
       setError(null);
       setActiveConversationId(conversationId);
-      setHistoryOpen(false);
 
       try {
         const detail = await fetchAiConversation(orgId, conversationId);
@@ -119,12 +123,47 @@ export function AiChatPage() {
       } catch (err) {
         setError(err instanceof Error ? err.message : t("dashboard.aiChat.error"));
         setMessages([]);
+        setActiveConversationId(null);
+        router.replace(AI_CHAT_BASE_PATH);
       } finally {
         setLoadingConversation(false);
       }
     },
-    [loadingConversation, orgId, t],
+    [orgId, router, t],
   );
+
+  const openConversation = useCallback(
+    (conversationId: string) => {
+      if (!orgId || loadingConversation) return;
+      setHistoryOpen(false);
+      router.push(aiChatConversationPath(conversationId));
+    },
+    [loadingConversation, orgId, router],
+  );
+
+  useEffect(() => {
+    if (!orgId) return;
+
+    if (!routeConversationId) {
+      setActiveConversationId(null);
+      setMessages([]);
+      setInput("");
+      setError(null);
+      skipRouteLoadRef.current = null;
+      return;
+    }
+
+    if (skipRouteLoadRef.current === routeConversationId) {
+      skipRouteLoadRef.current = null;
+      return;
+    }
+
+    if (routeConversationId === activeConversationId && messages.length > 0) {
+      return;
+    }
+
+    void loadConversation(routeConversationId);
+  }, [routeConversationId, orgId, activeConversationId, messages.length, loadConversation]);
 
   const sendMessage = useCallback(
     async (text: string) => {
@@ -162,6 +201,10 @@ export function AiChatPage() {
             createdAt: new Date().toISOString(),
           },
         ]);
+        if (!routeConversationId) {
+          skipRouteLoadRef.current = response.conversationId;
+          router.replace(aiChatConversationPath(response.conversationId));
+        }
         void refreshConversations();
       } catch (err) {
         setError(err instanceof Error ? err.message : t("dashboard.aiChat.error"));
@@ -170,7 +213,7 @@ export function AiChatPage() {
         setLoading(false);
       }
     },
-    [activeConversationId, loading, orgId, refreshConversations, t],
+    [activeConversationId, loading, orgId, refreshConversations, routeConversationId, router, t],
   );
 
   const handleFeedbackChange = useCallback((messageId: string, feedback: "up" | "down" | null) => {
