@@ -14,6 +14,7 @@ import {
   usageLabel,
   usagePercent,
 } from "@/lib/api/billing-account";
+import { PLAN_CHECKOUT_PATH } from "@/lib/auth/session";
 import { storePaymentCheckout } from "@/lib/auth/plan-signup";
 import { CONTACT_EMAIL } from "@/lib/marketing/site-content";
 import { useTranslation } from "@/lib/localization";
@@ -142,7 +143,7 @@ export function SubscriptionBillingPage() {
     try {
       const checkout = await fetchRenewCheckout(activeOrganisationId);
       storePaymentCheckout(checkout);
-      router.push("/auth/payment");
+      router.push(PLAN_CHECKOUT_PATH);
     } catch (err) {
       setError(err instanceof Error ? err.message : t("dashboard.subscription.renewError"));
     } finally {

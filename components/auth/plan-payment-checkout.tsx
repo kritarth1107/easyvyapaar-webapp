@@ -294,12 +294,18 @@ type PlanPaymentCheckoutProps = {
   initialContext?: PaymentCheckoutContext | null;
   paymentToken?: string | null;
   pricing?: PublicPricingResponse | null;
+  /** When set, missing/expired checkout redirects here instead of login (logged-in renew flow). */
+  checkoutFallbackPath?: string;
+  /** Compact layout inside dashboard shell (no register marketing chrome). */
+  embedded?: boolean;
 };
 
 export function PlanPaymentCheckout({
   initialContext,
   paymentToken,
   pricing,
+  checkoutFallbackPath,
+  embedded = false,
 }: PlanPaymentCheckoutProps) {
   const router = useRouter();
   const { t } = useTranslation();
@@ -322,12 +328,17 @@ export function PlanPaymentCheckout({
     (message: string, errorCode?: number) => {
       if (errorCode === 1007 || isPaymentSessionExpiredMessage(message)) {
         setRedirectingToLogin(true);
-        redirectToLoginForPayment(router);
+        if (checkoutFallbackPath) {
+          clearPaymentToken();
+          router.replace(checkoutFallbackPath);
+        } else {
+          redirectToLoginForPayment(router);
+        }
         return;
       }
       setError(message);
     },
-    [router],
+    [checkoutFallbackPath, router],
   );
 
   const paidPlans = useMemo(() => {
@@ -409,12 +420,21 @@ export function PlanPaymentCheckout({
     }
   }, [token, selectedPlan, selectedBilling, loadExploreCoupons]);
 
+  const redirectForMissingCheckout = useCallback(() => {
+    setRedirectingToLogin(true);
+    if (checkoutFallbackPath) {
+      clearPaymentToken();
+      router.replace(checkoutFallbackPath);
+    } else {
+      redirectToLoginForPayment(router);
+    }
+  }, [checkoutFallbackPath, router]);
+
   useEffect(() => {
     const storedContext = readPaymentCheckout();
     if (storedContext) {
       if (isPaymentTokenExpired(storedContext.paymentToken)) {
-        setRedirectingToLogin(true);
-        redirectToLoginForPayment(router);
+        redirectForMissingCheckout();
         return;
       }
       syncFromContext(storedContext);
@@ -423,18 +443,16 @@ export function PlanPaymentCheckout({
     const stored = readPaymentToken();
     if (stored) {
       if (isPaymentTokenExpired(stored)) {
-        setRedirectingToLogin(true);
-        redirectToLoginForPayment(router);
+        redirectForMissingCheckout();
         return;
       }
       setToken(stored);
       return;
     }
     if (!initialContext && !paymentToken) {
-      setRedirectingToLogin(true);
-      redirectToLoginForPayment(router);
+      redirectForMissingCheckout();
     }
-  }, [initialContext, paymentToken, router, syncFromContext]);
+  }, [initialContext, paymentToken, redirectForMissingCheckout, syncFromContext]);
 
   useEffect(() => {
     if (initialContext) {
@@ -450,8 +468,7 @@ export function PlanPaymentCheckout({
     ) => {
       const paymentTokenValue = token ?? readPaymentToken();
       if (!paymentTokenValue) {
-        setRedirectingToLogin(true);
-        redirectToLoginForPayment(router);
+        redirectForMissingCheckout();
         return;
       }
 
@@ -509,7 +526,7 @@ export function PlanPaymentCheckout({
         setSelectionUpdating(false);
       }
     },
-    [context, loadExploreCoupons, router, selectedBilling, selectedPlan, showPaymentError, syncFromContext, token],
+    [context, loadExploreCoupons, redirectForMissingCheckout, selectedBilling, selectedPlan, showPaymentError, syncFromContext, token],
   );
 
   const applyCouponCode = useCallback(
@@ -594,7 +611,11 @@ export function PlanPaymentCheckout({
           setStoredActiveOrganisationId(defaultOrganisationId);
         }
 
-        router.push(`${DASHBOARD_PATH}?utm=plan_payment`);
+        router.push(
+          checkoutFallbackPath
+            ? `${checkoutFallbackPath}?payment=success`
+            : `${DASHBOARD_PATH}?utm=plan_payment`,
+        );
         router.refresh();
       } catch {
         setError("Network error while confirming payment.");
@@ -602,14 +623,13 @@ export function PlanPaymentCheckout({
         setLoading(false);
       }
     },
-    [router, showPaymentError],
+    [checkoutFallbackPath, router, showPaymentError],
   );
 
   const startCheckout = useCallback(async () => {
     const paymentTokenValue = token ?? readPaymentToken();
     if (!paymentTokenValue) {
-      setRedirectingToLogin(true);
-      redirectToLoginForPayment(router);
+      redirectForMissingCheckout();
       return;
     }
 
@@ -723,7 +743,7 @@ export function PlanPaymentCheckout({
     } finally {
       setLoading(false);
     }
-  }, [context, router, showPaymentError, token, verifyPayment]);
+  }, [context, redirectForMissingCheckout, showPaymentError, token, verifyPayment]);
 
   const busy = loading || selectionUpdating || couponApplying;
 
@@ -736,27 +756,55 @@ export function PlanPaymentCheckout({
   }
 
   return (
-    <div className="relative flex h-full min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden bg-white px-4 py-5 sm:px-8 sm:py-6 lg:px-16 xl:px-24 2xl:px-28">
-      <div className="mx-auto flex h-full min-h-0 w-full max-w-2xl flex-col lg:mx-0">
-        <div className="mb-4 shrink-0 sm:mb-5 lg:hidden">
-          <Image
-            src={BRAND_LOGO}
-            alt={t("common.brandName")}
-            width={200}
-            height={38}
-            className="h-9 w-auto object-contain sm:h-10"
-            priority
-          />
-        </div>
+    <div
+      className={`relative flex h-full min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden bg-white ${
+        embedded
+          ? "px-4 py-4 lg:px-6 lg:py-6"
+          : "px-4 py-5 sm:px-8 sm:py-6 lg:px-16 xl:px-24 2xl:px-28"
+      }`}
+    >
+      <div
+        className={`mx-auto flex h-full min-h-0 w-full flex-col ${
+          embedded ? "max-w-4xl" : "max-w-2xl lg:mx-0"
+        }`}
+      >
+        {checkoutFallbackPath ? (
+          <Link
+            href={checkoutFallbackPath}
+            className="mb-4 inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-brand-primary-muted hover:text-brand-primary"
+          >
+            <span aria-hidden>←</span>
+            {t("dashboard.subscription.title")}
+          </Link>
+        ) : null}
+
+        {!embedded ? (
+          <div className="mb-4 shrink-0 sm:mb-5 lg:hidden">
+            <Image
+              src={BRAND_LOGO}
+              alt={t("common.brandName")}
+              width={200}
+              height={38}
+              className="h-9 w-auto object-contain sm:h-10"
+              priority
+            />
+          </div>
+        ) : null}
 
         <div className="shrink-0">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-orange-2">Plan payment</p>
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-orange-2">
+            {embedded ? t("dashboard.subscription.tabPlan") : "Plan payment"}
+          </p>
           <h1 className="mt-2 text-xl font-bold text-brand-primary sm:text-2xl xl:text-3xl">
-            Choose your plan and pay
+            {embedded
+              ? t("dashboard.subscription.manageRenewal")
+              : "Choose your plan and pay"}
           </h1>
           <p className="mt-2 text-sm text-brand-primary-muted">
             {context?.organisationName
-              ? `Activate Mahajaan for ${context.organisationName}. Switch plan or billing anytime before you pay.`
+              ? embedded
+                ? `${t("dashboard.subscription.subtitle")} · ${context.organisationName}`
+                : `Activate Mahajaan for ${context.organisationName}. Switch plan or billing anytime before you pay.`
               : "Activate your Mahajaan subscription to access your dashboard."}
           </p>
           {context?.organisationName ? (

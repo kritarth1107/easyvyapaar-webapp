@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server";
 import {
   DASHBOARD_PATH,
   LOGIN_PATH,
+  PAYMENT_PATH,
   SESSION_COOKIE_NAME,
   hasSessionCookie,
 } from "@/lib/auth/session";
@@ -23,7 +24,8 @@ export function proxy(request: NextRequest) {
   }
 
   if (pathname.startsWith("/auth")) {
-    if (loggedIn) {
+    // Signed-up users completing first payment may still be on /auth/payment.
+    if (loggedIn && !pathname.startsWith(PAYMENT_PATH)) {
       return NextResponse.redirect(new URL(DASHBOARD_PATH, request.url));
     }
     return NextResponse.next();

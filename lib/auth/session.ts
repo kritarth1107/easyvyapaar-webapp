@@ -9,6 +9,8 @@ export const SESSION_MAX_AGE = 30 * 24 * 60 * 60;
 export const DASHBOARD_PATH = "/dashboard";
 export const LOGIN_PATH = "/auth/login";
 export const PAYMENT_PATH = "/auth/payment";
+/** Logged-in plan upgrade / renewal checkout (plan picker + Razorpay). */
+export const PLAN_CHECKOUT_PATH = "/dashboard/settings/subscription/checkout";
 
 export function hasSessionCookie(token: string | undefined): boolean {
   return typeof token === "string" && token.trim().length > 0;

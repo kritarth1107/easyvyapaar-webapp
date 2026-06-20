@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useUserMe } from "@/components/providers/user-me-provider";
+import { PLAN_CHECKOUT_PATH } from "@/lib/auth/session";
 import { storePaymentCheckout } from "@/lib/auth/plan-signup";
 import { useTranslation } from "@/lib/localization";
 import type { PlanRenewalReminder } from "@/lib/dashboard/shop-workspace";
@@ -78,7 +79,7 @@ export function PlanRenewalBanner() {
   const handleRenew = () => {
     if (!reminder.checkout) return;
     storePaymentCheckout(reminder.checkout);
-    router.push("/auth/payment");
+    router.push(PLAN_CHECKOUT_PATH);
   };
 
   return (
