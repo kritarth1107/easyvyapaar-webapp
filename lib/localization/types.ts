@@ -1176,6 +1176,18 @@ export type MessageTree = {
         sendEmailSuccess: string;
         sendEmailError: string;
         sendEmailInvalid: string;
+        sendWhatsAppAction: string;
+        sendWhatsAppTitle: string;
+        sendWhatsAppSubtitle: string;
+        sendWhatsAppLabel: string;
+        sendWhatsAppPlaceholder: string;
+        sendWhatsAppHint: string;
+        sendWhatsAppSending: string;
+        sendWhatsAppSuccess: string;
+        sendWhatsAppError: string;
+        sendWhatsAppInvalid: string;
+        sendWhatsAppUpgradeRequired: string;
+        sendWhatsAppUpgradeCta: string;
       };
       todaySales: string;
       monthSales: string;

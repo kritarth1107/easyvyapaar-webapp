@@ -5,7 +5,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { SelectedInvoiceParty } from "@/components/dashboard/sales/party-select-modal";
 import { InvoiceSettingsPreview } from "@/components/dashboard/sales/invoice-settings-preview";
 import { SalesInvoiceSendEmailModal } from "@/components/dashboard/sales/sales-invoice-send-email-modal";
+import { SalesInvoiceSendWhatsAppModal } from "@/components/dashboard/sales/sales-invoice-send-whatsapp-modal";
 import { ModernSelect } from "@/components/ui/modern-select";
+import { useOrganisationPermissions } from "@/components/providers/organisation-permissions-provider";
+import {
+  canSendInvoiceWhatsApp,
+  isInvoiceWhatsAppStarterLocked,
+} from "@/lib/permissions/plan-nav-features";
 import { useUserMe } from "@/components/providers/user-me-provider";
 import { fetchBusinessProfile } from "@/lib/business/business-profile-api-client";
 import { fetchPartyDetail } from "@/lib/parties/parties-api-client";
@@ -32,6 +38,7 @@ import {
   fetchSalesInvoiceDetail,
   recordSalesInvoicePayment,
   sendSalesInvoiceEmail,
+  sendSalesInvoiceWhatsApp,
 } from "@/lib/sales/sales-api-client";
 import type { SalesInvoiceDetail, SalesInvoiceStatus } from "@/lib/types/sales-api";
 import type { PartyDetail } from "@/lib/types/parties-api";
@@ -102,7 +109,12 @@ function partyDetailToSelected(party: PartyDetail): SelectedInvoiceParty {
 
 export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
   const { t } = useTranslation();
+  const { planFeatures, loading: permissionsLoading } = useOrganisationPermissions();
   const { activeOrganisation, activeOrganisationId } = useUserMe();
+  const canSendInvoiceWhatsAppFeature =
+    permissionsLoading || canSendInvoiceWhatsApp(planFeatures);
+  const showWhatsAppUpgrade =
+    !permissionsLoading && isInvoiceWhatsAppStarterLocked(planFeatures);
   const businessName = activeOrganisation?.name ?? "Your Business";
   const printAreaRef = useRef<HTMLDivElement>(null);
 
@@ -110,7 +122,9 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
   const [party, setParty] = useState<SelectedInvoiceParty | null>(null);
   const [partyEmail, setPartyEmail] = useState<string | undefined>();
   const [sendEmailOpen, setSendEmailOpen] = useState(false);
+  const [sendWhatsAppOpen, setSendWhatsAppOpen] = useState(false);
   const [emailSuccess, setEmailSuccess] = useState<string | null>(null);
+  const [whatsappSuccess, setWhatsappSuccess] = useState<string | null>(null);
   const [storedSettings, setStoredSettings] = useState<StoredSalesInvoiceSettings>(
     DEFAULT_STORED_SALES_INVOICE_SETTINGS,
   );
@@ -342,6 +356,29 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            {showWhatsAppUpgrade ? (
+              <Link
+                href="/dashboard/settings/subscription"
+                className="inline-flex h-10 items-center gap-2 rounded-sm border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary-muted hover:bg-slate-50"
+                title={t("dashboard.salesInvoices.view.sendWhatsAppUpgradeRequired")}
+              >
+                <WhatsAppIcon />
+                {t("dashboard.salesInvoices.view.sendWhatsAppUpgradeCta")}
+              </Link>
+            ) : canSendInvoiceWhatsAppFeature ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setWhatsappSuccess(null);
+                  setSendWhatsAppOpen(true);
+                }}
+                disabled={permissionsLoading}
+                className="inline-flex h-10 items-center gap-2 rounded-sm border border-emerald-600/25 bg-emerald-50 px-4 text-sm font-semibold text-emerald-800 hover:bg-emerald-100 disabled:opacity-60"
+              >
+                <WhatsAppIcon />
+                {t("dashboard.salesInvoices.view.sendWhatsAppAction")}
+              </button>
+            ) : null}
             <button
               type="button"
               onClick={() => {
@@ -497,6 +534,25 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
         </aside>
       </div>
 
+      <SalesInvoiceSendWhatsAppModal
+        open={sendWhatsAppOpen}
+        onClose={() => setSendWhatsAppOpen(false)}
+        defaultPhone={party?.phone}
+        invoiceNumber={invoice.displayNumber}
+        partyName={invoice.partyName}
+        onSend={async (phone) => {
+          const orgId = activeOrganisationId?.trim();
+          if (!orgId) throw new Error(t("dashboard.salesInvoices.create.noOrganisation"));
+          const result = await sendSalesInvoiceWhatsApp(orgId, invoice.invoiceId, phone);
+          const displayPhone = result.phone.startsWith("91")
+            ? result.phone.slice(2)
+            : result.phone;
+          setWhatsappSuccess(
+            t("dashboard.salesInvoices.view.sendWhatsAppSuccess").replace("{phone}", displayPhone),
+          );
+        }}
+      />
+
       <SalesInvoiceSendEmailModal
         open={sendEmailOpen}
         onClose={() => setSendEmailOpen(false)}
@@ -516,6 +572,11 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
       {emailSuccess ? (
         <div className="fixed bottom-4 left-1/2 z-[120] -translate-x-1/2 rounded-sm border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-800 shadow-md">
           {emailSuccess}
+        </div>
+      ) : null}
+      {whatsappSuccess ? (
+        <div className="fixed bottom-4 left-1/2 z-[120] -translate-x-1/2 rounded-sm border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-800 shadow-md">
+          {whatsappSuccess}
         </div>
       ) : null}
     </div>

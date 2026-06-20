@@ -157,3 +157,27 @@ export async function sendSalesInvoiceEmail(
   }
   return { sent: true, email: data.email };
 }
+
+export async function sendSalesInvoiceWhatsApp(
+  organisationId: string,
+  invoiceId: string,
+  phone: string,
+): Promise<{ sent: true; phone: string }> {
+  const res = await fetch(
+    `/api/sales/invoices/${encodeURIComponent(invoiceId)}/send-whatsapp?organisationId=${encodeURIComponent(organisationId)}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone }),
+    },
+  );
+  const body = await parseJsonResponse(res);
+  if (!res.ok) {
+    throw new Error(extractBackendError(body) ?? "Failed to send invoice via WhatsApp");
+  }
+  const data = (body as { data?: { sent?: boolean; phone?: string } })?.data;
+  if (!data?.sent || !data.phone) {
+    throw new Error("Failed to send invoice via WhatsApp");
+  }
+  return { sent: true, phone: data.phone };
+}
