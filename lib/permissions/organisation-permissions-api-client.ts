@@ -1,4 +1,5 @@
 import { extractBackendError } from "@/lib/api/inventory";
+import type { OrganisationPlanFeatures } from "@/lib/permissions/plan-nav-features";
 import type { Permission } from "@/lib/permissions/role-permissions";
 import type { UserRole } from "@/lib/permissions/role-permissions";
 
@@ -6,6 +7,7 @@ export type OrganisationPermissions = {
   role: UserRole;
   permissions: Permission[];
   flags: Record<Permission, boolean>;
+  planFeatures?: OrganisationPlanFeatures | null;
 };
 
 async function parseJson(res: Response): Promise<unknown> {

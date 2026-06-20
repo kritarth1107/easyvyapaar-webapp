@@ -1,10 +1,10 @@
 import { getApiBaseUrl, parseBackendBody } from "@/lib/api/backend";
-import { getHeadersFromRequest } from "@/lib/header-utils";
+import { getBodylessHeadersFromRequest, getHeadersFromRequest } from "@/lib/header-utils";
 
 export async function proxyDashboardBackend(
   request: Request,
   path: string,
-  init?: RequestInit,
+  init?: RequestInit & { bodyless?: boolean },
 ): Promise<{ response: Response; body: unknown }> {
   const apiBaseUrl = getApiBaseUrl();
   if (!apiBaseUrl) {
@@ -14,16 +14,19 @@ export async function proxyDashboardBackend(
     };
   }
 
-  const headers = getHeadersFromRequest(request);
+  const { bodyless, ...fetchInit } = init ?? {};
+  const headers = bodyless
+    ? getBodylessHeadersFromRequest(request)
+    : getHeadersFromRequest(request);
   const backendUrl = new URL(path.replace(/^\//, ""), apiBaseUrl);
 
   try {
     const response = await fetch(backendUrl.toString(), {
       cache: "no-store",
-      ...init,
+      ...fetchInit,
       headers: {
         ...headers,
-        ...(init?.headers ?? {}),
+        ...(fetchInit.headers ?? {}),
       },
     });
     const body = await parseBackendBody(response);

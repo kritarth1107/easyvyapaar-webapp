@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import type { OrganisationSummary } from "@/lib/types/user-api";
@@ -9,8 +8,7 @@ export type CreateBusinessPrompt = {
   title: string;
   subtitle: string;
   cta: string;
-  href: string;
-  onNavigate?: () => void;
+  onClick: () => void;
 };
 
 type OrganisationSelectModalProps = {
@@ -76,10 +74,10 @@ function CloseIcon() {
 
 function CreateBusinessCta({ prompt }: { prompt: CreateBusinessPrompt }) {
   return (
-    <Link
-      href={prompt.href}
-      onClick={prompt.onNavigate}
-      className="group mt-4 flex items-center gap-3 rounded-xl border-2 border-dashed border-brand-orange-1/40 bg-gradient-to-br from-brand-surface-warm/80 via-white to-brand-surface px-4 py-4 transition-colors hover:border-brand-orange-1/70 hover:bg-brand-surface-warm focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange-1/50"
+    <button
+      type="button"
+      onClick={prompt.onClick}
+      className="group mt-4 flex w-full items-center gap-3 rounded-xl border-2 border-dashed border-brand-orange-1/40 bg-gradient-to-br from-brand-surface-warm/80 via-white to-brand-surface px-4 py-4 text-left transition-colors hover:border-brand-orange-1/70 hover:bg-brand-surface-warm focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange-1/50"
     >
       <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand-orange-2 to-brand-orange-1 text-white shadow-[0_4px_14px_-4px_rgba(246,62,22,0.45)] transition-transform group-hover:scale-105">
         <PlusIcon />
@@ -102,7 +100,7 @@ function CreateBusinessCta({ prompt }: { prompt: CreateBusinessPrompt }) {
           </svg>
         </span>
       </span>
-    </Link>
+    </button>
   );
 }
 

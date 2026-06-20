@@ -20,6 +20,10 @@ import {
   type UserRole,
 } from "@/lib/permissions/role-permissions";
 import {
+  fetchBillingAccount,
+  usageLabel,
+} from "@/lib/api/billing-account";
+import {
   fetchOrganisationMembers,
   removeOrganisationMember,
   revokeOrganisationInvite,
@@ -162,6 +166,17 @@ export function TeamManagementPage() {
   const [removingUserId, setRemovingUserId] = useState<string | null>(null);
   const [removeTarget, setRemoveTarget] = useState<OrganisationMember | null>(null);
   const [revokingInviteId, setRevokingInviteId] = useState<string | null>(null);
+  const [seatUsage, setSeatUsage] = useState<{
+    used: number;
+    limit: number;
+    unlimited: boolean;
+  } | null>(null);
+
+  const seatsAtLimit =
+    seatUsage !== null &&
+    !seatUsage.unlimited &&
+    seatUsage.limit > 0 &&
+    seatUsage.used >= seatUsage.limit;
 
   const roleOptions = useMemo(
     () =>
@@ -181,6 +196,12 @@ export function TeamManagementPage() {
       const data = await fetchOrganisationMembers(orgId);
       setMembers(data.members);
       setPendingInvites(data.pendingInvites);
+      try {
+        const billing = await fetchBillingAccount(orgId);
+        setSeatUsage(billing.usage.teamSeats);
+      } catch {
+        setSeatUsage(null);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : t("dashboard.teamSettings.loadError"));
     } finally {
@@ -339,6 +360,15 @@ export function TeamManagementPage() {
           type="button"
           onClick={() => {
             setError(null);
+            if (seatsAtLimit && seatUsage) {
+              setError(
+                formatMessage(t("dashboard.teamSettings.seatLimitHint"), {
+                  used: seatUsage.used,
+                  limit: seatUsage.limit,
+                }),
+              );
+              return;
+            }
             setInviteModalOpen(true);
           }}
           className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-md bg-gradient-to-r from-brand-primary to-brand-primary-light px-4 text-sm font-semibold text-white shadow-[0_2px_10px_-4px_rgba(3,31,73,0.45)] transition-all hover:brightness-110"
@@ -352,6 +382,24 @@ export function TeamManagementPage() {
         <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
           {error}
         </p>
+      ) : null}
+      {seatsAtLimit && seatUsage ? (
+        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+          <p className="font-semibold">{t("dashboard.teamSettings.seatLimitTitle")}</p>
+          <p className="mt-1">
+            {formatMessage(t("dashboard.teamSettings.seatLimitHint"), {
+              used: seatUsage.used,
+              limit: seatUsage.limit,
+            })}
+          </p>
+          <p className="mt-1 text-xs text-amber-900/80">{usageLabel(seatUsage)}</p>
+          <Link
+            href="/dashboard/settings/subscription"
+            className="mt-3 inline-flex rounded-md bg-brand-orange-2 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-orange-1"
+          >
+            {t("dashboard.teamSettings.seatLimitUpgradeCta")}
+          </Link>
+        </div>
       ) : null}
       {message ? (
         <p className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-800">

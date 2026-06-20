@@ -1,4 +1,5 @@
 import type { DashboardNavIconId } from "@/lib/dashboard/navigation-types";
+import type { OrganisationPlanFeatures } from "@/lib/permissions/plan-nav-features";
 import type { ReportLink, ReportSlug } from "@/lib/types/reports-api";
 import type { TranslationKey } from "@/lib/localization";
 
@@ -31,6 +32,46 @@ export function getReportDescriptionKey(slug: ReportSlug): TranslationKey {
   return `dashboard.reports.descriptions.${slug}`;
 }
 
+/** Plan feature required to open a report (unset = available on all plans). */
+export const REPORT_SLUG_PLAN_REQUIREMENTS: Partial<
+  Record<ReportSlug, keyof OrganisationPlanFeatures>
+> = {
+  gstr1: "gstReports",
+  gstr2: "gstReports",
+  gstr3b: "gstReports",
+  "gst-sales-hsn": "gstReports",
+  "gst-purchase-hsn": "gstReports",
+  "hsn-wise-sales": "gstReports",
+  "purchase-summary": "purchases",
+  "cash-bank": "financeSuite",
+  daybook: "financeSuite",
+  "expense-categories": "financeSuite",
+  "profit-and-loss": "financialReports",
+  "balance-sheet": "financialReports",
+  "bill-wise-profit": "financialReports",
+  "party-outstanding": "parties",
+  "receivable-ageing": "parties",
+  "payable-ageing": "parties",
+  "party-report-by-item": "parties",
+};
+
+export function canAccessReportSlug(
+  slug: ReportSlug,
+  planFeatures: OrganisationPlanFeatures | null,
+): boolean {
+  const featureKey = REPORT_SLUG_PLAN_REQUIREMENTS[slug];
+  if (!featureKey) return true;
+  if (!planFeatures) return true;
+  return Boolean(planFeatures[featureKey]);
+}
+
+export function filterReportLinks(
+  links: ReportLink[],
+  planFeatures: OrganisationPlanFeatures | null,
+): ReportLink[] {
+  return links.filter((link) => canAccessReportSlug(link.slug, planFeatures));
+}
+
 export const REPORT_LINKS: ReportLink[] = [
   { slug: "sales-summary", category: "favourite", href: "/dashboard/reports/view/sales-summary" },
   { slug: "party-outstanding", category: "favourite", href: "/dashboard/reports/view/party-outstanding" },
@@ -59,14 +100,18 @@ export const REPORT_LINKS: ReportLink[] = [
   { slug: "payable-ageing", category: "party", href: "/dashboard/reports/view/payable-ageing" },
 ];
 
-export function getReportsByCategory(category: ReportLink["category"]): ReportLink[] {
+export function getReportsByCategory(
+  category: ReportLink["category"],
+  planFeatures?: OrganisationPlanFeatures | null,
+): ReportLink[] {
   const seen = new Set<ReportSlug>();
-  return REPORT_LINKS.filter((link) => {
+  const rows = REPORT_LINKS.filter((link) => {
     if (link.category !== category) return false;
     if (seen.has(link.slug)) return false;
     seen.add(link.slug);
     return true;
   });
+  return planFeatures !== undefined ? filterReportLinks(rows, planFeatures) : rows;
 }
 
 export function getReportTitleKey(slug: ReportSlug): `dashboard.reports.slugs.${ReportSlug}` {

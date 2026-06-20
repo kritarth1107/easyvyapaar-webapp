@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { NavIcon } from "@/components/dashboard/nav-icon";
+import { useOrganisationPermissions } from "@/components/providers/organisation-permissions-provider";
 import { useTranslation } from "@/lib/localization";
 import type { TranslationKey } from "@/lib/localization";
 import {
@@ -87,6 +88,11 @@ function CategoryQuickLink({
 
 export function ReportsHubPage() {
   const { t } = useTranslation();
+  const { planFeatures } = useOrganisationPermissions();
+
+  const showGst = Boolean(planFeatures?.gstReports);
+  const showFinancial = Boolean(planFeatures?.financialReports);
+  const showParty = Boolean(planFeatures?.parties);
 
   return (
     <div className="p-4 lg:p-6">
@@ -96,39 +102,60 @@ export function ReportsHubPage() {
       </div>
 
       <div className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <CategoryQuickLink
-          href="/dashboard/reports/gst-reports"
-          title={t("dashboard.nav.gstReports")}
-          description={t("dashboard.reports.categoryGstDesc")}
-          icon="reports"
-        />
-        <CategoryQuickLink
-          href="/dashboard/reports/financial-reports"
-          title={t("dashboard.nav.financialReports")}
-          description={t("dashboard.reports.categoryFinancialDesc")}
-          icon="chart"
-        />
+        {showGst ? (
+          <CategoryQuickLink
+            href="/dashboard/reports/gst-reports"
+            title={t("dashboard.nav.gstReports")}
+            description={t("dashboard.reports.categoryGstDesc")}
+            icon="reports"
+          />
+        ) : null}
+        {showFinancial ? (
+          <CategoryQuickLink
+            href="/dashboard/reports/financial-reports"
+            title={t("dashboard.nav.financialReports")}
+            description={t("dashboard.reports.categoryFinancialDesc")}
+            icon="chart"
+          />
+        ) : null}
         <CategoryQuickLink
           href="/dashboard/reports/inventory-reports"
           title={t("dashboard.nav.inventoryReports")}
           description={t("dashboard.reports.categoryInventoryDesc")}
           icon="warehouse"
         />
-        <CategoryQuickLink
-          href="/dashboard/reports/party-reports"
-          title={t("dashboard.nav.partyReports")}
-          description={t("dashboard.reports.categoryPartyDesc")}
-          icon="parties"
-        />
+        {showParty ? (
+          <CategoryQuickLink
+            href="/dashboard/reports/party-reports"
+            title={t("dashboard.nav.partyReports")}
+            description={t("dashboard.reports.categoryPartyDesc")}
+            icon="parties"
+          />
+        ) : null}
       </div>
 
       <div className="space-y-8">
-        <ReportSection title={t("dashboard.reports.sectionFavourite")} links={getReportsByCategory("favourite")} />
-        <ReportSection title={t("dashboard.reports.sectionGst")} links={getReportsByCategory("gst")} />
-        <ReportSection title={t("dashboard.reports.sectionFinancial")} links={getReportsByCategory("financial")} />
-        <ReportSection title={t("dashboard.reports.sectionTransaction")} links={getReportsByCategory("transaction")} />
-        <ReportSection title={t("dashboard.reports.sectionItem")} links={getReportsByCategory("item")} />
-        <ReportSection title={t("dashboard.reports.sectionParty")} links={getReportsByCategory("party")} />
+        <ReportSection
+          title={t("dashboard.reports.sectionFavourite")}
+          links={getReportsByCategory("favourite", planFeatures)}
+        />
+        {showGst ? (
+          <ReportSection title={t("dashboard.reports.sectionGst")} links={getReportsByCategory("gst", planFeatures)} />
+        ) : null}
+        {showFinancial ? (
+          <ReportSection
+            title={t("dashboard.reports.sectionFinancial")}
+            links={getReportsByCategory("financial", planFeatures)}
+          />
+        ) : null}
+        <ReportSection
+          title={t("dashboard.reports.sectionTransaction")}
+          links={getReportsByCategory("transaction", planFeatures)}
+        />
+        <ReportSection title={t("dashboard.reports.sectionItem")} links={getReportsByCategory("item", planFeatures)} />
+        {showParty ? (
+          <ReportSection title={t("dashboard.reports.sectionParty")} links={getReportsByCategory("party", planFeatures)} />
+        ) : null}
       </div>
     </div>
   );
@@ -140,12 +167,14 @@ export function ReportCategoryPage({
   category: "gst" | "financial" | "inventory" | "party" | "item" | "transaction";
 }) {
   const { t } = useTranslation();
+  const { planFeatures } = useOrganisationPermissions();
   const links = getReportsByCategory(
     category === "financial"
       ? "financial"
       : category === "inventory"
         ? "inventory"
         : category,
+    planFeatures,
   );
   const titleKey =
     category === "gst"

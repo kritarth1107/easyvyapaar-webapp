@@ -1,3 +1,5 @@
+import { canAccessNavItemForPlan } from "@/lib/permissions/plan-nav-features";
+import type { OrganisationPlanFeatures } from "@/lib/permissions/plan-nav-features";
 import type { Permission } from "@/lib/permissions/role-permissions";
 
 /** Minimum permission to show a nav item. `null` = always visible when logged in. */
@@ -49,9 +51,14 @@ export const NAV_ITEM_PERMISSIONS: Record<string, Permission | null> = {
 export function canAccessNavItem(
   itemId: string,
   flags: Record<Permission, boolean> | null,
+  planFeatures?: OrganisationPlanFeatures | null,
 ): boolean {
   const required = NAV_ITEM_PERMISSIONS[itemId];
-  if (required === undefined || required === null) return true;
-  if (!flags) return true;
-  return Boolean(flags[required]);
+  if (required !== undefined && required !== null && flags) {
+    if (!flags[required]) return false;
+  }
+  if (planFeatures) {
+    return canAccessNavItemForPlan(itemId, planFeatures);
+  }
+  return true;
 }

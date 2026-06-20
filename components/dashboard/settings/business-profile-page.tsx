@@ -1,8 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { CreateBusinessModal } from "@/components/dashboard/create-business-modal";
 import { orgInitials } from "@/components/dashboard/business-switch";
 import { InvoiceSignatureInput } from "@/components/dashboard/sales/invoice-signature-input";
 import { useUserMe } from "@/components/providers/user-me-provider";
@@ -183,6 +183,7 @@ export function BusinessProfilePage() {
   } | null>(null);
   const [detailType, setDetailType] = useState<string>(ADDITIONAL_DETAIL_TYPES[0].value);
   const [detailValue, setDetailValue] = useState("");
+  const [createBusinessOpen, setCreateBusinessOpen] = useState(false);
 
   useEffect(() => {
     const orgId = activeOrganisationId?.trim();
@@ -379,12 +380,13 @@ export function BusinessProfilePage() {
                 {t("dashboard.businessProfile.subtitle")}
               </p>
             </div>
-            <Link
-              href="/auth/register"
+            <button
+              type="button"
+              onClick={() => setCreateBusinessOpen(true)}
               className="inline-flex h-9 shrink-0 items-center rounded-md bg-gradient-to-r from-brand-orange-2 to-brand-orange-1 px-4 text-sm font-semibold text-white hover:brightness-105"
             >
               {t("dashboard.businessProfile.createNewBusiness")}
-            </Link>
+            </button>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -813,14 +815,16 @@ export function BusinessProfilePage() {
           <p className="mt-3 text-sm text-brand-primary-muted">
             {t("dashboard.businessProfile.addNewBusinessHint")}
           </p>
-          <Link
-            href="/auth/register"
+          <button
+            type="button"
+            onClick={() => setCreateBusinessOpen(true)}
             className="mt-3 inline-flex h-10 items-center rounded-md bg-gradient-to-r from-brand-orange-2 to-brand-orange-1 px-5 text-sm font-semibold text-white hover:brightness-105"
           >
             {t("dashboard.businessProfile.createNewBusiness")}
-          </Link>
+          </button>
         </div>
       </div>
+      <CreateBusinessModal open={createBusinessOpen} onClose={() => setCreateBusinessOpen(false)} />
     </div>
   );
 }

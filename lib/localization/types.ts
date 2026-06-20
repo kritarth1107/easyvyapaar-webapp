@@ -54,6 +54,29 @@ export type MessageTree = {
     requiredSubtitle: string;
     selectFromSidebarHint: string;
   };
+  createBusiness: {
+    title: string;
+    subtitle: string;
+    loadError: string;
+    submitError: string;
+    upgradeTitle: string;
+    upgradeHint: string;
+    upgradePlanHint: string;
+    upgradeCta: string;
+    tradeName: string;
+    tradeNamePlaceholder: string;
+    orgType: string;
+    orgTypePlaceholder: string;
+    industry: string;
+    industryPlaceholder: string;
+    gstin: string;
+    gstinPlaceholder: string;
+    gstinHint: string;
+    nameRequired: string;
+    orgTypeRequired: string;
+    industryRequired: string;
+    submit: string;
+  };
   login: {
     signIn: string;
     title: string;
@@ -1993,6 +2016,8 @@ export type MessageTree = {
       subtitle: string;
       hubTitle: string;
       backToHub: string;
+      planUpgradeRequired: string;
+      upgradePlanCta: string;
       availableReports: string;
       sectionFavourite: string;
       sectionGst: string;
@@ -2265,6 +2290,47 @@ export type MessageTree = {
       leaveConfirm: string;
       leaveError: string;
       leftOrg: string;
+      subscriptionLink: string;
+    };
+    subscription: {
+      title: string;
+      subtitle: string;
+      profileLink: string;
+      loadError: string;
+      txLoadError: string;
+      renewError: string;
+      renewCta: string;
+      ownerRenewHint: string;
+      tabPlan: string;
+      tabTransactions: string;
+      currentPlan: string;
+      billingMonthly: string;
+      billingYearly: string;
+      validUntil: string;
+      accessUntil: string;
+      planCode: string;
+      manageRenewal: string;
+      planBenefits: string;
+      usageTitle: string;
+      usageHint: string;
+      addonsTitle: string;
+      addonsHint: string;
+      requestAiAddon: string;
+      requestAddon: string;
+      transactionsTitle: string;
+      transactionsHint: string;
+      noTransactions: string;
+      colDate: string;
+      colPlan: string;
+      colType: string;
+      colAmount: string;
+      colPayment: string;
+      colInvoice: string;
+      downloadInvoice: string;
+      downloadInvoiceError: string;
+      gstLine: string;
+      gstBreakdown: string;
+      colStatus: string;
     };
     teamSettings: {
       title: string;
@@ -2320,6 +2386,9 @@ export type MessageTree = {
       tabTeamMembers: string;
       tabInviteMember: string;
       inviteMemberButton: string;
+      seatLimitTitle: string;
+      seatLimitHint: string;
+      seatLimitUpgradeCta: string;
       colName: string;
       colMobile: string;
       colRole: string;
@@ -2537,6 +2606,7 @@ export type MessageTree = {
       printSettings: string;
       team: string;
       appSettings: string;
+      subscription: string;
       group: {
         sales: string;
         parties: string;

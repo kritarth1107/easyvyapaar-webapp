@@ -209,20 +209,28 @@ export function AccountSettingsPage() {
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-6 lg:px-6 lg:py-8">
-      <div className="mb-6 flex items-center gap-3">
-        <Link
-          href="/dashboard"
-          className="flex h-9 w-9 items-center justify-center rounded-md border border-slate-200/90 text-brand-primary hover:bg-slate-50"
-          aria-label={t("common.back")}
-        >
-          <BackIcon />
-        </Link>
-        <div>
-          <h1 className="text-xl font-bold text-brand-primary lg:text-2xl">
-            {t("dashboard.userSettings.title")}
-          </h1>
-          <p className="text-sm text-brand-primary-muted">{t("dashboard.userSettings.subtitle")}</p>
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <Link
+            href="/dashboard"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-slate-200/90 text-brand-primary hover:bg-slate-50"
+            aria-label={t("common.back")}
+          >
+            <BackIcon />
+          </Link>
+          <div>
+            <h1 className="text-xl font-bold text-brand-primary lg:text-2xl">
+              {t("dashboard.userSettings.title")}
+            </h1>
+            <p className="text-sm text-brand-primary-muted">{t("dashboard.userSettings.subtitle")}</p>
+          </div>
         </div>
+        <Link
+          href="/dashboard/settings/subscription"
+          className="inline-flex shrink-0 justify-center rounded-md border border-slate-200/90 px-3 py-2 text-sm font-semibold text-brand-primary hover:bg-slate-50 sm:ml-auto"
+        >
+          {t("dashboard.userSettings.subscriptionLink")}
+        </Link>
       </div>
 
       {(profileMessage || profileError) && (

@@ -16,6 +16,7 @@ import {
   type SignupPlanCode,
 } from "@/lib/auth/plan-signup";
 import { setStoredActiveOrganisationId } from "@/lib/auth/active-organisation";
+import { parseResponseJson } from "@/lib/api/parse-response";
 import {
   isPaymentSessionExpiredMessage,
   isPaymentTokenExpired,
@@ -367,6 +368,13 @@ export function PlanPaymentCheckout({
 
   const hasDiscount = (context?.discountPaise ?? 0) > 0;
 
+  const gstHint = useMemo(() => {
+    if (context?.gstAmountPaise && context.gstAmountPaise > 0) {
+      return `${t("dashboard.subscription.gstLine")} (${formatPlanPriceInr(context.gstAmountPaise)})`;
+    }
+    return t("dashboard.subscription.gstLine");
+  }, [context?.gstAmountPaise, t]);
+
   const syncFromContext = useCallback((checkout: PaymentCheckoutContext) => {
     setContext(checkout);
     setToken(checkout.paymentToken);
@@ -383,7 +391,7 @@ export function PlanPaymentCheckout({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ paymentToken: paymentTokenValue }),
       });
-      const data: unknown = await res.json();
+      const data: unknown = await parseResponseJson(res);
       if (!res.ok) return;
       const body = data as { success: boolean; data?: PlanCouponExploreItem[] };
       if (body.success && Array.isArray(body.data)) {
@@ -477,7 +485,7 @@ export function PlanPaymentCheckout({
                 : couponCode.trim().toUpperCase(),
           }),
         });
-        const data: unknown = await res.json();
+        const data: unknown = await parseResponseJson(res);
 
         if (!res.ok) {
           const message = isApiErrorResponse(data)
@@ -558,7 +566,7 @@ export function PlanPaymentCheckout({
             razorpaySignature: razorpayResponse.razorpay_signature,
           }),
         });
-        const data: unknown = await res.json();
+        const data: unknown = await parseResponseJson(res);
         if (!res.ok) {
           const message = isApiErrorResponse(data)
             ? data.error.details ?? data.message
@@ -615,7 +623,7 @@ export function PlanPaymentCheckout({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ paymentToken: paymentTokenValue }),
       });
-      const data: unknown = await res.json();
+      const data: unknown = await parseResponseJson(res);
       if (!res.ok) {
         const message = isApiErrorResponse(data)
           ? data.error.details ?? data.message
@@ -880,8 +888,10 @@ export function PlanPaymentCheckout({
             </div>
             <p className="mt-1 text-xs text-brand-primary-muted">
               {selectedBilling === "yearly"
-                ? "Billed annually · GST excluded"
-                : "Monthly UPI Autopay · GST excluded"}
+                ? "Billed annually"
+                : "Monthly UPI Autopay"}
+              {" · "}
+              {gstHint}
             </p>
           </div>
 

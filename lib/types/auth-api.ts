@@ -60,6 +60,9 @@ export interface PaymentCheckoutContext {
   amountPaise: number;
   originalAmountPaise?: number;
   discountPaise?: number;
+  taxableAmountPaise?: number;
+  gstAmountPaise?: number;
+  gstRatePercent?: number;
   couponCode?: string;
   couponTitle?: string;
   paymentMode?: "one_time" | "upi_mandate";

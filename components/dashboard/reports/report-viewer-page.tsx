@@ -4,12 +4,14 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { CompactDateField } from "@/components/ui/compact-date-field";
+import { useOrganisationPermissions } from "@/components/providers/organisation-permissions-provider";
 import { useUserMe } from "@/components/providers/user-me-provider";
 import { BalanceSheetReportView } from "@/components/dashboard/reports/balance-sheet-report-view";
 import { ProfitLossReportView } from "@/components/dashboard/reports/profit-loss-report-view";
 import { ReportSectionView } from "@/components/dashboard/reports/report-primitives";
 import { formatDateIndian } from "@/lib/dashboard/date-format";
 import { AS_OF_DATE_REPORTS, getDefaultReportDateRange } from "@/lib/reports/report-backend-map";
+import { canAccessReportSlug } from "@/lib/reports/report-config";
 import { fetchReport, isReportSlug } from "@/lib/reports/reports-api-client";
 import type { ReportData } from "@/lib/types/reports-api";
 import { useTranslation } from "@/lib/localization";
@@ -26,10 +28,12 @@ const PAGINATED_REPORTS = new Set([
 export function ReportViewerPage() {
   const { t } = useTranslation();
   const params = useParams<{ reportSlug: string }>();
+  const { planFeatures } = useOrganisationPermissions();
   const { activeOrganisationId, activeOrganisation } = useUserMe();
   const orgId = activeOrganisationId?.trim() ?? "";
   const slug = params.reportSlug;
   const validSlug = isReportSlug(slug) ? slug : null;
+  const planAllowed = validSlug ? canAccessReportSlug(validSlug, planFeatures) : false;
 
   const defaults = useMemo(() => getDefaultReportDateRange(), []);
   const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
@@ -91,6 +95,26 @@ export function ReportViewerPage() {
         <Link
           href="/dashboard/reports"
           className="mt-4 inline-block text-sm font-semibold text-brand-orange-2 hover:underline"
+        >
+          ← {t("dashboard.reports.backToHub")}
+        </Link>
+      </div>
+    );
+  }
+
+  if (!planAllowed) {
+    return (
+      <div className="p-6">
+        <p className="text-brand-primary">{t("dashboard.reports.planUpgradeRequired")}</p>
+        <Link
+          href="/dashboard/settings/subscription"
+          className="mt-4 inline-flex rounded-md bg-brand-orange-2 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-orange-1"
+        >
+          {t("dashboard.reports.upgradePlanCta")}
+        </Link>
+        <Link
+          href="/dashboard/reports"
+          className="mt-4 ml-4 inline-block text-sm font-semibold text-brand-orange-2 hover:underline"
         >
           ← {t("dashboard.reports.backToHub")}
         </Link>

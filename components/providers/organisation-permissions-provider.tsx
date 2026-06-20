@@ -19,11 +19,13 @@ import {
   type UserRole,
 } from "@/lib/permissions/role-permissions";
 import { canAccessNavItem } from "@/lib/permissions/nav-permissions";
+import type { OrganisationPlanFeatures } from "@/lib/permissions/plan-nav-features";
 
 type OrganisationPermissionsContextValue = {
   role: UserRole | null;
   flags: Record<Permission, boolean> | null;
   permissions: Permission[];
+  planFeatures: OrganisationPlanFeatures | null;
   loading: boolean;
   can: (permission: Permission) => boolean;
   canNav: (itemId: string) => boolean;
@@ -64,6 +66,7 @@ export function OrganisationPermissionsProvider({
   }, [refreshPermissions]);
 
   const role = (remote?.role ?? activeOrganisation?.userRole ?? null) as UserRole | null;
+  const planFeatures = remote?.planFeatures ?? null;
   const flags = useMemo(() => {
     if (remote?.flags) return remote.flags;
     if (role) return getPermissionFlags(role);
@@ -77,12 +80,13 @@ export function OrganisationPermissionsProvider({
       role,
       flags,
       permissions,
+      planFeatures,
       loading,
       can: (permission) => Boolean(flags?.[permission]),
-      canNav: (itemId) => canAccessNavItem(itemId, flags),
+      canNav: (itemId) => canAccessNavItem(itemId, flags, planFeatures),
       refreshPermissions,
     }),
-    [role, flags, permissions, loading, refreshPermissions],
+    [role, flags, permissions, planFeatures, loading, refreshPermissions],
   );
 
   return (

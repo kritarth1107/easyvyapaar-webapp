@@ -48,6 +48,7 @@ const NAV_ITEM_KEYS: Record<string, TranslationKey> = {
   "invoice-themes": "dashboard.nav.invoiceThemes",
   "print-settings": "dashboard.nav.printSettings",
   team: "dashboard.nav.team",
+  subscription: "dashboard.nav.subscription",
   settings: "dashboard.nav.appSettings",
 };
 

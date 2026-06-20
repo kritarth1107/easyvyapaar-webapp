@@ -1,8 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { OrganisationSelectModal } from "@/components/auth/organisation-select-modal";
+import { CreateBusinessModal } from "@/components/dashboard/create-business-modal";
 import { useUserMe } from "@/components/providers/user-me-provider";
 import { useTranslation } from "@/lib/localization";
 
@@ -47,35 +48,41 @@ type BusinessSwitchModalProps = {
 export function BusinessSwitchModal({ open, onClose }: BusinessSwitchModalProps) {
   const { t } = useTranslation();
   const { user, activeOrganisationId, switchActiveOrganisation } = useUserMe();
+  const [createBusinessOpen, setCreateBusinessOpen] = useState(false);
   const hasOrgs = (user?.organisations.length ?? 0) > 0;
   const requireSelection = hasOrgs && !activeOrganisationId;
 
   return (
-    <OrganisationSelectModal
-      variant="dashboard"
-      open={open}
-      organisations={user?.organisations ?? []}
-      activeOrganisationId={activeOrganisationId}
-      requireSelection={requireSelection}
-      currentBadge={t("orgSelect.currentBadge")}
-      closeLabel={t("common.close")}
-      title={requireSelection ? t("orgSelect.requiredTitle") : t("orgSelect.switchTitle")}
-      subtitle={
-        requireSelection ? t("orgSelect.requiredSubtitle") : t("orgSelect.switchSubtitle")
-      }
-      createBusiness={{
-        title: t("orgSelect.createBusinessTitle"),
-        subtitle: t("orgSelect.createBusinessSubtitle"),
-        cta: t("orgSelect.createBusinessCta"),
-        href: "/auth/register",
-        onNavigate: onClose,
-      }}
-      onClose={requireSelection ? undefined : onClose}
-      onSelect={(orgId) => {
-        onClose();
-        void switchActiveOrganisation(orgId);
-      }}
-    />
+    <>
+      <OrganisationSelectModal
+        variant="dashboard"
+        open={open}
+        organisations={user?.organisations ?? []}
+        activeOrganisationId={activeOrganisationId}
+        requireSelection={requireSelection}
+        currentBadge={t("orgSelect.currentBadge")}
+        closeLabel={t("common.close")}
+        title={requireSelection ? t("orgSelect.requiredTitle") : t("orgSelect.switchTitle")}
+        subtitle={
+          requireSelection ? t("orgSelect.requiredSubtitle") : t("orgSelect.switchSubtitle")
+        }
+        createBusiness={{
+          title: t("orgSelect.createBusinessTitle"),
+          subtitle: t("orgSelect.createBusinessSubtitle"),
+          cta: t("orgSelect.createBusinessCta"),
+          onClick: () => {
+            onClose();
+            setCreateBusinessOpen(true);
+          },
+        }}
+        onClose={requireSelection ? undefined : onClose}
+        onSelect={(orgId) => {
+          onClose();
+          void switchActiveOrganisation(orgId);
+        }}
+      />
+      <CreateBusinessModal open={createBusinessOpen} onClose={() => setCreateBusinessOpen(false)} />
+    </>
   );
 }
 
