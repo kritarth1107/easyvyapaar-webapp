@@ -49,6 +49,7 @@ export const enMessages: MessageTree = {
     invalidMobile: "Enter a valid 10-digit Indian mobile number",
     enterOtpError: "Enter the 6-digit OTP",
     loginFailed: "Login failed. Please try again.",
+    paymentRequiredAlert: "Sign in to complete your plan payment.",
     heroLine1: "Run your entire",
     heroLine2: "from one dashboard",
     heroSubtitle:

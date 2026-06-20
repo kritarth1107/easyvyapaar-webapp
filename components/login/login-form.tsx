@@ -2,9 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { BRAND_LOGO } from "@/lib/brand/assets";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { OtpInput } from "./otp-input";
 import { useTranslation } from "@/lib/localization";
 import { normalizeIndianMobileInput } from "@/lib/validators/indian-mobile";
@@ -12,6 +12,10 @@ import { OrganisationSelectModal } from "@/components/auth/organisation-select-m
 import { completeAuthSessionOrganisation } from "@/lib/auth/complete-auth-session";
 import { setStoredActiveOrganisationId } from "@/lib/auth/active-organisation";
 import { DASHBOARD_PATH, PAYMENT_PATH } from "@/lib/auth/session";
+import {
+  PAYMENT_LOGIN_QUERY,
+  PAYMENT_LOGIN_REQUIRED_VALUE,
+} from "@/lib/auth/payment-session";
 import { storePaymentCheckout } from "@/lib/auth/plan-signup";
 import type { OrganisationSummary } from "@/lib/types/auth-api";
 import {
@@ -41,6 +45,7 @@ function PencilIcon() {
 
 export function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { t } = useTranslation();
   const [mobile, setMobile] = useState("");
   const [otpDigits, setOtpDigits] = useState<string[]>(Array(6).fill(""));
@@ -50,10 +55,17 @@ export function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [paymentAlert, setPaymentAlert] = useState<string | null>(null);
   const [orgModalOpen, setOrgModalOpen] = useState(false);
   const [pendingOrganisations, setPendingOrganisations] = useState<OrganisationSummary[]>([]);
   const [pendingDefaultOrgId, setPendingDefaultOrgId] = useState<string | undefined>();
   const lastOtpRequestRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (searchParams.get(PAYMENT_LOGIN_QUERY) === PAYMENT_LOGIN_REQUIRED_VALUE) {
+      setPaymentAlert(t("login.paymentRequiredAlert"));
+    }
+  }, [searchParams, t]);
 
   const isValidMobile = INDIAN_MOBILE_REGEX.test(mobile);
   const otpValue = otpDigits.join("");
@@ -300,6 +312,15 @@ export function LoginForm() {
                 disabled={loading}
               />
             </div>
+          )}
+
+          {paymentAlert && !error && (
+            <p
+              className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-950"
+              role="alert"
+            >
+              {paymentAlert}
+            </p>
           )}
 
           {error && (

@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { DecorativePanel, LoginForm } from "@/components/login";
 import { JsonLd } from "@/components/seo/json-ld";
 import { getSiteUrl, SITE_NAME } from "@/lib/seo/site-metadata";
@@ -31,7 +32,9 @@ export default function LoginPage() {
       <JsonLd data={loginJsonLd} />
       <div className="flex min-h-screen font-sans">
         <DecorativePanel />
-        <LoginForm />
+        <Suspense fallback={null}>
+          <LoginForm />
+        </Suspense>
       </div>
     </>
   );

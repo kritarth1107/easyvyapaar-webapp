@@ -16,6 +16,11 @@ import {
   type SignupPlanCode,
 } from "@/lib/auth/plan-signup";
 import { setStoredActiveOrganisationId } from "@/lib/auth/active-organisation";
+import {
+  isPaymentSessionExpiredMessage,
+  isPaymentTokenExpired,
+  redirectToLoginForPayment,
+} from "@/lib/auth/payment-session";
 import { DASHBOARD_PATH } from "@/lib/auth/session";
 import { BRAND_LOGO } from "@/lib/brand/assets";
 import { useTranslation } from "@/lib/localization";
@@ -305,6 +310,19 @@ export function PlanPaymentCheckout({
   const [compareOpen, setCompareOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
+  const [redirectingToLogin, setRedirectingToLogin] = useState(false);
+
+  const showPaymentError = useCallback(
+    (message: string, errorCode?: number) => {
+      if (errorCode === 1007 || isPaymentSessionExpiredMessage(message)) {
+        setRedirectingToLogin(true);
+        redirectToLoginForPayment(router);
+        return;
+      }
+      setError(message);
+    },
+    [router],
+  );
 
   const paidPlans = useMemo(() => {
     if (!pricing?.plans.length) return [];
@@ -381,12 +399,29 @@ export function PlanPaymentCheckout({
   useEffect(() => {
     const storedContext = readPaymentCheckout();
     if (storedContext) {
+      if (isPaymentTokenExpired(storedContext.paymentToken)) {
+        setRedirectingToLogin(true);
+        redirectToLoginForPayment(router);
+        return;
+      }
       syncFromContext(storedContext);
       return;
     }
     const stored = readPaymentToken();
-    if (stored) setToken(stored);
-  }, [syncFromContext]);
+    if (stored) {
+      if (isPaymentTokenExpired(stored)) {
+        setRedirectingToLogin(true);
+        redirectToLoginForPayment(router);
+        return;
+      }
+      setToken(stored);
+      return;
+    }
+    if (!initialContext && !paymentToken) {
+      setRedirectingToLogin(true);
+      redirectToLoginForPayment(router);
+    }
+  }, [initialContext, paymentToken, router, syncFromContext]);
 
   useEffect(() => {
     if (initialContext) {
@@ -402,7 +437,8 @@ export function PlanPaymentCheckout({
     ) => {
       const paymentTokenValue = token ?? readPaymentToken();
       if (!paymentTokenValue) {
-        setError("Payment session expired. Sign in again to continue.");
+        setRedirectingToLogin(true);
+        redirectToLoginForPayment(router);
         return;
       }
 
@@ -442,7 +478,7 @@ export function PlanPaymentCheckout({
           const message = isApiErrorResponse(data)
             ? data.error.details ?? data.message
             : "Could not update plan selection";
-          setError(message);
+          showPaymentError(message, isApiErrorResponse(data) ? data.error.errorCode : undefined);
           return;
         }
 
@@ -460,7 +496,7 @@ export function PlanPaymentCheckout({
         setSelectionUpdating(false);
       }
     },
-    [context, loadExploreCoupons, selectedBilling, selectedPlan, syncFromContext, token],
+    [context, loadExploreCoupons, router, selectedBilling, selectedPlan, showPaymentError, syncFromContext, token],
   );
 
   const applyCouponCode = useCallback(
@@ -522,7 +558,7 @@ export function PlanPaymentCheckout({
           const message = isApiErrorResponse(data)
             ? data.error.details ?? data.message
             : "Payment verification failed";
-          setError(message);
+          showPaymentError(message, isApiErrorResponse(data) ? data.error.errorCode : undefined);
           return;
         }
 
@@ -553,13 +589,14 @@ export function PlanPaymentCheckout({
         setLoading(false);
       }
     },
-    [router],
+    [router, showPaymentError],
   );
 
   const startCheckout = useCallback(async () => {
     const paymentTokenValue = token ?? readPaymentToken();
     if (!paymentTokenValue) {
-      setError("Payment session expired. Sign in again to continue.");
+      setRedirectingToLogin(true);
+      redirectToLoginForPayment(router);
       return;
     }
 
@@ -578,7 +615,7 @@ export function PlanPaymentCheckout({
         const message = isApiErrorResponse(data)
           ? data.error.details ?? data.message
           : "Could not start payment";
-        setError(message);
+        showPaymentError(message, isApiErrorResponse(data) ? data.error.errorCode : undefined);
         return;
       }
 
@@ -673,35 +710,16 @@ export function PlanPaymentCheckout({
     } finally {
       setLoading(false);
     }
-  }, [context, token, verifyPayment]);
+  }, [context, router, showPaymentError, token, verifyPayment]);
 
   const busy = loading || selectionUpdating || couponApplying;
 
+  if (redirectingToLogin) {
+    return null;
+  }
+
   if (!context && !token) {
-    return (
-      <div className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col justify-center bg-white px-4 py-6 sm:px-8 lg:px-16 xl:px-24 2xl:px-28">
-        <div className="mx-auto w-full max-w-lg lg:mx-0">
-          <div className="mb-6 lg:hidden">
-            <Image
-              src={BRAND_LOGO}
-              alt={t("common.brandName")}
-              width={200}
-              height={38}
-              className="h-9 w-auto object-contain sm:h-10"
-              priority
-            />
-          </div>
-          <h1 className="text-xl font-bold text-brand-primary sm:text-2xl">Complete your plan payment</h1>
-          <p className="mt-2 text-sm text-brand-primary-muted">Sign in with your verified mobile to continue.</p>
-          <Link
-            href="/auth/login"
-            className="login-btn-primary mt-6 inline-flex rounded-xs px-6 py-3.5 text-sm font-semibold"
-          >
-            Go to login
-          </Link>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (

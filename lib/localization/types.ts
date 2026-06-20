@@ -69,6 +69,7 @@ export type MessageTree = {
     invalidMobile: string;
     enterOtpError: string;
     loginFailed: string;
+    paymentRequiredAlert: string;
     heroLine1: string;
     heroLine2: string;
     heroSubtitle: string;
