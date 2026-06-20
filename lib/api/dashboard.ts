@@ -1,6 +1,6 @@
 import { extractBackendError } from "@/lib/api/inventory";
-import type { ShopDashboardStats, WeekdayKey } from "@/lib/dashboard/shop-workspace";
-import type { PaymentCheckoutContext } from "@/lib/types/auth-api";
+import type { PlanRenewalReminder, ShopDashboardStats, WeekdayKey } from "@/lib/dashboard/shop-workspace";
+import { isPaymentCheckoutContext } from "@/lib/types/auth-api";
 
 export { extractBackendError };
 
@@ -190,7 +190,7 @@ export function normalizeDashboardOverview(body: unknown): ShopDashboardStats | 
   const reminderSeverity = pickString(planRenewalReminderRaw?.severity);
   const reminderSeverities = new Set(["info", "warning", "critical"]);
   const billingCycleRaw = pickString(planRenewalReminderRaw?.billingCycle);
-  const planRenewalReminder =
+  const planRenewalReminder: PlanRenewalReminder =
     planRenewalReminderRaw &&
     typeof planRenewalReminderRaw.show === "boolean" &&
     reminderKind &&
@@ -200,8 +200,8 @@ export function normalizeDashboardOverview(body: unknown): ShopDashboardStats | 
     (billingCycleRaw === "MONTHLY" || billingCycleRaw === "YEARLY")
       ? {
           show: planRenewalReminderRaw.show,
-          kind: reminderKind as ShopDashboardStats["planRenewalReminder"]["kind"],
-          severity: reminderSeverity as ShopDashboardStats["planRenewalReminder"]["severity"],
+          kind: reminderKind as PlanRenewalReminder["kind"],
+          severity: reminderSeverity as PlanRenewalReminder["severity"],
           billingCycle: billingCycleRaw,
           planCode: pickString(planRenewalReminderRaw.planCode) ?? "STARTER",
           validityEnd: pickString(planRenewalReminderRaw.validityEnd) ?? new Date().toISOString(),
@@ -215,9 +215,9 @@ export function normalizeDashboardOverview(body: unknown): ShopDashboardStats | 
         }
       : {
           show: false,
-          kind: "none" as const,
-          severity: "info" as const,
-          billingCycle: "YEARLY" as const,
+          kind: "none",
+          severity: "info",
+          billingCycle: "YEARLY",
           planCode: "STARTER",
           validityEnd: new Date().toISOString(),
           graceEndsAt: new Date().toISOString(),
@@ -229,17 +229,9 @@ export function normalizeDashboardOverview(body: unknown): ShopDashboardStats | 
           message: "",
         };
 
-  if (planRenewalReminderRaw?.checkout && asRecord(planRenewalReminderRaw.checkout)) {
-    const checkout = asRecord(planRenewalReminderRaw.checkout);
-    const paymentToken = pickString(checkout.paymentToken);
-    if (
-      checkout.paymentRequired === true &&
-      paymentToken &&
-      pickString(checkout.organisationId) &&
-      pickString(checkout.planCode)
-    ) {
-      planRenewalReminder.checkout = checkout as PaymentCheckoutContext;
-    }
+  const checkoutRaw = planRenewalReminderRaw?.checkout;
+  if (isPaymentCheckoutContext(checkoutRaw)) {
+    planRenewalReminder.checkout = checkoutRaw;
   }
 
   return {
