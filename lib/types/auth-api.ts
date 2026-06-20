@@ -37,10 +37,69 @@ export interface VerifyOtpSuccessData {
   mobile: string;
   name: string;
   isMobileVerified: boolean;
-  sessionToken: string;
+  sessionToken?: string;
+  paymentRequired?: boolean;
+  paymentToken?: string;
+  organisationId?: string;
+  organisationName?: string;
+  planCode?: string;
+  billingCycle?: string;
+  amountPaise?: number;
   defaultOrganisationId?: string;
   defaultOrganisation?: OrganisationSummary;
-  organisations: OrganisationSummary[];
+  organisations?: OrganisationSummary[];
+}
+
+export interface PaymentCheckoutContext {
+  paymentRequired: true;
+  paymentToken: string;
+  organisationId: string;
+  organisationName: string;
+  planCode: string;
+  billingCycle: string;
+  amountPaise: number;
+  originalAmountPaise?: number;
+  discountPaise?: number;
+  couponCode?: string;
+  couponTitle?: string;
+  paymentMode?: "one_time" | "upi_mandate";
+  userId: string;
+  mobile: string;
+  name: string;
+  isMobileVerified: boolean;
+}
+
+export type PlanCouponExploreItem = {
+  couponCode: string;
+  title: string;
+  description: string;
+  discountLabel: string;
+  discountDuration: "first_cycle" | "every_cycle";
+  isEligible: boolean;
+  reason?: string;
+  originalAmountPaise: number;
+  discountPaise: number;
+  finalAmountPaise: number;
+};
+
+export interface PaymentSessionSuccessResponse {
+  success: true;
+  message: string;
+  details?: string;
+  data: VerifyOtpSuccessData & {
+    sessionToken: string;
+    organisations: OrganisationSummary[];
+  };
+}
+
+export function isPaymentCheckoutContext(data: unknown): data is PaymentCheckoutContext {
+  return (
+    typeof data === "object" &&
+    data !== null &&
+    "paymentRequired" in data &&
+    (data as PaymentCheckoutContext).paymentRequired === true &&
+    typeof (data as PaymentCheckoutContext).paymentToken === "string"
+  );
 }
 
 export interface VerifyOtpSuccessResponse {

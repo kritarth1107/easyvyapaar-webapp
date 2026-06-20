@@ -2449,6 +2449,22 @@ export type MessageTree = {
     sidebarTagline: string;
     posLive: string;
     notifications: string;
+    planRenewal: {
+      pendingTitle: string;
+      pendingMessage: string;
+      monthlyGraceTitle: string;
+      monthlyGraceMessage: string;
+      graceTitle: string;
+      graceMessage: string;
+      expiringSoonTitle: string;
+      expiringSoonMessage: string;
+      mandateTitle: string;
+      mandateMessage: string;
+      expiredTitle: string;
+      expiredMessage: string;
+      ownerOnly: string;
+      renewCta: string;
+    };
     notificationFeed: {
       markAllRead: string;
       viewAll: string;

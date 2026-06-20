@@ -27,7 +27,12 @@ import { ModernSelect } from "@/components/ui/modern-select";
 import { OrganisationSelectModal } from "@/components/auth/organisation-select-modal";
 import { completeAuthSessionOrganisation } from "@/lib/auth/complete-auth-session";
 import { setStoredActiveOrganisationId } from "@/lib/auth/active-organisation";
-import { DASHBOARD_PATH } from "@/lib/auth/session";
+import { DASHBOARD_PATH, PAYMENT_PATH } from "@/lib/auth/session";
+import {
+  storePaymentCheckout,
+  type SignupBillingCycle,
+  type SignupPlanCode,
+} from "@/lib/auth/plan-signup";
 import {
   AUTH_ERROR_MOBILE_ALREADY_REGISTERED,
   type CheckGstSuccessResponse,
@@ -35,6 +40,7 @@ import {
   type RegisterSuccessResponse,
   type VerifyOtpSuccessResponse,
   isApiErrorResponse,
+  isPaymentCheckoutContext,
 } from "@/lib/types/auth-api";
 import { normalizeIndianMobileInput } from "@/lib/validators/indian-mobile";
 import { isValidGstin, normalizeGstin } from "@/lib/validators/gstin";
@@ -45,6 +51,8 @@ const INDIAN_MOBILE_REGEX = /^[6-9]\d{9}$/;
 
 type RegisterFormProps = {
   initialMobile?: string;
+  initialPlan?: SignupPlanCode;
+  initialBilling?: SignupBillingCycle;
 };
 
 type RegisterStep = 1 | 2 | 3 | 4;
@@ -191,7 +199,11 @@ function StepIndicator({ step, stepLabels }: StepIndicatorProps) {
   );
 }
 
-export function RegisterForm({ initialMobile = "" }: RegisterFormProps) {
+export function RegisterForm({
+  initialMobile = "",
+  initialPlan = "STARTER",
+  initialBilling = "yearly",
+}: RegisterFormProps) {
   const router = useRouter();
   const { t, locale, setLocale } = useTranslation();
   const [step, setStep] = useState<RegisterStep>(1);
@@ -401,6 +413,8 @@ export function RegisterForm({ initialMobile = "" }: RegisterFormProps) {
         industryType,
         mobile,
         preferredLanguage: locale,
+        planCode: initialPlan,
+        billingCycle: initialBilling === "yearly" ? "YEARLY" : "MONTHLY",
       };
       if (gstVerified && isValidGstin(normalizedGst)) {
         registerPayload.gstin = normalizedGst;
@@ -470,6 +484,19 @@ export function RegisterForm({ initialMobile = "" }: RegisterFormProps) {
 
       const success = data as VerifyOtpSuccessResponse;
       if (!success.success || !success.data) {
+        setError(t("register.otp.verifyFailed"));
+        return;
+      }
+
+      if (isPaymentCheckoutContext(success.data)) {
+        storePaymentCheckout(success.data);
+        router.push(
+          `${PAYMENT_PATH}?plan=${encodeURIComponent(success.data.planCode)}&billing=${encodeURIComponent(success.data.billingCycle)}`
+        );
+        return;
+      }
+
+      if (!success.data.sessionToken) {
         setError(t("register.otp.verifyFailed"));
         return;
       }

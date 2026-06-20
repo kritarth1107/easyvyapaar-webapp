@@ -157,7 +157,7 @@ export function normalizeOrganisationProfile(raw: unknown): OrganisationProfile 
     website: pickString(root.website),
     ownerUserId: pickString(root.ownerUserId, root.owner_user_id) ?? "",
     status: pickString(root.status) ?? "ACTIVE",
-    currentPlan: pickString(root.currentPlan, root.current_plan) ?? "FREE",
+    currentPlan: pickString(root.currentPlan, root.current_plan) ?? "PRO",
   };
 }
 

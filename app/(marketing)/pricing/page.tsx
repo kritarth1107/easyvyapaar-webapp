@@ -1,79 +1,59 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { SectionHeading } from "@/components/marketing/section-heading";
-import { PRICING_PLANS } from "@/lib/marketing/site-content";
+import { PricingPageContent } from "@/components/marketing/pricing-page-content";
+import { normalizePublicPricing } from "@/lib/api/pricing";
+import { fetchBackend, getApiBaseUrl, parseBackendBody } from "@/lib/api/backend";
 import { PRICING_KEYWORDS } from "@/lib/seo/marketing-keywords";
 import { buildMarketingMetadata } from "@/lib/seo/site-metadata";
+import type { PublicPricingResponse } from "@/lib/types/pricing-api";
 
 export const metadata: Metadata = buildMarketingMetadata({
-  title: "Pricing — Free early access & plans for every shop size",
+  title: "Pricing. Plans from ₹149/mo for kirana, mobile & wholesale",
   description:
-    "Transparent Mahajaan pricing for Indian retailers. Start free during early access — no credit card. Growth & Business plans with POS, payroll & advanced reports. Compare cost vs Vyapar, myBillBook, TallyPrime, Marg ERP & Busy.",
+    "Mahajaan pricing for Indian retailers: Starter from ₹149/mo (annual), Pro with AI Chat at ₹299/mo, Business with WhatsApp at ₹499/mo, and Enterprise white-label. Compare vs Vyapar & myBillBook.",
   path: "/pricing",
   keywords: PRICING_KEYWORDS,
 });
 
-export default function PricingPage() {
-  return (
-    <>
-      <section className="bg-brand-surface py-16 sm:py-20">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <SectionHeading
-            eyebrow="Pricing"
-            title="Start free. Grow when your shop grows."
-            description="No hidden setup fees. Pick a plan that matches your counter, team size, and reporting needs."
-          />
-        </div>
-      </section>
+export const revalidate = 300;
 
-      <section className="pb-20">
-        <div className="mx-auto grid max-w-6xl gap-6 px-4 sm:px-6 lg:grid-cols-3">
-          {PRICING_PLANS.map((plan) => (
-            <article
-              key={plan.id}
-              className={`flex flex-col rounded-2xl border p-6 ${
-                plan.highlighted
-                  ? "border-brand-orange-1/40 bg-white shadow-lg shadow-brand-orange-1/10 ring-2 ring-brand-orange-1/20"
-                  : "border-slate-200/90 bg-white"
-              }`}
-            >
-              {plan.highlighted ? (
-                <span className="mb-3 inline-flex w-fit rounded-full bg-brand-orange-1/10 px-3 py-1 text-xs font-bold uppercase tracking-wide text-brand-orange-2">
-                  Most popular
-                </span>
-              ) : null}
-              <h2 className="text-xl font-bold text-brand-primary">{plan.name}</h2>
-              <p className="mt-3">
-                <span className="text-3xl font-bold text-brand-primary">{plan.price}</span>
-                <span className="text-sm text-brand-primary-muted"> {plan.period}</span>
-              </p>
-              <p className="mt-3 text-sm leading-7 text-brand-primary-muted">{plan.description}</p>
-              <ul className="mt-6 flex-1 space-y-2.5">
-                {plan.features.map((feature) => (
-                  <li key={feature} className="flex gap-2 text-sm text-brand-primary">
-                    <span className="text-brand-orange-2">✓</span>
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-              <Link
-                href={plan.id === "business" ? "/contact" : "/auth/register"}
-                className={`mt-8 inline-flex justify-center rounded-sm px-5 py-3 text-sm font-semibold ${
-                  plan.highlighted
-                    ? "brand-gradient-orange-h text-white"
-                    : "border border-brand-primary/15 text-brand-primary hover:bg-brand-surface"
-                }`}
-              >
-                {plan.cta}
-              </Link>
-            </article>
-          ))}
+async function loadPricing(): Promise<PublicPricingResponse | null> {
+  const apiBaseUrl = getApiBaseUrl();
+  if (!apiBaseUrl) return null;
+
+  try {
+    const response = await fetchBackend(new URL("public/pricing", apiBaseUrl).toString(), {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      next: { revalidate: 300 },
+      timeoutMs: 10_000,
+    });
+    const body = await parseBackendBody(response);
+    if (!response.ok) return null;
+    return normalizePublicPricing(body);
+  } catch {
+    return null;
+  }
+}
+
+export default async function PricingPage() {
+  const pricing = await loadPricing();
+
+  if (!pricing) {
+    return (
+      <section className="bg-brand-surface py-20">
+        <div className="mx-auto max-w-2xl px-4 text-center sm:px-6">
+          <h1 className="text-2xl font-bold text-brand-primary">Pricing</h1>
+          <p className="mt-4 text-sm text-brand-primary-muted">
+            Pricing is being updated. Please check back shortly or{" "}
+            <a href="/contact" className="font-semibold text-brand-orange-2 hover:underline">
+              contact us
+            </a>
+            .
+          </p>
         </div>
-        <p className="mx-auto mt-8 max-w-2xl px-4 text-center text-xs text-brand-primary-muted">
-          Prices shown are indicative for planning purposes. Final commercial terms may vary during
-          early access. GST applicable where required.
-        </p>
       </section>
-    </>
-  );
+    );
+  }
+
+  return <PricingPageContent pricing={pricing} />;
 }

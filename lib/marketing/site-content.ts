@@ -261,59 +261,6 @@ export const HOME_STATS = [
   },
 ];
 
-export const PRICING_PLANS = [
-  {
-    id: "starter",
-    name: "Starter",
-    price: "Free",
-    period: "during early access",
-    description: "For single-shop owners getting started on Mahajaan.",
-    features: [
-      "GST billing & quotations",
-      "Inventory & parties",
-      "Basic reports",
-      "1 business, up to 2 users",
-      "Email support",
-    ],
-    cta: "Start free",
-    highlighted: false,
-  },
-  {
-    id: "growth",
-    name: "Growth",
-    price: "₹999",
-    period: "/ month",
-    description: "For growing shops that need more users and deeper controls.",
-    features: [
-      "Everything in Starter",
-      "POS billing",
-      "Staff, attendance & payroll",
-      "Advanced reports (P&L, balance sheet)",
-      "Up to 5 users",
-      "Priority support",
-    ],
-    cta: "Join waitlist",
-    highlighted: true,
-  },
-  {
-    id: "business",
-    name: "Business",
-    price: "Custom",
-    period: "pricing",
-    description: "For multi-counter stores, branches, or higher volume operations.",
-    features: [
-      "Everything in Growth",
-      "Multiple godowns",
-      "Custom invoice numbering",
-      "Dedicated onboarding",
-      "Unlimited users",
-      "Phone & WhatsApp support",
-    ],
-    cta: "Talk to sales",
-    highlighted: false,
-  },
-];
-
 export const USE_CASES_PAGE = {
   eyebrow: "Use cases",
   title: "Every counter has a different rhythm",

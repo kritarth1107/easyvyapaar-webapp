@@ -1,9 +1,10 @@
 import { RegisterForm, RegisterSidebar } from "@/components/register";
+import { normalizeSignupBillingCycle, normalizeSignupPlanCode } from "@/lib/auth/plan-signup";
 import { JsonLd } from "@/components/seo/json-ld";
 import { getSiteUrl, SITE_NAME } from "@/lib/seo/site-metadata";
 
 type RegisterPageProps = {
-  searchParams: Promise<{ mobile?: string }>;
+  searchParams: Promise<{ mobile?: string; plan?: string; billing?: string }>;
 };
 
 const registerJsonLd = {
@@ -32,13 +33,19 @@ const registerJsonLd = {
 export default async function RegisterPage({ searchParams }: RegisterPageProps) {
   const params = await searchParams;
   const initialMobile = params.mobile?.replace(/\D/g, "").slice(-10) ?? "";
+  const initialPlan = normalizeSignupPlanCode(params.plan);
+  const initialBilling = normalizeSignupBillingCycle(params.billing);
 
   return (
     <>
       <JsonLd data={registerJsonLd} />
       <div className="flex min-h-screen min-h-[100dvh] w-full font-sans overflow-x-hidden">
         <RegisterSidebar />
-        <RegisterForm initialMobile={initialMobile} />
+        <RegisterForm
+          initialMobile={initialMobile}
+          initialPlan={initialPlan}
+          initialBilling={initialBilling}
+        />
       </div>
     </>
   );

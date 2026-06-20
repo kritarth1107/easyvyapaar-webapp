@@ -2470,6 +2470,24 @@ export const enMessages: MessageTree = {
     sidebarTagline: "GST · Inventory · Billing",
     posLive: "Live",
     notifications: "Notifications",
+    planRenewal: {
+      pendingTitle: "Complete your plan payment",
+      pendingMessage: "Activate Mahajaan for this shop to unlock billing and inventory.",
+      monthlyGraceTitle: "Monthly renewal pending — {days} day(s) left",
+      monthlyGraceMessage:
+        "We haven't received this month's UPI Autopay yet. Renew now to avoid losing access.",
+      graceTitle: "Plan renewal overdue — {days} day(s) left",
+      graceMessage: "Your paid period ended. Renew within the grace window to keep using Mahajaan.",
+      expiringSoonTitle: "Annual plan renews in {daysUntilRenewal} day(s)",
+      expiringSoonMessage: "Renew early so billing, inventory, and reports stay uninterrupted.",
+      mandateTitle: "UPI Autopay needs attention",
+      mandateMessage:
+        "Your monthly mandate was paused or cancelled. Set up payment before access ends in {days} day(s).",
+      expiredTitle: "Plan expired",
+      expiredMessage: "Renew your Mahajaan subscription to restore full access for this shop.",
+      ownerOnly: "Ask the shop owner to complete plan payment.",
+      renewCta: "Renew plan",
+    },
     notificationFeed: {
       markAllRead: "Mark all read",
       viewAll: "View all alerts",

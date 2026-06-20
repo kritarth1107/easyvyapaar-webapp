@@ -1,5 +1,6 @@
 import { extractBackendError } from "@/lib/api/inventory";
 import type { ShopDashboardStats, WeekdayKey } from "@/lib/dashboard/shop-workspace";
+import type { PaymentCheckoutContext } from "@/lib/types/auth-api";
 
 export { extractBackendError };
 
@@ -176,6 +177,71 @@ export function normalizeDashboardOverview(body: unknown): ShopDashboardStats | 
     })
     .filter((item): item is NonNullable<typeof item> => item !== null);
 
+  const planRenewalReminderRaw = asRecord(row.planRenewalReminder);
+  const reminderKind = pickString(planRenewalReminderRaw?.kind);
+  const reminderKinds = new Set([
+    "none",
+    "pending_payment",
+    "grace_period",
+    "expiring_soon",
+    "mandate_issue",
+    "expired",
+  ]);
+  const reminderSeverity = pickString(planRenewalReminderRaw?.severity);
+  const reminderSeverities = new Set(["info", "warning", "critical"]);
+  const billingCycleRaw = pickString(planRenewalReminderRaw?.billingCycle);
+  const planRenewalReminder =
+    planRenewalReminderRaw &&
+    typeof planRenewalReminderRaw.show === "boolean" &&
+    reminderKind &&
+    reminderKinds.has(reminderKind) &&
+    reminderSeverity &&
+    reminderSeverities.has(reminderSeverity) &&
+    (billingCycleRaw === "MONTHLY" || billingCycleRaw === "YEARLY")
+      ? {
+          show: planRenewalReminderRaw.show,
+          kind: reminderKind as ShopDashboardStats["planRenewalReminder"]["kind"],
+          severity: reminderSeverity as ShopDashboardStats["planRenewalReminder"]["severity"],
+          billingCycle: billingCycleRaw,
+          planCode: pickString(planRenewalReminderRaw.planCode) ?? "STARTER",
+          validityEnd: pickString(planRenewalReminderRaw.validityEnd) ?? new Date().toISOString(),
+          graceEndsAt: pickString(planRenewalReminderRaw.graceEndsAt) ?? new Date().toISOString(),
+          daysUntilAccessEnds: pickNumber(planRenewalReminderRaw.daysUntilAccessEnds) ?? 0,
+          daysPastDue: pickNumber(planRenewalReminderRaw.daysPastDue) ?? 0,
+          daysUntilValidityEnd: pickNumber(planRenewalReminderRaw.daysUntilValidityEnd) ?? 0,
+          subscriptionStatus: pickString(planRenewalReminderRaw.subscriptionStatus) ?? "ACTIVE",
+          isOwner: Boolean(planRenewalReminderRaw.isOwner),
+          message: pickString(planRenewalReminderRaw.message) ?? "",
+        }
+      : {
+          show: false,
+          kind: "none" as const,
+          severity: "info" as const,
+          billingCycle: "YEARLY" as const,
+          planCode: "STARTER",
+          validityEnd: new Date().toISOString(),
+          graceEndsAt: new Date().toISOString(),
+          daysUntilAccessEnds: 0,
+          daysPastDue: 0,
+          daysUntilValidityEnd: 0,
+          subscriptionStatus: "ACTIVE",
+          isOwner: false,
+          message: "",
+        };
+
+  if (planRenewalReminderRaw?.checkout && asRecord(planRenewalReminderRaw.checkout)) {
+    const checkout = asRecord(planRenewalReminderRaw.checkout);
+    const paymentToken = pickString(checkout.paymentToken);
+    if (
+      checkout.paymentRequired === true &&
+      paymentToken &&
+      pickString(checkout.organisationId) &&
+      pickString(checkout.planCode)
+    ) {
+      planRenewalReminder.checkout = checkout as PaymentCheckoutContext;
+    }
+  }
+
   return {
     organisationId,
     generatedAt: pickString(row.generatedAt) ?? new Date().toISOString(),
@@ -209,5 +275,6 @@ export function normalizeDashboardOverview(body: unknown): ShopDashboardStats | 
     lowStockItems,
     recentActivity,
     alerts,
+    planRenewalReminder,
   };
 }

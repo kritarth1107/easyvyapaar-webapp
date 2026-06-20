@@ -1,4 +1,5 @@
 import { normalizeDashboardOverview } from "@/lib/api/dashboard";
+import type { PaymentCheckoutContext } from "@/lib/types/auth-api";
 
 export type WeekdayKey = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
 
@@ -68,6 +69,32 @@ export type ShopDashboardStats = {
     count?: number;
     href?: string;
   }[];
+  planRenewalReminder: PlanRenewalReminder;
+};
+
+export type PlanRenewalReminderKind =
+  | "none"
+  | "pending_payment"
+  | "grace_period"
+  | "expiring_soon"
+  | "mandate_issue"
+  | "expired";
+
+export type PlanRenewalReminder = {
+  show: boolean;
+  kind: PlanRenewalReminderKind;
+  severity: "info" | "warning" | "critical";
+  billingCycle: "MONTHLY" | "YEARLY";
+  planCode: string;
+  validityEnd: string;
+  graceEndsAt: string;
+  daysUntilAccessEnds: number;
+  daysPastDue: number;
+  daysUntilValidityEnd: number;
+  subscriptionStatus: string;
+  isOwner: boolean;
+  message: string;
+  checkout?: PaymentCheckoutContext;
 };
 
 export async function fetchShopDashboardStats(

@@ -14,7 +14,8 @@ env:
   AZURE_WEBAPP_NAME: mahajaan-web
   RESOURCE_GROUP: rg-mahajaan-prod
   NODE_VERSION: "22"
-  NEXT_PUBLIC_API_URL: https://mahajaan-api.icybeach-b419bf3c.centralindia.azurecontainerapps.io/api/v1/
+  NEXT_PUBLIC_API_URL: https://mahajaan.zktechnologies.in/api/v1/
+  NEXT_PUBLIC_APP_URL: https://mahajaan.com
 
 jobs:
   build-and-deploy:
@@ -36,6 +37,7 @@ jobs:
           npm run build
         env:
           NEXT_PUBLIC_API_URL: ${{ env.NEXT_PUBLIC_API_URL }}
+          NEXT_PUBLIC_APP_URL: ${{ env.NEXT_PUBLIC_APP_URL }}
 
       - name: Prepare standalone package
         run: |

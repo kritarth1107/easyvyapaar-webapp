@@ -11,7 +11,8 @@ import { normalizeIndianMobileInput } from "@/lib/validators/indian-mobile";
 import { OrganisationSelectModal } from "@/components/auth/organisation-select-modal";
 import { completeAuthSessionOrganisation } from "@/lib/auth/complete-auth-session";
 import { setStoredActiveOrganisationId } from "@/lib/auth/active-organisation";
-import { DASHBOARD_PATH } from "@/lib/auth/session";
+import { DASHBOARD_PATH, PAYMENT_PATH } from "@/lib/auth/session";
+import { storePaymentCheckout } from "@/lib/auth/plan-signup";
 import type { OrganisationSummary } from "@/lib/types/auth-api";
 import {
   AUTH_ERROR_USER_NOT_FOUND,
@@ -19,6 +20,7 @@ import {
   type GetOtpSuccessResponse,
   type VerifyOtpSuccessResponse,
   isApiErrorResponse,
+  isPaymentCheckoutContext,
 } from "@/lib/types/auth-api";
 
 const INDIAN_MOBILE_REGEX = /^[6-9]\d{9}$/;
@@ -161,6 +163,19 @@ export function LoginForm() {
 
       const success = data as VerifyOtpSuccessResponse;
       if (!success.success || !success.data) {
+        setError(t("login.loginFailed"));
+        return;
+      }
+
+      if (isPaymentCheckoutContext(success.data)) {
+        storePaymentCheckout(success.data);
+        router.push(
+          `${PAYMENT_PATH}?plan=${encodeURIComponent(success.data.planCode)}&billing=${encodeURIComponent(success.data.billingCycle)}`
+        );
+        return;
+      }
+
+      if (!success.data.sessionToken) {
         setError(t("login.loginFailed"));
         return;
       }
