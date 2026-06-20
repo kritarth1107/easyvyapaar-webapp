@@ -213,57 +213,62 @@ function PaymentPlanCard({
       disabled={disabled}
       onClick={onSelect}
       aria-pressed={selected}
-      className={`group relative flex min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border bg-white text-left transition duration-300 disabled:cursor-not-allowed disabled:opacity-70 ${
+      className={`group relative flex h-full min-w-0 flex-1 flex-col overflow-visible rounded-2xl border bg-white text-left transition duration-300 disabled:cursor-not-allowed disabled:opacity-70 ${
         selected
-          ? `${style.border} ring-2 ring-brand-orange-1/50 scale-[1.02]`
+          ? `${style.border} ring-2 ring-brand-orange-1/50`
           : `${style.border} hover:-translate-y-0.5`
       } ${isHighlighted && !selected ? style.ring : ""}`}
     >
+      {plan.badge ? (
+        <span className="absolute left-1/2 top-0 z-10 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-orange-2 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white shadow-sm">
+          {plan.badge}
+        </span>
+      ) : null}
+
       <div
         className={`pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full blur-2xl transition-opacity ${style.glow} ${
           selected ? "opacity-80" : "opacity-50 group-hover:opacity-70"
         }`}
       />
 
-      <div className={`relative bg-gradient-to-b px-3.5 pb-3 pt-3.5 sm:px-4 sm:pt-4 ${style.headerGradient}`}>
+      <div
+        className={`relative bg-gradient-to-b px-3.5 pb-3 pt-3.5 sm:px-4 sm:pt-4 ${style.headerGradient}`}
+      >
         <div className="flex items-start justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
             <PlanCrownIcon className={`h-5 w-5 shrink-0 sm:h-6 sm:w-6 ${style.crown}`} />
-            <div className="min-w-0">
-              <p className="text-sm font-bold text-brand-primary sm:text-base">{plan.displayName}</p>
-              {plan.badge ? (
-                <span className="mt-0.5 inline-flex rounded-full bg-brand-orange-2 px-1.5 py-px text-[9px] font-bold uppercase tracking-wide text-white">
-                  {plan.badge}
-                </span>
-              ) : null}
-            </div>
+            <p className="min-h-[1.25rem] text-sm font-bold leading-tight text-brand-primary sm:min-h-[1.375rem] sm:text-base">
+              {plan.displayName}
+            </p>
           </div>
-          {selected ? (
-            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-orange-2 text-white">
-              <svg viewBox="0 0 12 12" className="h-3 w-3" fill="none" aria-hidden>
-                <path
-                  d="M2 6l2.5 2.5L10 3"
-                  stroke="currentColor"
-                  strokeWidth="1.75"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </span>
-          ) : null}
+          <span className="flex h-5 w-5 shrink-0 items-center justify-center">
+            {selected ? (
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-orange-2 text-white">
+                <svg viewBox="0 0 12 12" className="h-3 w-3" fill="none" aria-hidden>
+                  <path
+                    d="M2 6l2.5 2.5L10 3"
+                    stroke="currentColor"
+                    strokeWidth="1.75"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </span>
+            ) : null}
+          </span>
         </div>
 
-        <p className="mt-2.5 flex items-baseline gap-0.5">
+        <p className="mt-2.5 flex min-h-[1.75rem] items-baseline gap-0.5 sm:min-h-[2rem]">
           <span className={`text-xl font-bold tabular-nums tracking-tight sm:text-2xl ${style.priceAccent}`}>
             {formatInrFromPaise(monthlyPaise)}
           </span>
           <span className="text-[11px] font-semibold text-brand-primary-muted">/mo</span>
         </p>
-        {billing === "annual" && plan.annualSavingsPercent > 0 ? (
-          <p className="mt-0.5 text-[10px] font-medium text-emerald-700">
-            Save {plan.annualSavingsPercent}% vs monthly
-          </p>
-        ) : null}
+        <p className="mt-0.5 min-h-[0.875rem] text-[10px] font-medium text-emerald-700">
+          {billing === "annual" && plan.annualSavingsPercent > 0
+            ? `Save ${plan.annualSavingsPercent}% vs monthly`
+            : "\u00a0"}
+        </p>
       </div>
 
       {highlights.length > 0 ? (
@@ -766,7 +771,7 @@ export function PlanPaymentCheckout({
               />
             </div>
 
-            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="mt-4 grid grid-cols-1 items-stretch gap-3 pt-2 sm:grid-cols-3 sm:gap-3">
               {paidPlans.map((plan) => (
                 <PaymentPlanCard
                   key={plan.planCode}
