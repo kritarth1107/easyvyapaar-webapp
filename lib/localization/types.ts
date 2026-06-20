@@ -1166,6 +1166,16 @@ export type MessageTree = {
         recordingPayment: string;
         sendPaymentReminder: string;
         reminderNoPhone: string;
+        sendEmailAction: string;
+        sendEmailTitle: string;
+        sendEmailSubtitle: string;
+        sendEmailLabel: string;
+        sendEmailPlaceholder: string;
+        sendEmailHint: string;
+        sendEmailSending: string;
+        sendEmailSuccess: string;
+        sendEmailError: string;
+        sendEmailInvalid: string;
       };
       todaySales: string;
       monthSales: string;

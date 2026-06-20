@@ -133,3 +133,27 @@ export function buildSalesInvoicePdfUrl(
   if (cacheKey != null) params.set("v", String(cacheKey));
   return `/api/sales/invoices/${encodeURIComponent(invoiceId)}/pdf?${params.toString()}`;
 }
+
+export async function sendSalesInvoiceEmail(
+  organisationId: string,
+  invoiceId: string,
+  email: string,
+): Promise<{ sent: true; email: string }> {
+  const res = await fetch(
+    `/api/sales/invoices/${encodeURIComponent(invoiceId)}/send-email?organisationId=${encodeURIComponent(organisationId)}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    },
+  );
+  const body = await parseJsonResponse(res);
+  if (!res.ok) {
+    throw new Error(extractBackendError(body) ?? "Failed to send invoice email");
+  }
+  const data = (body as { data?: { sent?: boolean; email?: string } })?.data;
+  if (!data?.sent || !data.email) {
+    throw new Error("Failed to send invoice email");
+  }
+  return { sent: true, email: data.email };
+}

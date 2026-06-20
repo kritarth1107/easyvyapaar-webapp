@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { SelectedInvoiceParty } from "@/components/dashboard/sales/party-select-modal";
 import { InvoiceSettingsPreview } from "@/components/dashboard/sales/invoice-settings-preview";
+import { SalesInvoiceSendEmailModal } from "@/components/dashboard/sales/sales-invoice-send-email-modal";
 import { ModernSelect } from "@/components/ui/modern-select";
 import { useUserMe } from "@/components/providers/user-me-provider";
 import { fetchBusinessProfile } from "@/lib/business/business-profile-api-client";
@@ -30,6 +31,7 @@ import { sharePaymentReminderWhatsApp } from "@/lib/sales/share-payment-reminder
 import {
   fetchSalesInvoiceDetail,
   recordSalesInvoicePayment,
+  sendSalesInvoiceEmail,
 } from "@/lib/sales/sales-api-client";
 import type { SalesInvoiceDetail, SalesInvoiceStatus } from "@/lib/types/sales-api";
 import type { PartyDetail } from "@/lib/types/parties-api";
@@ -106,6 +108,9 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
 
   const [invoice, setInvoice] = useState<SalesInvoiceDetail | null>(null);
   const [party, setParty] = useState<SelectedInvoiceParty | null>(null);
+  const [partyEmail, setPartyEmail] = useState<string | undefined>();
+  const [sendEmailOpen, setSendEmailOpen] = useState(false);
+  const [emailSuccess, setEmailSuccess] = useState<string | null>(null);
   const [storedSettings, setStoredSettings] = useState<StoredSalesInvoiceSettings>(
     DEFAULT_STORED_SALES_INVOICE_SETTINGS,
   );
@@ -157,11 +162,14 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
         try {
           const partyDetail = await fetchPartyDetail(orgId, invoiceDetail.partyId);
           setParty(partyDetailToSelected(partyDetail));
+          setPartyEmail(partyDetail.email?.trim() || undefined);
         } catch {
           setParty(null);
+          setPartyEmail(undefined);
         }
       } else {
         setParty(null);
+        setPartyEmail(undefined);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : t("dashboard.salesInvoices.view.loadError"));
@@ -234,6 +242,7 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
         try {
           const partyDetail = await fetchPartyDetail(orgId, updated.partyId);
           setParty(partyDetailToSelected(partyDetail));
+          setPartyEmail(partyDetail.email?.trim() || undefined);
         } catch {
           // Keep existing party snapshot if refresh fails.
         }
@@ -333,6 +342,16 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setEmailSuccess(null);
+                setSendEmailOpen(true);
+              }}
+              className="inline-flex h-10 items-center rounded-sm border border-blue-200 bg-blue-50 px-4 text-sm font-semibold text-blue-800 hover:bg-blue-100"
+            >
+              {t("dashboard.salesInvoices.view.sendEmailAction")}
+            </button>
             <button
               type="button"
               onClick={() => printInvoiceElement(printAreaRef.current, printOptions)}
@@ -477,6 +496,28 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
           </div>
         </aside>
       </div>
+
+      <SalesInvoiceSendEmailModal
+        open={sendEmailOpen}
+        onClose={() => setSendEmailOpen(false)}
+        defaultEmail={partyEmail}
+        invoiceNumber={invoice.displayNumber}
+        partyName={invoice.partyName}
+        onSend={async (email) => {
+          const orgId = activeOrganisationId?.trim();
+          if (!orgId) throw new Error(t("dashboard.salesInvoices.create.noOrganisation"));
+          const result = await sendSalesInvoiceEmail(orgId, invoice.invoiceId, email);
+          setEmailSuccess(
+            t("dashboard.salesInvoices.view.sendEmailSuccess").replace("{email}", result.email),
+          );
+        }}
+      />
+
+      {emailSuccess ? (
+        <div className="fixed bottom-4 left-1/2 z-[120] -translate-x-1/2 rounded-sm border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-800 shadow-md">
+          {emailSuccess}
+        </div>
+      ) : null}
     </div>
   );
 }
