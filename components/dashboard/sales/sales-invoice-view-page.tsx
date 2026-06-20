@@ -1,33 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { InvoiceSettingsPreview } from "@/components/dashboard/sales/invoice-settings-preview";
+import { useCallback, useEffect, useState } from "react";
 import type { SelectedInvoiceParty } from "@/components/dashboard/sales/party-select-modal";
 import { ModernSelect } from "@/components/ui/modern-select";
 import { useUserMe } from "@/components/providers/user-me-provider";
 import { fetchBusinessProfile } from "@/lib/business/business-profile-api-client";
 import { fetchPartyDetail } from "@/lib/parties/parties-api-client";
-import { buildLiveInvoicePreviewFromDetail } from "@/lib/sales/build-live-invoice-preview";
 import { formatInr, PAYMENT_MODES } from "@/lib/sales/create-invoice-form";
-import { mapLivePreviewToDocument } from "@/lib/sales/invoice-preview-document";
 import {
   formatGstinOrPanLine,
   organisationProfileToSnapshot,
   type InvoiceOrganisationSnapshot,
 } from "@/lib/sales/invoice-preview-formatters";
-import {
-  DEFAULT_STORED_SALES_INVOICE_SETTINGS,
-  getAccentHex,
-  INVOICE_THEME_CARDS,
-  normalizeThemeId,
-  resolveInvoicePageSizeFromTheme,
-  type StoredSalesInvoiceSettings,
-} from "@/lib/sales/invoice-settings-config";
-import { printInvoiceElement, triggerInvoiceSavePdf } from "@/lib/sales/print-invoice";
 import { sharePaymentReminderWhatsApp } from "@/lib/sales/share-payment-reminder";
-import { fetchSalesInvoiceDetail, recordSalesInvoicePayment } from "@/lib/sales/sales-api-client";
-import { fetchSalesInvoiceSettings } from "@/lib/sales/sales-invoice-settings-api-client";
+import {
+  buildSalesInvoicePdfUrl,
+  fetchSalesInvoiceDetail,
+  recordSalesInvoicePayment,
+} from "@/lib/sales/sales-api-client";
 import type { SalesInvoiceDetail, SalesInvoiceStatus } from "@/lib/types/sales-api";
 import type { PartyDetail } from "@/lib/types/parties-api";
 import { useTranslation } from "@/lib/localization";
@@ -99,13 +90,10 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
   const { t } = useTranslation();
   const { activeOrganisation, activeOrganisationId } = useUserMe();
   const businessName = activeOrganisation?.name ?? "Your Business";
-  const printAreaRef = useRef<HTMLDivElement>(null);
 
   const [invoice, setInvoice] = useState<SalesInvoiceDetail | null>(null);
   const [party, setParty] = useState<SelectedInvoiceParty | null>(null);
-  const [storedSettings, setStoredSettings] = useState<StoredSalesInvoiceSettings>(
-    DEFAULT_STORED_SALES_INVOICE_SETTINGS,
-  );
+  const [pdfVersion, setPdfVersion] = useState(0);
   const [organisationSnapshot, setOrganisationSnapshot] = useState<InvoiceOrganisationSnapshot>({
     businessAddress: "",
     businessPhone: "",
@@ -131,21 +119,17 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
     setLoading(true);
     setError(null);
     try {
-      const [invoiceDetail, settings, profile] = await Promise.all([
+      const [invoiceDetail, profile] = await Promise.all([
         fetchSalesInvoiceDetail(orgId, invoiceId.trim()),
-        fetchSalesInvoiceSettings(orgId).catch(() => DEFAULT_STORED_SALES_INVOICE_SETTINGS),
         fetchBusinessProfile(orgId).catch(() => null),
       ]);
 
       setInvoice(invoiceDetail);
+      setPdfVersion(Date.now());
       setPaymentAmount(invoiceDetail.balanceAmount);
       setPaymentMode(invoiceDetail.paymentMode || "cash");
       setPaymentError(null);
       setReminderError(null);
-      setStoredSettings({
-        ...settings,
-        themeId: normalizeThemeId(invoiceDetail.theme),
-      });
       if (profile) {
         setOrganisationSnapshot(organisationProfileToSnapshot(profile));
       }
@@ -226,6 +210,7 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
       setPaymentAmount(updated.balanceAmount);
       setPaymentMode(updated.paymentMode || paymentMode);
       setPaymentSuccess(t("dashboard.salesInvoices.view.paymentRecorded"));
+      setPdfVersion(Date.now());
 
       if (updated.partyId) {
         try {
@@ -244,39 +229,10 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
     }
   };
 
-  const previewModel = useMemo(() => {
-    if (!invoice) return null;
-    return buildLiveInvoicePreviewFromDetail(invoice, businessName, organisationSnapshot, party);
-  }, [invoice, businessName, organisationSnapshot, party]);
-
-  const themeLabel =
-    INVOICE_THEME_CARDS.find((theme) => theme.id === storedSettings.themeId)?.label ??
-    storedSettings.themeId;
-
-  const printTitle = invoice ? `Invoice ${invoice.displayNumber}` : "Invoice";
-  const printOptions = {
-    documentTitle: printTitle,
-    pageSize: resolveInvoicePageSizeFromTheme(storedSettings.themeId),
-  };
-
-  const previewProps = useMemo(() => {
-    if (!previewModel) return null;
-    return {
-      themeId: storedSettings.themeId,
-      themeLabel,
-      embedded: true,
-      businessName: previewModel.businessName,
-      accentHex: getAccentHex(storedSettings.accentColor),
-      showPartyBalance: storedSettings.showPartyBalance,
-      showPhoneOnInvoice: storedSettings.showPhoneOnInvoice,
-      showItemDescription: storedSettings.showItemDescription,
-      showTimeOnInvoice: storedSettings.showTimeOnInvoice,
-      enableReceiverSignature: storedSettings.enableReceiverSignature,
-      signatureImageUrl: storedSettings.signatureDataUrl,
-      document: mapLivePreviewToDocument(previewModel),
-      organisation: organisationSnapshot,
-    };
-  }, [previewModel, storedSettings, themeLabel, organisationSnapshot]);
+  const pdfUrl =
+    activeOrganisationId && invoice
+      ? buildSalesInvoicePdfUrl(activeOrganisationId, invoice.invoiceId, pdfVersion)
+      : null;
 
   if (!activeOrganisationId) {
     return (
@@ -294,7 +250,7 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
     );
   }
 
-  if (error || !invoice || !previewProps) {
+  if (error || !invoice) {
     return (
       <div className="flex min-h-full flex-col items-center justify-center gap-4 p-8">
         <p className="text-sm text-red-600">{error ?? t("dashboard.salesInvoices.view.loadError")}</p>
@@ -330,32 +286,43 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => printInvoiceElement(printAreaRef.current, printOptions)}
-              className="inline-flex h-10 items-center rounded-md bg-gradient-to-r from-brand-primary to-brand-primary-light px-4 text-sm font-semibold text-white shadow-[0_2px_10px_-4px_rgba(3,31,73,0.35)] hover:brightness-110"
-            >
-              {t("dashboard.salesInvoices.create.printInvoice")}
-            </button>
-            <button
-              type="button"
-              onClick={() => triggerInvoiceSavePdf(printAreaRef.current, printOptions)}
-              className="inline-flex h-10 items-center rounded-sm border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50"
-            >
-              {t("dashboard.salesInvoices.create.saveAsPdf")}
-            </button>
+            {pdfUrl ? (
+              <>
+                <a
+                  href={pdfUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex h-10 items-center rounded-md bg-gradient-to-r from-brand-primary to-brand-primary-light px-4 text-sm font-semibold text-white shadow-[0_2px_10px_-4px_rgba(3,31,73,0.35)] hover:brightness-110"
+                >
+                  {t("dashboard.salesInvoices.create.printInvoice")}
+                </a>
+                <a
+                  href={pdfUrl}
+                  download
+                  className="inline-flex h-10 items-center rounded-sm border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50"
+                >
+                  {t("dashboard.salesInvoices.create.saveAsPdf")}
+                </a>
+              </>
+            ) : null}
           </div>
         </div>
       </div>
 
       <div className="flex flex-1 flex-col gap-6 p-4 lg:flex-row lg:items-start lg:p-6">
         <div className="min-w-0 flex-1">
-          <div
-            ref={printAreaRef}
-            data-invoice-print-source
-            className="flex justify-center rounded-md bg-[#eceff3] px-4 py-8 sm:px-8 sm:py-10 lg:py-12"
-          >
-            <InvoiceSettingsPreview {...previewProps} />
+          <div className="overflow-hidden rounded-md border border-slate-200/90 bg-white shadow-sm">
+            {pdfUrl ? (
+              <iframe
+                title={invoice.displayNumber}
+                src={pdfUrl}
+                className="h-[min(80vh,900px)] w-full bg-white"
+              />
+            ) : (
+              <div className="flex h-64 items-center justify-center text-sm text-brand-primary-muted">
+                {t("common.pleaseWait")}
+              </div>
+            )}
           </div>
         </div>
 

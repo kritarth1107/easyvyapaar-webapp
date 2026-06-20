@@ -123,3 +123,23 @@ export async function createSalesInvoice(
   }
   return invoice;
 }
+
+export function buildSalesInvoicePdfUrl(
+  organisationId: string,
+  invoiceId: string,
+  cacheKey?: number,
+): string {
+  const params = new URLSearchParams({ organisationId });
+  if (cacheKey != null) params.set("v", String(cacheKey));
+  return `/api/sales/invoices/${encodeURIComponent(invoiceId)}/pdf?${params.toString()}`;
+}
+
+export function buildSalesInvoicePdfUrl(
+  organisationId: string,
+  invoiceId: string,
+  cacheKey?: number,
+): string {
+  const params = new URLSearchParams({ organisationId });
+  if (cacheKey != null) params.set("v", String(cacheKey));
+  return `/api/sales/invoices/${encodeURIComponent(invoiceId)}/pdf?${params.toString()}`;
+}
