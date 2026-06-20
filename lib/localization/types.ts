@@ -2299,6 +2299,7 @@ export type MessageTree = {
       loadError: string;
       txLoadError: string;
       renewError: string;
+      paymentSuccess: string;
       renewCta: string;
       ownerRenewHint: string;
       tabPlan: string;

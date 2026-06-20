@@ -2312,6 +2312,7 @@ export const enMessages: MessageTree = {
       loadError: "Failed to load subscription details",
       txLoadError: "Failed to load payment history",
       renewError: "Could not start plan payment",
+      paymentSuccess: "Plan updated successfully. Your new features are now available.",
       renewCta: "Renew plan",
       ownerRenewHint: "Ask the shop owner to renew the plan.",
       tabPlan: "Plan & usage",

@@ -22,6 +22,7 @@ import {
   isPaymentTokenExpired,
   redirectToLoginForPayment,
 } from "@/lib/auth/payment-session";
+import { emitPlanUpgradeSuccess } from "@/lib/auth/plan-upgrade";
 import { DASHBOARD_PATH } from "@/lib/auth/session";
 import { BRAND_LOGO } from "@/lib/brand/assets";
 import { useTranslation } from "@/lib/localization";
@@ -610,6 +611,8 @@ export function PlanPaymentCheckout({
         if (defaultOrganisationId) {
           setStoredActiveOrganisationId(defaultOrganisationId);
         }
+
+        emitPlanUpgradeSuccess();
 
         router.push(
           checkoutFallbackPath

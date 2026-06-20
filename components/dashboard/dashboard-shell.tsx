@@ -11,6 +11,7 @@ import { OrganisationPermissionsProvider } from "@/components/providers/organisa
 import { UserMeProvider } from "@/components/providers/user-me-provider";
 import { PendingInvitesBanner } from "@/components/dashboard/pending-invites-banner";
 import { PlanRenewalBanner } from "@/components/dashboard/plan-renewal-banner";
+import { PlanWorkspaceRefreshListener } from "@/components/dashboard/plan-workspace-refresh-listener";
 import { useIsMobileOrTablet } from "@/lib/hooks/use-is-mobile-or-tablet";
 import { AutoOpenOrganisationPicker, BusinessSwitchModal } from "./business-switch";
 import { DashboardSidebar } from "./dashboard-sidebar";
@@ -77,6 +78,7 @@ export function DashboardShell({ children, hasSession = false }: DashboardShellP
     return (
       <UserMeProvider>
         <OrganisationPermissionsProvider>
+          <PlanWorkspaceRefreshListener />
           <AutoOpenOrganisationPicker onOpen={openBusinessSwitch} />
           <BusinessSwitchModal
             open={businessSwitchOpen}
@@ -92,6 +94,7 @@ export function DashboardShell({ children, hasSession = false }: DashboardShellP
   return (
     <UserMeProvider>
       <OrganisationPermissionsProvider>
+        <PlanWorkspaceRefreshListener />
         <AutoOpenOrganisationPicker onOpen={openBusinessSwitch} />
         <BusinessSwitchModal
           open={businessSwitchOpen}

@@ -130,6 +130,13 @@ export function SubscriptionBillingPage() {
   }, [activeOrganisationId, isWorkspaceLoading, loadAccount]);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("payment") !== "success") return;
+    setMessage(t("dashboard.subscription.paymentSuccess"));
+    void loadAccount();
+  }, [loadAccount, t]);
+
+  useEffect(() => {
     if (tab === "transactions" && activeOrganisationId) {
       void loadTransactions();
     }
