@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AdjustSerialStockModal } from "@/components/dashboard/inventory/adjust-serial-stock-modal";
+import { CreateItemModal } from "@/components/dashboard/inventory/create-item-modal";
 import { AdjustStockModal } from "@/components/dashboard/inventory/adjust-stock-modal";
 import { useUserMe } from "@/components/providers/user-me-provider";
 import type { InventoryItemStatus } from "@/lib/types/inventory-ui";
@@ -134,6 +135,7 @@ export function InventoryItemDetailPage({ itemId }: InventoryItemDetailPageProps
   const [historyLoading, setHistoryLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [adjustOpen, setAdjustOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   const loadItem = useCallback(async () => {
     const orgId = activeOrganisationId?.trim();
@@ -244,6 +246,13 @@ export function InventoryItemDetailPage({ itemId }: InventoryItemDetailPageProps
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setEditOpen(true)}
+                className="inline-flex h-10 items-center gap-2 rounded-md border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50"
+              >
+                {t("dashboard.inventory.itemDetail.editItem")}
+              </button>
               <button
                 type="button"
                 onClick={() => setAdjustOpen(true)}
@@ -619,6 +628,17 @@ export function InventoryItemDetailPage({ itemId }: InventoryItemDetailPageProps
                 onSaved={handleStockAdjusted}
               />
             ))}
+
+          <CreateItemModal
+            open={editOpen}
+            onClose={() => setEditOpen(false)}
+            organisationId={activeOrganisationId}
+            editItem={item}
+            onSaved={(updated) => {
+              if (updated) setItem(updated);
+              else void loadItem();
+            }}
+          />
         </>
       ) : null}
     </div>

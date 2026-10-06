@@ -217,6 +217,8 @@ export function normalizePurchaseBillDetail(raw: unknown): PurchaseBillDetail | 
     ...(pickString(row.attachmentFilename) && {
       attachmentFilename: pickString(row.attachmentFilename),
     }),
+    ...(pickString(row.billPdfPath) && { billPdfPath: pickString(row.billPdfPath) }),
+    ...(pickString(row.billPdfUrl) && { billPdfUrl: pickString(row.billPdfUrl) }),
     ...(pickString(row.updatedByUserId) && { updatedByUserId: pickString(row.updatedByUserId) }),
   };
 }

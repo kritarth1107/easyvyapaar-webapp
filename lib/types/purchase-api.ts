@@ -40,6 +40,8 @@ export type PurchaseBillDetail = PurchaseBillSummary & {
   billNumber: string;
   notes?: string;
   attachmentFilename?: string;
+  billPdfPath?: string;
+  billPdfUrl?: string;
   lineItems: PurchaseLineItem[];
   subtotal: number;
   lineTax: number;

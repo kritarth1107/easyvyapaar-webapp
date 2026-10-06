@@ -1,4 +1,7 @@
-import type { CreateInventoryItemRequest } from "@/lib/types/inventory-api";
+import type {
+  CreateInventoryItemRequest,
+  UpdateInventoryItemRequest,
+} from "@/lib/types/inventory-api";
 import type { CreateItemFormState } from "@/lib/inventory/create-item-form";
 
 function parseOptionalNumber(value: string): number | undefined {
@@ -60,5 +63,35 @@ export function mapFormToCreateItemRequest(
         field: row.label.trim(),
         value: row.value.trim(),
       })),
+  };
+}
+
+export function mapFormToUpdateItemRequest(
+  form: CreateItemFormState,
+  organisationId: string,
+): UpdateInventoryItemRequest {
+  const create = mapFormToCreateItemRequest(form, organisationId);
+  return {
+    organisationId,
+    categoryId: create.categoryId,
+    itemType: create.itemType,
+    name: create.name,
+    showInOnlineStore: create.showInOnlineStore,
+    salesPrice: create.salesPrice,
+    salesTaxMode: create.salesTaxMode,
+    purchasePrice: create.purchasePrice,
+    purchaseTaxMode: create.purchaseTaxMode,
+    gstRate: create.gstRate,
+    salesDiscountPercent: create.salesDiscountPercent,
+    unit: create.unit,
+    itemCode: create.itemCode,
+    ...(create.hsn !== undefined ? { hsn: create.hsn } : { hsn: "" }),
+    asOfDate: create.asOfDate,
+    lowStockWarning: create.lowStockWarning,
+    lowStockQty: create.lowStockQty,
+    ...(create.description !== undefined ? { description: create.description } : { description: "" }),
+    partyPrices: create.partyPrices,
+    customFields: create.customFields,
+    purchaseSuppliers: create.purchaseSuppliers,
   };
 }

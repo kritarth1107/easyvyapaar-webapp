@@ -14,6 +14,7 @@ import {
 import type { InventoryItem } from "@/lib/types/inventory-ui";
 import type {
   CreateInventoryItemRequest,
+  UpdateInventoryItemRequest,
   CreateStockAdjustmentRequest,
   InventoryCategory,
   InventoryItemDetail,
@@ -234,6 +235,30 @@ export async function createInventoryItem(
   const detail = normalizeInventoryDetailResponse(body);
   if (!detail) {
     throw new Error("Failed to save item");
+  }
+  return detail;
+}
+
+
+export async function updateInventoryItem(
+  itemId: string,
+  payload: UpdateInventoryItemRequest,
+): Promise<InventoryItemDetail> {
+  const res = await fetch(
+    `/api/inventory/items/${encodeURIComponent(itemId)}?organisationId=${encodeURIComponent(payload.organisationId)}`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    },
+  );
+  const body = await parseJsonResponse(res);
+  if (!res.ok) {
+    throw new Error(extractBackendError(body) ?? "Failed to update item");
+  }
+  const detail = normalizeInventoryDetailResponse(body);
+  if (!detail) {
+    throw new Error("Failed to update item");
   }
   return detail;
 }

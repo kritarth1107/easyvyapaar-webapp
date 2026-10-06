@@ -90,15 +90,35 @@ export async function fetchPurchaseBillDetail(
   return bill;
 }
 
+
+export function buildPurchaseBillPdfUrl(
+  organisationId: string,
+  purchaseBillId: string,
+  cacheKey?: number,
+): string {
+  const params = new URLSearchParams({ organisationId });
+  if (cacheKey != null) params.set("v", String(cacheKey));
+  return `/api/purchase/bills/${encodeURIComponent(purchaseBillId)}/pdf?${params.toString()}`;
+}
+
+function toBackendCreatePurchaseBillPayload(payload: CreatePurchaseBillRequest) {
+  const { paidAmount, attachmentFilename: _attachmentFilename, ...rest } = payload;
+  return {
+    ...rest,
+    ...(paidAmount !== undefined ? { amountPaid: paidAmount } : {}),
+  };
+}
+
 export async function createPurchaseBill(
   organisationId: string,
   payload: CreatePurchaseBillRequest,
   pdfFile?: File | null,
 ): Promise<PurchaseBillDetail> {
+  const backendPayload = toBackendCreatePurchaseBillPayload(payload);
   let res: Response;
   if (pdfFile) {
     const formData = new FormData();
-    formData.append("payload", JSON.stringify(payload));
+    formData.append("payload", JSON.stringify(backendPayload));
     formData.append("attachment", pdfFile);
     res = await fetch(
       `/api/purchase/bills?organisationId=${encodeURIComponent(organisationId)}`,
@@ -110,7 +130,7 @@ export async function createPurchaseBill(
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(backendPayload),
       },
     );
   }

@@ -151,6 +151,32 @@ export type CreateInventoryItemRequest = {
   purchaseSuppliers?: InventoryPurchaseSupplier[];
 };
 
+
+export type UpdateInventoryItemRequest = {
+  organisationId: string;
+  categoryId?: string;
+  itemType?: "product" | "service";
+  name?: string;
+  showInOnlineStore?: boolean;
+  salesPrice?: number;
+  salesTaxMode?: "with_tax" | "without_tax";
+  purchasePrice?: number;
+  purchaseTaxMode?: "with_tax" | "without_tax";
+  gstRate?: string;
+  salesDiscountPercent?: number;
+  unit?: string;
+  itemCode?: string;
+  hsn?: string;
+  asOfDate?: string;
+  lowStockWarning?: boolean;
+  lowStockQty?: number;
+  description?: string;
+  partyPrices?: InventoryPartyPrice[];
+  customFields?: InventoryCustomField[];
+  purchaseSuppliers?: InventoryPurchaseSupplier[];
+  status?: "ACTIVE" | "INACTIVE" | "ARCHIVED";
+};
+
 export type StockAdjustmentType = "add" | "reduce";
 
 export type InventoryStockAdjustment = {

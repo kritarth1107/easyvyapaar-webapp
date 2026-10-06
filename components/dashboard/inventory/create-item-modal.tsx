@@ -15,11 +15,16 @@ import { ModernSelect } from "@/components/ui/modern-select";
 import {
   createInventoryCategory,
   createInventoryItem,
+  updateInventoryItem,
   uploadInventoryItemImage,
 } from "@/lib/inventory/inventory-api-client";
 import { fetchParties } from "@/lib/parties/parties-api-client";
 import type { PartySummary } from "@/lib/types/parties-api";
-import { mapFormToCreateItemRequest } from "@/lib/inventory/map-form-to-create-request";
+import {
+  mapFormToCreateItemRequest,
+  mapFormToUpdateItemRequest,
+} from "@/lib/inventory/map-form-to-create-request";
+import type { InventoryItemDetail } from "@/lib/types/inventory-api";
 import { useUserMe } from "@/components/providers/user-me-provider";
 import { formatIndustryTypeLabel } from "@/lib/constants/industry-types";
 import {
@@ -31,6 +36,7 @@ import { resolveCategoryIdForSave } from "@/lib/inventory/resolve-category-for-s
 import {
   createInitialItemForm,
   createSerialRow,
+  formFromInventoryItemDetail,
   generateItemCode,
   getInitialUnitList,
   GST_RATE_OPTIONS,
@@ -44,7 +50,9 @@ type CreateItemModalProps = {
   open: boolean;
   onClose: () => void;
   organisationId: string | null;
-  onSaved?: () => void;
+  onSaved?: (item?: InventoryItemDetail) => void;
+  /** When set, modal opens in edit mode for this item. */
+  editItem?: InventoryItemDetail | null;
 };
 
 function CloseIcon() {
@@ -165,9 +173,11 @@ function FormField({
   );
 }
 
-export function CreateItemModal({ open, onClose, organisationId, onSaved }: CreateItemModalProps) {
+export function CreateItemModal({ open, onClose, organisationId, onSaved, editItem = null }: CreateItemModalProps) {
   const { t } = useTranslation();
   const { activeOrganisation } = useUserMe();
+  const isEdit = Boolean(editItem?.itemId);
+  const editItemId = editItem?.itemId?.trim() ?? "";
   const industryType = activeOrganisation?.industryType ?? null;
   const [mounted, setMounted] = useState(false);
   const [section, setSection] = useState<CreateItemSection>("basic");
@@ -245,8 +255,28 @@ export function CreateItemModal({ open, onClose, organisationId, onSaved }: Crea
   useEffect(() => {
     if (!open) {
       resetForm();
+      return;
     }
-  }, [open, resetForm]);
+    if (editItem?.itemId) {
+      setForm(formFromInventoryItemDetail(editItem));
+      setSection("basic");
+      setNameError(false);
+      setCategoryError(false);
+      setSaveError(null);
+      setSerialError(null);
+      clearPendingImage();
+      if (editItem.imageUrl) {
+        setImagePreviewUrl(editItem.imageUrl);
+      }
+      if (editItem.unit) {
+        setUnits((prev) => getInitialUnitList([editItem.unit, ...prev]));
+      }
+    } else {
+      resetForm();
+    }
+    // Re-init when modal opens or the edited item id changes (not on every parent re-render).
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- editItem snapshot read on open/id change
+  }, [open, editItem?.itemId, resetForm, clearPendingImage]);
 
   useEffect(() => {
     const orgId = organisationId?.trim();
@@ -335,14 +365,24 @@ export function CreateItemModal({ open, onClose, organisationId, onSaved }: Crea
         orgId,
         resolvedCategoryIds.current,
       );
-      const payload = mapFormToCreateItemRequest({ ...form, categoryId }, orgId);
-      const created = await createInventoryItem(payload);
-      if (pendingImageFile) {
-        await uploadInventoryItemImage(orgId, created.itemId, pendingImageFile);
+      if (isEdit && editItemId) {
+        const payload = mapFormToUpdateItemRequest({ ...form, categoryId }, orgId);
+        const updated = await updateInventoryItem(editItemId, payload);
+        if (pendingImageFile) {
+          await uploadInventoryItemImage(orgId, updated.itemId, pendingImageFile);
+        }
+        onSaved?.(updated);
+        onClose();
+      } else {
+        const payload = mapFormToCreateItemRequest({ ...form, categoryId }, orgId);
+        const created = await createInventoryItem(payload);
+        if (pendingImageFile) {
+          await uploadInventoryItemImage(orgId, created.itemId, pendingImageFile);
+        }
+        onSaved?.(created);
+        if (saveAndNew) resetForm();
+        else onClose();
       }
-      onSaved?.();
-      if (saveAndNew) resetForm();
-      else onClose();
     } catch (err) {
       setSaveError(
         err instanceof Error ? err.message : t("dashboard.inventory.createItem.saveError"),
@@ -410,7 +450,9 @@ export function CreateItemModal({ open, onClose, organisationId, onSaved }: Crea
       >
         <header className="flex h-[60px] shrink-0 items-center justify-between border-b border-slate-100 px-6">
           <h2 id="create-item-title" className="text-lg font-bold text-brand-primary">
-            {t("dashboard.inventory.createItem.title")}
+            {isEdit
+              ? t("dashboard.inventory.createItem.editTitle")
+              : t("dashboard.inventory.createItem.title")}
           </h2>
           <button
             type="button"
@@ -560,16 +602,18 @@ export function CreateItemModal({ open, onClose, organisationId, onSaved }: Crea
               {t("dashboard.inventory.createItem.cancel")}
             </button>
             <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => void handleSave(true)}
-                disabled={saveLoading || !organisationId}
-                className="h-10 rounded-sm border border-slate-200/90 bg-white px-5 text-sm font-semibold text-brand-primary transition-colors hover:border-brand-orange-1/40 hover:bg-brand-surface-warm disabled:opacity-60"
-              >
-                {saveLoading
-                  ? t("dashboard.inventory.createItem.saving")
-                  : t("dashboard.inventory.createItem.saveAndNew")}
-              </button>
+              {!isEdit && (
+                <button
+                  type="button"
+                  onClick={() => void handleSave(true)}
+                  disabled={saveLoading || !organisationId}
+                  className="h-10 rounded-sm border border-slate-200/90 bg-white px-5 text-sm font-semibold text-brand-primary transition-colors hover:border-brand-orange-1/40 hover:bg-brand-surface-warm disabled:opacity-60"
+                >
+                  {saveLoading
+                    ? t("dashboard.inventory.createItem.saving")
+                    : t("dashboard.inventory.createItem.saveAndNew")}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => void handleSave(false)}
@@ -578,7 +622,9 @@ export function CreateItemModal({ open, onClose, organisationId, onSaved }: Crea
               >
                 {saveLoading
                   ? t("dashboard.inventory.createItem.saving")
-                  : t("dashboard.inventory.createItem.saveItem")}
+                  : isEdit
+                    ? t("dashboard.inventory.createItem.saveChanges")
+                    : t("dashboard.inventory.createItem.saveItem")}
               </button>
             </div>
           </div>

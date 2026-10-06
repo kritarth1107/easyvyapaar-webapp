@@ -4,9 +4,11 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useUserMe } from "@/components/providers/user-me-provider";
+import { PurchaseBillPdfPreviewModal } from "@/components/dashboard/purchase/purchase-bill-pdf-preview-modal";
 import { ModernSelect } from "@/components/ui/modern-select";
 import { formatDate, formatInr, inputClass, StatCard } from "@/lib/dashboard/page-utils";
 import {
+  buildPurchaseBillPdfUrl,
   fetchPurchaseBillDetail,
   recordPurchaseBillPayment,
 } from "@/lib/purchase/purchases-api-client";
@@ -27,6 +29,9 @@ export function PurchaseBillViewPage() {
   const [payDate, setPayDate] = useState(new Date().toISOString().slice(0, 10));
   const [payMode, setPayMode] = useState<PurchasePaymentMode>("cash");
   const [paying, setPaying] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState("");
 
   const load = useCallback(async () => {
     if (!orgId || !billId) return;
@@ -65,6 +70,36 @@ export function PurchaseBillViewPage() {
     }
   };
 
+  const handleDownloadPdf = async () => {
+    if (!orgId || !billId) return;
+    setDownloadingPdf(true);
+    setError(null);
+    try {
+      const url = buildPurchaseBillPdfUrl(orgId, billId, Date.now());
+      const res = await fetch(url);
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(
+          (body as { error?: string } | null)?.error ??
+            t("dashboard.purchases.view.downloadPdfError"),
+        );
+      }
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = objectUrl;
+      a.download = `${bill?.displayNumber ?? "purchase-bill"}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(objectUrl);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("dashboard.purchases.view.downloadPdfError"));
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
+
   if (loading) {
     return <div className="p-6 text-brand-primary-muted">{t("common.pleaseWait")}</div>;
   }
@@ -80,6 +115,8 @@ export function PurchaseBillViewPage() {
     );
   }
 
+  const attachedUrl = bill.billPdfUrl?.trim() || "";
+
   return (
     <div className="p-4 lg:p-6">
       <Link href="/dashboard/purchases" className="text-sm font-semibold text-brand-orange-2 hover:underline">
@@ -92,7 +129,48 @@ export function PurchaseBillViewPage() {
             {bill.partyName} · {formatDate(bill.billDate)}
           </p>
         </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              if (!orgId || !billId) return;
+              setPreviewUrl(buildPurchaseBillPdfUrl(orgId, billId, Date.now()));
+              setPreviewOpen(true);
+            }}
+            className="inline-flex h-10 items-center justify-center rounded-md border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50"
+          >
+            {t("dashboard.purchases.view.previewPdf")}
+          </button>
+          <button
+            type="button"
+            disabled={downloadingPdf}
+            onClick={() => void handleDownloadPdf()}
+            className="inline-flex h-10 items-center justify-center rounded-md border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50 disabled:opacity-60"
+          >
+            {downloadingPdf
+              ? t("dashboard.purchases.view.downloadingPdf")
+              : t("dashboard.purchases.view.downloadPdf")}
+          </button>
+        </div>
       </div>
+
+      {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
+
+      {attachedUrl ? (
+        <div className="mt-4 rounded-sm border border-slate-200/90 bg-white px-4 py-3">
+          <p className="text-xs font-semibold uppercase text-brand-primary-muted">
+            {t("dashboard.purchases.view.attachedBill")}
+          </p>
+          <a
+            href={attachedUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-1 inline-flex text-sm font-semibold text-brand-orange-2 hover:underline"
+          >
+            {t("dashboard.purchases.view.openAttachedBill")}
+          </a>
+        </div>
+      ) : null}
 
       <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard label={t("dashboard.purchases.view.total")} value={formatInr(bill.totalAmount)} accent="navy" />
@@ -150,6 +228,14 @@ export function PurchaseBillViewPage() {
           </div>
         </div>
       )}
+
+      <PurchaseBillPdfPreviewModal
+        open={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+        pdfUrl={previewUrl}
+        title={bill.displayNumber}
+        filename={bill.displayNumber}
+      />
     </div>
   );
 }

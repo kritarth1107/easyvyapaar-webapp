@@ -2,6 +2,7 @@ import type { InventoryItem } from "@/lib/types/inventory-ui";
 import { GST_RATE_OPTIONS } from "@/lib/inventory/create-item-form";
 import type {
   CreateInventoryItemRequest,
+  UpdateInventoryItemRequest,
   InventoryCategory,
   InventoryItemDetail,
   InventoryItemListResponse,
@@ -330,6 +331,53 @@ export function buildCreateItemBackendPayload(
 
   const description = input.description?.trim();
   if (description) payload.description = description;
+
+  return payload;
+}
+
+
+export function buildUpdateItemBackendPayload(
+  input: UpdateInventoryItemRequest,
+): Record<string, unknown> {
+  const payload: Record<string, unknown> = {};
+
+  if (input.categoryId !== undefined) payload.categoryId = input.categoryId.trim();
+  if (input.itemType !== undefined) payload.itemType = input.itemType;
+  if (input.name !== undefined) payload.name = input.name.trim();
+  if (input.showInOnlineStore !== undefined) payload.showInOnlineStore = input.showInOnlineStore;
+  if (input.salesPrice !== undefined) payload.salesPrice = input.salesPrice;
+  if (input.salesTaxMode !== undefined) payload.salesTaxMode = input.salesTaxMode;
+  if (input.purchasePrice !== undefined) payload.purchasePrice = input.purchasePrice;
+  if (input.purchaseTaxMode !== undefined) payload.purchaseTaxMode = input.purchaseTaxMode;
+  if (input.gstRate !== undefined) payload.gstRate = input.gstRate;
+  if (input.salesDiscountPercent !== undefined) {
+    payload.salesDiscountPercent = input.salesDiscountPercent;
+  }
+  if (input.unit !== undefined) payload.unit = input.unit.trim();
+  if (input.itemCode !== undefined) payload.itemCode = input.itemCode.trim();
+  if (input.hsn !== undefined) {
+    const hsn = input.hsn.trim();
+    payload.hsn = hsn;
+  }
+  if (input.asOfDate !== undefined) payload.asOfDate = input.asOfDate;
+  if (input.lowStockWarning !== undefined) payload.lowStockWarning = input.lowStockWarning;
+  if (input.lowStockQty !== undefined) payload.lowStockQty = input.lowStockQty;
+  if (input.description !== undefined) {
+    const description = input.description.trim();
+    payload.description = description;
+  }
+  if (input.partyPrices !== undefined) {
+    payload.partyPrices = input.partyPrices.filter((row) => row.partyId.trim() && row.price >= 0);
+  }
+  if (input.customFields !== undefined) {
+    payload.customFields = input.customFields.filter(
+      (row) => row.field.trim() && row.value.trim(),
+    );
+  }
+  if (input.purchaseSuppliers !== undefined) {
+    payload.purchaseSuppliers = input.purchaseSuppliers.filter((row) => row.partyId.trim());
+  }
+  if (input.status !== undefined) payload.status = input.status;
 
   return payload;
 }

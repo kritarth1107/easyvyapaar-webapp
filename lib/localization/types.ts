@@ -398,6 +398,7 @@ export type MessageTree = {
       hsn: string;
       itemDetail: {
         backToItems: string;
+        editItem: string;
         loadError: string;
         purchasePrice: string;
         openingStock: string;
@@ -470,8 +471,10 @@ export type MessageTree = {
       };
       createItem: {
         title: string;
+        editTitle: string;
         cancel: string;
         saveItem: string;
+        saveChanges: string;
         saveAndNew: string;
         saving: string;
         saveError: string;
@@ -1662,6 +1665,7 @@ export type MessageTree = {
         selectBill: string;
         billNumber: string;
         attachment: string;
+        removeAttachment: string;
         items: string;
         addItems: string;
         noItems: string;
@@ -1696,6 +1700,15 @@ export type MessageTree = {
         paying: string;
         savePayment: string;
         paymentError: string;
+        downloadPdf: string;
+        downloadingPdf: string;
+        downloadPdfError: string;
+        previewPdf: string;
+        loadingPreview: string;
+        previewPdfError: string;
+        openInNewTab: string;
+        attachedBill: string;
+        openAttachedBill: string;
       };
     };
     expenses: {

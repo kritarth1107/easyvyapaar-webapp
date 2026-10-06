@@ -151,7 +151,24 @@ export function CreatePurchaseBillPage() {
               <label className="mb-1 block text-xs font-semibold uppercase text-brand-primary-muted">
                 {t("dashboard.purchases.create.attachment")}
               </label>
-              <input type="file" accept=".pdf,image/*" onChange={(e) => setPdfFile(e.target.files?.[0] ?? null)} className={inputClass} />
+              <input
+                type="file"
+                accept="application/pdf,.pdf,image/*"
+                onChange={(e) => setPdfFile(e.target.files?.[0] ?? null)}
+                className={inputClass}
+              />
+              {pdfFile ? (
+                <div className="mt-1 flex items-center gap-2 text-xs text-brand-primary-muted">
+                  <span className="truncate">{pdfFile.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => setPdfFile(null)}
+                    className="shrink-0 font-semibold text-brand-orange-2 hover:underline"
+                  >
+                    {t("dashboard.purchases.create.removeAttachment")}
+                  </button>
+                </div>
+              ) : null}
             </div>
           </div>
 
