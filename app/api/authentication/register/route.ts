@@ -38,6 +38,8 @@ export async function POST(request: Request) {
       industryType?: unknown;
       gstin?: unknown;
       preferredLanguage?: unknown;
+      planCode?: unknown;
+      billingCycle?: unknown;
     };
 
     const parsedMobile = parseIndianMobile(payload.mobile);
@@ -107,6 +109,27 @@ export async function POST(request: Request) {
       gstin = normalized;
     }
 
+    // Plan selected on the pricing page (?plan=&billing=). Forward it so the backend creates the
+    // pending subscription for that plan instead of defaulting to STARTER.
+    let planCode: "STARTER" | "PRO" | "BUSINESS" | undefined;
+    if (payload.planCode !== undefined && payload.planCode !== null && payload.planCode !== "") {
+      const code = typeof payload.planCode === "string" ? payload.planCode.trim().toUpperCase() : "";
+      if (code !== "STARTER" && code !== "PRO" && code !== "BUSINESS") {
+        return NextResponse.json({ error: "Select a valid plan" }, { status: 400 });
+      }
+      planCode = code;
+    }
+
+    let billingCycle: "MONTHLY" | "YEARLY" | undefined;
+    if (payload.billingCycle !== undefined && payload.billingCycle !== null && payload.billingCycle !== "") {
+      const cycle =
+        typeof payload.billingCycle === "string" ? payload.billingCycle.trim().toUpperCase() : "";
+      if (cycle !== "MONTHLY" && cycle !== "YEARLY") {
+        return NextResponse.json({ error: "Select a valid billing cycle" }, { status: 400 });
+      }
+      billingCycle = cycle;
+    }
+
     const headers = getHeadersFromRequest(request);
 
     let backendResponse: Response;
@@ -122,6 +145,8 @@ export async function POST(request: Request) {
           industryType,
           preferredLanguage,
           ...(gstin && { gstin }),
+          ...(planCode && { planCode }),
+          ...(billingCycle && { billingCycle }),
         }),
       });
     } catch (error) {
