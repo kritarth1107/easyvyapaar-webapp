@@ -24,6 +24,8 @@ export type OrganisationProfile = {
   businessType?: string[];
   enableTDS?: boolean;
   enableTCS?: boolean;
+  enableEInvoicing?: boolean;
+  enableEWayBill?: boolean;
   additionalDetails?: OrganisationAdditionalDetail[];
   registrationNumber?: string;
   gstin?: string;

@@ -24,6 +24,7 @@ import {
 import { uploadBusinessLogo } from "@/lib/api/business-profile-client";
 import type { BusinessProfileSuccessResponse } from "@/lib/types/business-profile-api";
 import { useTranslation } from "@/lib/localization";
+import { downloadTallyXml } from "@/lib/reports/gstr-portal-export-client";
 
 const inputClass =
   "h-10 w-full rounded-sm border border-slate-200/90 bg-white px-3 text-sm text-brand-primary outline-none transition-all placeholder:text-brand-primary-muted/60 focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15";
@@ -181,6 +182,9 @@ export function BusinessProfilePage() {
     type: "success" | "error";
     message: string;
   } | null>(null);
+  const [tallyFromDate, setTallyFromDate] = useState("");
+  const [tallyToDate, setTallyToDate] = useState("");
+  const [tallyBusy, setTallyBusy] = useState(false);
   const [detailType, setDetailType] = useState<string>(ADDITIONAL_DETAIL_TYPES[0].value);
   const [detailValue, setDetailValue] = useState("");
   const [createBusinessOpen, setCreateBusinessOpen] = useState(false);
@@ -630,6 +634,17 @@ export function BusinessProfilePage() {
                 label={t("dashboard.businessProfile.enableEInvoicing")}
                 badge={t("dashboard.businessProfile.newBadge")}
               />
+              <p className="text-xs text-brand-primary-muted -mt-1 mb-2">
+                {t("dashboard.businessProfile.enableEInvoicingHint")}
+              </p>
+              <ToggleRow
+                checked={form.enableEWayBill}
+                onChange={(v) => patch({ enableEWayBill: v })}
+                label={t("dashboard.businessProfile.enableEWayBill")}
+              />
+              <p className="text-xs text-brand-primary-muted -mt-1 mb-2">
+                {t("dashboard.businessProfile.enableEWayBillHint")}
+              </p>
 
               <div>
                 <FieldLabel verifiedTitle={gstVerifiedTitle}>
@@ -798,13 +813,58 @@ export function BusinessProfilePage() {
                 <p className="mt-1 text-sm text-brand-primary-muted">
                   {t("dashboard.businessProfile.tallyExportHint")}
                 </p>
+                <div className="mt-3 flex flex-wrap items-end gap-3">
+                  <div>
+                    <label className="mb-1 block text-[11px] font-medium text-brand-primary-muted">
+                      {t("dashboard.businessProfile.tallyFromDate")}
+                    </label>
+                    <input
+                      type="date"
+                      value={tallyFromDate}
+                      onChange={(e) => setTallyFromDate(e.target.value)}
+                      className="h-9 rounded-sm border border-slate-200/90 bg-white px-2 text-sm text-brand-primary"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-[11px] font-medium text-brand-primary-muted">
+                      {t("dashboard.businessProfile.tallyToDate")}
+                    </label>
+                    <input
+                      type="date"
+                      value={tallyToDate}
+                      onChange={(e) => setTallyToDate(e.target.value)}
+                      className="h-9 rounded-sm border border-slate-200/90 bg-white px-2 text-sm text-brand-primary"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    disabled={tallyBusy}
+                    onClick={() => {
+                      const orgId = activeOrganisationId?.trim();
+                      if (!orgId) return;
+                      setTallyBusy(true);
+                      void downloadTallyXml(
+                        orgId,
+                        tallyFromDate.trim() || undefined,
+                        tallyToDate.trim() || undefined,
+                      )
+                        .catch((err) => {
+                          setSaveFeedback({
+                            type: "error",
+                            message:
+                              err instanceof Error
+                                ? err.message
+                                : t("dashboard.businessProfile.saveError"),
+                          });
+                        })
+                        .finally(() => setTallyBusy(false));
+                    }}
+                    className="inline-flex h-9 items-center rounded-sm border border-slate-200/90 bg-white px-3 text-sm font-semibold text-brand-primary hover:bg-slate-50 disabled:opacity-60"
+                  >
+                    {t("dashboard.businessProfile.downloadTallyXml")}
+                  </button>
+                </div>
               </div>
-              <button
-                type="button"
-                className="shrink-0 rounded-sm border border-slate-200/90 px-3 py-2 text-sm font-medium text-brand-primary-mid hover:bg-slate-50"
-              >
-                {t("dashboard.businessProfile.configure")}
-              </button>
             </div>
           </div>
         </div>

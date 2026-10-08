@@ -13,6 +13,7 @@ import { formatDateIndian } from "@/lib/dashboard/date-format";
 import { AS_OF_DATE_REPORTS, getDefaultReportDateRange } from "@/lib/reports/report-backend-map";
 import { canAccessReportSlug } from "@/lib/reports/report-config";
 import { fetchReport, isReportSlug } from "@/lib/reports/reports-api-client";
+import { downloadGstr1PortalJson, downloadTallyXml } from "@/lib/reports/gstr-portal-export-client";
 import type { ReportData } from "@/lib/types/reports-api";
 import { useTranslation } from "@/lib/localization";
 
@@ -43,6 +44,7 @@ export function ReportViewerPage() {
   const [report, setReport] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   const isAsOfReport = validSlug ? AS_OF_DATE_REPORTS.includes(validSlug) : false;
   const isPaginated = validSlug ? PAGINATED_REPORTS.has(validSlug) : false;
@@ -186,6 +188,52 @@ export function ReportViewerPage() {
         >
           {loading ? t("common.pleaseWait") : t("dashboard.reports.runReport")}
         </button>
+        {validSlug === "gstr1" ? (
+          <button
+            type="button"
+            disabled={loading || exporting || !orgId}
+            onClick={() => {
+              void (async () => {
+                setExporting(true);
+                setError(null);
+                try {
+                  const range = isMonthReport ? monthRange : { fromDate, toDate };
+                  await downloadGstr1PortalJson(orgId, range.fromDate, range.toDate);
+                } catch (err) {
+                  setError(err instanceof Error ? err.message : t("dashboard.reports.loadError"));
+                } finally {
+                  setExporting(false);
+                }
+              })();
+            }}
+            className="h-9 rounded-sm border border-brand-primary/30 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50 disabled:opacity-60"
+          >
+            {exporting ? t("common.pleaseWait") : t("dashboard.reports.exportPortalJson")}
+          </button>
+        ) : null}
+        {validSlug === "gstr1" || validSlug === "sales-summary" || validSlug === "daybook" ? (
+          <button
+            type="button"
+            disabled={loading || exporting || !orgId}
+            onClick={() => {
+              void (async () => {
+                setExporting(true);
+                setError(null);
+                try {
+                  const range = isMonthReport ? monthRange : { fromDate, toDate };
+                  await downloadTallyXml(orgId, range.fromDate, range.toDate);
+                } catch (err) {
+                  setError(err instanceof Error ? err.message : t("dashboard.reports.loadError"));
+                } finally {
+                  setExporting(false);
+                }
+              })();
+            }}
+            className="h-9 rounded-sm border border-brand-primary/30 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50 disabled:opacity-60"
+          >
+            {exporting ? t("common.pleaseWait") : t("dashboard.reports.exportTallyXml")}
+          </button>
+        ) : null}
         {isMonthReport ? (
           <p className="w-full text-xs text-brand-primary-muted">
             {isBalanceSheet

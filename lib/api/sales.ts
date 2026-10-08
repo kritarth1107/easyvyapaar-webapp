@@ -251,6 +251,19 @@ export function normalizeSalesInvoiceDetail(raw: unknown): SalesInvoiceDetail | 
     ...(bankAccount && Object.keys(bankAccount).length > 0 ? { bankAccount } : {}),
     ...(pickString(row.partyPhone) && { partyPhone: pickString(row.partyPhone) }),
     ...(pickString(row.updatedByUserId) && { updatedByUserId: pickString(row.updatedByUserId) }),
+    ...(pickString(row.irn) && { irn: pickString(row.irn) }),
+    ...(pickString(row.ackNo) && { ackNo: pickString(row.ackNo) }),
+    ...(pickString(row.ackDate) && { ackDate: pickString(row.ackDate) }),
+    ...(pickString(row.signedQr) && { signedQr: pickString(row.signedQr) }),
+    ...(pickString(row.eInvoiceStatus) && { eInvoiceStatus: pickString(row.eInvoiceStatus) as SalesInvoiceDetail["eInvoiceStatus"] }),
+    ...(pickString(row.eInvoiceMode) && { eInvoiceMode: pickString(row.eInvoiceMode) as SalesInvoiceDetail["eInvoiceMode"] }),
+    ...(pickString(row.eInvoiceCancelledAt) && { eInvoiceCancelledAt: pickString(row.eInvoiceCancelledAt) }),
+    ...(pickString(row.eInvoiceCancelReason) && { eInvoiceCancelReason: pickString(row.eInvoiceCancelReason) }),
+    ...(pickString(row.ewayBillNo) && { ewayBillNo: pickString(row.ewayBillNo) }),
+    ...(pickString(row.ewayBillDate) && { ewayBillDate: pickString(row.ewayBillDate) }),
+    ...(pickString(row.ewayValidUpto) && { ewayValidUpto: pickString(row.ewayValidUpto) }),
+    ...(pickString(row.eWayBillStatus) && { eWayBillStatus: pickString(row.eWayBillStatus) as SalesInvoiceDetail["eWayBillStatus"] }),
+    ...(pickString(row.eWayBillMode) && { eWayBillMode: pickString(row.eWayBillMode) as SalesInvoiceDetail["eWayBillMode"] }),
   };
 }
 

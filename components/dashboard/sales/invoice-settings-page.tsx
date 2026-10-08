@@ -454,6 +454,9 @@ export function InvoiceSettingsPage() {
                   onChange={(v) => patch({ showEwayBill: v })}
                   label={t("dashboard.invoiceSettings.ewayBill")}
                 />
+                <p className="pb-2 pl-7 text-[11px] text-brand-primary-muted">
+                  {t("dashboard.invoiceSettings.ewayBillHint")}
+                </p>
                 <CheckRow
                   checked={settings.showVehicleNumber}
                   onChange={(v) => patch({ showVehicleNumber: v })}

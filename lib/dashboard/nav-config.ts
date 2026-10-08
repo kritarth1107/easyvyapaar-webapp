@@ -63,7 +63,7 @@ export const DASHBOARD_NAV_GROUPS: NavGroupConfig[] = [
       { id: "stock", href: "/dashboard/inventory/stock-summary", icon: "warehouse" },
       { id: "low-stock", href: "/dashboard/inventory/low-stock", icon: "inventory" },
       { id: "serial-tracking", href: "/dashboard/inventory/serial-tracking", icon: "inventory" },
-      { id: "godowns", href: "/dashboard/godowns", icon: "warehouse" },
+      // godowns deferred - hidden until real feature
     ],
   },
   {
@@ -125,7 +125,7 @@ export const DASHBOARD_SETTINGS_GROUP: NavGroupConfig = {
       icon: "wallet",
     },
     { id: "invoice-themes", href: "/dashboard/sales/invoices/settings", icon: "document" },
-    { id: "print-settings", href: "/dashboard/settings/print-settings", icon: "settings" },
+    // print-settings deferred - hidden until real feature
     { id: "team", href: "/dashboard/settings/team", icon: "users" },
     { id: "subscription", href: "/dashboard/settings/subscription", icon: "wallet" },
     { id: "settings", href: "/dashboard/settings", icon: "settings" },

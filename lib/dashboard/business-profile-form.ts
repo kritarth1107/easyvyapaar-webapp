@@ -76,6 +76,7 @@ export type BusinessProfileForm = {
   gstVerified: boolean;
   gstNumber: string;
   enableEInvoicing: boolean;
+  enableEWayBill: boolean;
   pan: string;
   enableTds: boolean;
   enableTcs: boolean;
@@ -100,6 +101,7 @@ export const DEFAULT_BUSINESS_PROFILE: BusinessProfileForm = {
   gstVerified: false,
   gstNumber: "",
   enableEInvoicing: false,
+  enableEWayBill: false,
   pan: "",
   enableTds: false,
   enableTcs: false,

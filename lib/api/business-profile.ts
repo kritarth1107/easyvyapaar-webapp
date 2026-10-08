@@ -48,6 +48,8 @@ export type UpdateOrganisationPayload = {
   businessType?: string[];
   enableTDS?: boolean;
   enableTCS?: boolean;
+  enableEInvoicing?: boolean;
+  enableEWayBill?: boolean;
   additionalDetails?: { field: string; value: string }[];
   gstin?: string;
   pan?: string;
@@ -143,6 +145,8 @@ export function normalizeOrganisationProfile(raw: unknown): OrganisationProfile 
     businessType,
     enableTDS: Boolean(root.enableTDS ?? root.enableTds ?? root.enable_tds),
     enableTCS: Boolean(root.enableTCS ?? root.enableTcs ?? root.enable_tcs),
+    enableEInvoicing: Boolean(root.enableEInvoicing ?? root.enableEinvoicing ?? root.enable_e_invoicing),
+    enableEWayBill: Boolean(root.enableEWayBill ?? root.enableEwayBill ?? root.enable_e_way_bill),
     additionalDetails,
     registrationNumber: pickString(root.registrationNumber, root.registration_number),
     gstin: pickString(root.gstin, root.gstIN, root.GSTIN),
@@ -213,7 +217,8 @@ export function mapProfileToForm(profile: OrganisationProfile): BusinessProfileF
     gstRegistered: Boolean(profile.gstin),
     gstVerified: profile.gstVerified ?? false,
     gstNumber: profile.gstin ?? "",
-    enableEInvoicing: false,
+    enableEInvoicing: profile.enableEInvoicing ?? false,
+    enableEWayBill: profile.enableEWayBill ?? false,
     pan: profile.pan ?? "",
     enableTds: profile.enableTDS ?? false,
     enableTcs: profile.enableTCS ?? false,
@@ -259,6 +264,8 @@ export function mapFormToUpdatePayload(form: BusinessProfileForm): UpdateOrganis
   const payload: UpdateOrganisationPayload = {
     enableTDS: form.enableTds,
     enableTCS: form.enableTcs,
+    enableEInvoicing: form.enableEInvoicing,
+    enableEWayBill: form.enableEWayBill,
     contactNumber: form.phone.trim(),
     email: form.email.trim() || undefined,
     businessType: form.businessTypes

@@ -82,6 +82,21 @@ export type SalesInvoiceDetail = SalesInvoiceSummary & {
   paymentMode: string;
   theme: string;
   partyPhone?: string;
+  irn?: string;
+  ackNo?: string;
+  ackDate?: string;
+  signedQr?: string;
+  eInvoiceStatus?: 'none' | 'generated' | 'cancelled' | 'failed';
+  eInvoiceMode?: 'mock' | 'live';
+  eInvoiceCancelledAt?: string;
+  eInvoiceCancelReason?: string;
+  ewayBillNo?: string;
+  ewayBillDate?: string;
+  ewayValidUpto?: string;
+  eWayBillStatus?: "none" | "generated" | "cancelled" | "failed";
+  eWayBillMode?: "mock" | "live";
+  vehicleNumber?: string;
+  transporterId?: string;
   createdByUserId: string;
   updatedByUserId?: string;
   createdAt: string;
@@ -167,4 +182,17 @@ export type SalesInvoiceListResponse = {
     total: number;
     totalPages: number;
   };
+};
+
+export type EInvoiceResult = {
+  mode: 'mock' | 'live';
+  status: 'none' | 'generated' | 'cancelled' | 'failed';
+  irn?: string;
+  ackNo?: string;
+  ackDate?: string;
+  signedQr?: string;
+  cancelledAt?: string;
+  cancelReason?: string;
+  isMock: boolean;
+  message: string;
 };

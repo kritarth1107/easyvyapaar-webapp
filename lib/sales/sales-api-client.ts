@@ -6,6 +6,7 @@ import {
 } from "@/lib/api/sales";
 import type {
   CreateSalesInvoiceRequest,
+  EInvoiceResult,
   NextInvoiceNumber,
   RecordSalesInvoicePaymentRequest,
   SalesInvoiceDetail,
@@ -162,7 +163,7 @@ export async function sendSalesInvoiceWhatsApp(
   organisationId: string,
   invoiceId: string,
   phone: string,
-): Promise<{ sent: true; phone: string }> {
+): Promise<{ sent: true; phone: string; mode: "template" | "session"; hint?: string }> {
   const res = await fetch(
     `/api/sales/invoices/${encodeURIComponent(invoiceId)}/send-whatsapp?organisationId=${encodeURIComponent(organisationId)}`,
     {
@@ -175,9 +176,146 @@ export async function sendSalesInvoiceWhatsApp(
   if (!res.ok) {
     throw new Error(extractBackendError(body) ?? "Failed to send invoice via WhatsApp");
   }
-  const data = (body as { data?: { sent?: boolean; phone?: string } })?.data;
+  const data = (body as {
+    data?: { sent?: boolean; phone?: string; mode?: string; hint?: string };
+  })?.data;
   if (!data?.sent || !data.phone) {
     throw new Error("Failed to send invoice via WhatsApp");
   }
-  return { sent: true, phone: data.phone };
+  const mode = data.mode === "template" ? "template" : "session";
+  return {
+    sent: true,
+    phone: data.phone,
+    mode,
+    ...(typeof data.hint === "string" && data.hint ? { hint: data.hint } : {}),
+  };
+}
+
+
+function normalizeEInvoiceResult(body: unknown): EInvoiceResult | null {
+  const root = typeof body === 'object' && body !== null ? (body as Record<string, unknown>) : null;
+  const data = root && root.success === true ? root.data : body;
+  const row = typeof data === 'object' && data !== null ? (data as Record<string, unknown>) : null;
+  if (!row) return null;
+  const mode = row.mode === 'live' ? 'live' : 'mock';
+  const statusRaw = typeof row.status === 'string' ? row.status : 'none';
+  const status =
+    statusRaw === 'generated' || statusRaw === 'cancelled' || statusRaw === 'failed'
+      ? statusRaw
+      : 'none';
+  const message = typeof row.message === 'string' ? row.message : '';
+  return {
+    mode,
+    status,
+    isMock: Boolean(row.isMock) || mode === 'mock',
+    message,
+    ...(typeof row.irn === 'string' && row.irn ? { irn: row.irn } : {}),
+    ...(typeof row.ackNo === 'string' && row.ackNo ? { ackNo: row.ackNo } : {}),
+    ...(typeof row.ackDate === 'string' && row.ackDate ? { ackDate: row.ackDate } : {}),
+    ...(typeof row.signedQr === 'string' && row.signedQr ? { signedQr: row.signedQr } : {}),
+    ...(typeof row.cancelledAt === 'string' && row.cancelledAt ? { cancelledAt: row.cancelledAt } : {}),
+    ...(typeof row.cancelReason === 'string' && row.cancelReason ? { cancelReason: row.cancelReason } : {}),
+  };
+}
+
+export async function generateSalesInvoiceEInvoice(
+  organisationId: string,
+  invoiceId: string,
+): Promise<EInvoiceResult> {
+  const res = await fetch(
+    `/api/sales/invoices/${encodeURIComponent(invoiceId)}/e-invoice/generate?organisationId=${encodeURIComponent(organisationId)}`,
+    { method: 'POST' },
+  );
+  const body = await parseJsonResponse(res);
+  if (!res.ok) {
+    throw new Error(extractBackendError(body) ?? 'Failed to generate IRN');
+  }
+  const data = normalizeEInvoiceResult(body);
+  if (!data) throw new Error('Failed to generate IRN');
+  return data;
+}
+
+export async function fetchSalesInvoiceEInvoiceStatus(
+  organisationId: string,
+  invoiceId: string,
+): Promise<EInvoiceResult> {
+  const res = await fetch(
+    `/api/sales/invoices/${encodeURIComponent(invoiceId)}/e-invoice?organisationId=${encodeURIComponent(organisationId)}`,
+  );
+  const body = await parseJsonResponse(res);
+  if (!res.ok) {
+    throw new Error(extractBackendError(body) ?? 'Failed to load e-Invoice status');
+  }
+  const data = normalizeEInvoiceResult(body);
+  if (!data) throw new Error('Failed to load e-Invoice status');
+  return data;
+}
+
+export async function cancelSalesInvoiceEInvoice(
+  organisationId: string,
+  invoiceId: string,
+  reason = '1',
+): Promise<EInvoiceResult> {
+  const res = await fetch(
+    `/api/sales/invoices/${encodeURIComponent(invoiceId)}/e-invoice/cancel?organisationId=${encodeURIComponent(organisationId)}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason }),
+    },
+  );
+  const body = await parseJsonResponse(res);
+  if (!res.ok) {
+    throw new Error(extractBackendError(body) ?? 'Failed to cancel IRN');
+  }
+  const data = normalizeEInvoiceResult(body);
+  if (!data) throw new Error('Failed to cancel IRN');
+  return data;
+}
+
+
+export async function generateSalesInvoiceEWayBill(
+  organisationId: string,
+  invoiceId: string,
+  payload: { vehicleNumber?: string; transporterId?: string } = {},
+): Promise<Record<string, unknown>> {
+  const res = await fetch(
+    `/api/sales/invoices/${encodeURIComponent(invoiceId)}/e-way-bill/generate?organisationId=${encodeURIComponent(organisationId)}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    },
+  );
+  const body = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(extractBackendError(body) ?? "Failed to generate E-Way Bill");
+  const root = typeof body === "object" && body !== null ? (body as Record<string, unknown>) : null;
+  return (root?.data as Record<string, unknown>) ?? {};
+}
+
+export async function fetchSalesInvoiceEWayBillStatus(
+  organisationId: string,
+  invoiceId: string,
+): Promise<Record<string, unknown>> {
+  const res = await fetch(
+    `/api/sales/invoices/${encodeURIComponent(invoiceId)}/e-way-bill?organisationId=${encodeURIComponent(organisationId)}`,
+  );
+  const body = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(extractBackendError(body) ?? "Failed to load E-Way Bill status");
+  const root = typeof body === "object" && body !== null ? (body as Record<string, unknown>) : null;
+  return (root?.data as Record<string, unknown>) ?? {};
+}
+
+export async function cancelSalesInvoiceEWayBill(
+  organisationId: string,
+  invoiceId: string,
+): Promise<Record<string, unknown>> {
+  const res = await fetch(
+    `/api/sales/invoices/${encodeURIComponent(invoiceId)}/e-way-bill/cancel?organisationId=${encodeURIComponent(organisationId)}`,
+    { method: "POST" },
+  );
+  const body = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(extractBackendError(body) ?? "Failed to cancel E-Way Bill");
+  const root = typeof body === "object" && body !== null ? (body as Record<string, unknown>) : null;
+  return (root?.data as Record<string, unknown>) ?? {};
 }

@@ -35,12 +35,18 @@ import { printInvoiceElement, triggerInvoiceSavePdf } from "@/lib/sales/print-in
 import { fetchSalesInvoiceSettings } from "@/lib/sales/sales-invoice-settings-api-client";
 import { sharePaymentReminderWhatsApp } from "@/lib/sales/share-payment-reminder";
 import {
+  cancelSalesInvoiceEInvoice,
+  cancelSalesInvoiceEWayBill,
   fetchSalesInvoiceDetail,
+  fetchSalesInvoiceEInvoiceStatus,
+  fetchSalesInvoiceEWayBillStatus,
+  generateSalesInvoiceEInvoice,
+  generateSalesInvoiceEWayBill,
   recordSalesInvoicePayment,
   sendSalesInvoiceEmail,
   sendSalesInvoiceWhatsApp,
 } from "@/lib/sales/sales-api-client";
-import type { SalesInvoiceDetail, SalesInvoiceStatus } from "@/lib/types/sales-api";
+import type { EInvoiceResult, SalesInvoiceDetail, SalesInvoiceStatus } from "@/lib/types/sales-api";
 import type { PartyDetail } from "@/lib/types/parties-api";
 import { useTranslation } from "@/lib/localization";
 
@@ -142,6 +148,19 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [paymentSuccess, setPaymentSuccess] = useState<string | null>(null);
   const [reminderError, setReminderError] = useState<string | null>(null);
+  const [enableEInvoicing, setEnableEInvoicing] = useState(false);
+  const [enableEWayBill, setEnableEWayBill] = useState(false);
+  const [ewayBusy, setEwayBusy] = useState(false);
+  const [ewayMsg, setEwayMsg] = useState<string | null>(null);
+  const [ewayVehicle, setEwayVehicle] = useState("");
+  const [ewayTransporter, setEwayTransporter] = useState("");
+  const [ewayMetaStatus, setEwayMetaStatus] = useState<string | null>(null);
+  const [eInvoiceBusy, setEInvoiceBusy] = useState(false);
+  const [irnCancelOpen, setIrnCancelOpen] = useState(false);
+  const [irnCancelReason, setIrnCancelReason] = useState("1");
+  const [eInvoiceError, setEInvoiceError] = useState<string | null>(null);
+  const [eInvoiceSuccess, setEInvoiceSuccess] = useState<string | null>(null);
+  const [eInvoiceMeta, setEInvoiceMeta] = useState<EInvoiceResult | null>(null);
 
   const loadInvoice = useCallback(async () => {
     const orgId = activeOrganisationId?.trim();
@@ -170,6 +189,51 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
       setReminderError(null);
       if (profile) {
         setOrganisationSnapshot(organisationProfileToSnapshot(profile));
+        setEnableEInvoicing(Boolean(profile.enableEInvoicing));
+        setEnableEWayBill(Boolean(profile.enableEWayBill));
+      } else {
+        setEnableEInvoicing(false);
+        setEnableEWayBill(false);
+      }
+
+      if (invoiceDetail.irn) {
+        try {
+          const status = await fetchSalesInvoiceEInvoiceStatus(orgId, invoiceDetail.invoiceId);
+          setEInvoiceMeta(status);
+        } catch {
+          setEInvoiceMeta({
+            mode: invoiceDetail.eInvoiceMode === "live" ? "live" : "mock",
+            status:
+              invoiceDetail.eInvoiceStatus === "cancelled"
+                ? "cancelled"
+                : invoiceDetail.eInvoiceStatus === "failed"
+                  ? "failed"
+                  : "generated",
+            irn: invoiceDetail.irn,
+            ...(invoiceDetail.ackNo ? { ackNo: invoiceDetail.ackNo } : {}),
+            ...(invoiceDetail.ackDate ? { ackDate: invoiceDetail.ackDate } : {}),
+            ...(invoiceDetail.signedQr ? { signedQr: invoiceDetail.signedQr } : {}),
+            isMock:
+              invoiceDetail.eInvoiceMode !== "live" ||
+              Boolean(invoiceDetail.irn?.startsWith("MOCK")),
+            message: "",
+          });
+        }
+      } else {
+        setEInvoiceMeta(null);
+      }
+      setEInvoiceError(null);
+      setEInvoiceSuccess(null);
+
+      if (invoiceDetail.vehicleNumber) setEwayVehicle(invoiceDetail.vehicleNumber);
+      if (invoiceDetail.transporterId) setEwayTransporter(invoiceDetail.transporterId);
+      try {
+        const eway = await fetchSalesInvoiceEWayBillStatus(orgId, invoiceDetail.invoiceId);
+        setEwayMetaStatus(typeof eway.status === "string" ? eway.status : null);
+        if (typeof eway.vehicleNumber === "string" && eway.vehicleNumber) setEwayVehicle(eway.vehicleNumber);
+        if (typeof eway.transporterId === "string" && eway.transporterId) setEwayTransporter(eway.transporterId);
+      } catch {
+        setEwayMetaStatus(invoiceDetail.eWayBillStatus ?? null);
       }
 
       if (invoiceDetail.partyId) {
@@ -270,6 +334,69 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
     }
   };
 
+
+  const generateEway = async () => {
+    const orgId = activeOrganisationId?.trim();
+    if (!orgId || !invoice) return;
+    setEwayBusy(true);
+    setEwayMsg(null);
+    try {
+      const data = await generateSalesInvoiceEWayBill(orgId, invoice.invoiceId, {
+        ...(ewayVehicle.trim() ? { vehicleNumber: ewayVehicle.trim() } : {}),
+        ...(ewayTransporter.trim() ? { transporterId: ewayTransporter.trim() } : {}),
+      });
+      setInvoice((prev) =>
+        prev
+          ? {
+              ...prev,
+              ewayBillNo: typeof data.ewayBillNo === "string" ? data.ewayBillNo : prev.ewayBillNo,
+              ewayBillDate: typeof data.ewayBillDate === "string" ? data.ewayBillDate : prev.ewayBillDate,
+              ewayValidUpto: typeof data.ewayValidUpto === "string" ? data.ewayValidUpto : prev.ewayValidUpto,
+              eWayBillStatus: "generated",
+              eWayBillMode: data.mode === "live" ? "live" : "mock",
+              ...(ewayVehicle.trim() ? { vehicleNumber: ewayVehicle.trim().toUpperCase() } : {}),
+              ...(ewayTransporter.trim() ? { transporterId: ewayTransporter.trim() } : {}),
+            }
+          : prev,
+      );
+      setEwayMetaStatus("generated");
+      setEwayMsg(typeof data.message === "string" ? data.message : "E-Way Bill generated.");
+    } catch (err) {
+      setEwayMsg(err instanceof Error ? err.message : "Failed to generate E-Way Bill");
+    } finally {
+      setEwayBusy(false);
+    }
+  };
+
+  const cancelEway = async () => {
+    const orgId = activeOrganisationId?.trim();
+    if (!orgId || !invoice) return;
+    if (!window.confirm(t("dashboard.salesInvoices.view.ewayCancel") + "?")) return;
+    setEwayBusy(true);
+    setEwayMsg(null);
+    try {
+      const data = await cancelSalesInvoiceEWayBill(orgId, invoice.invoiceId);
+      setInvoice((prev) =>
+        prev
+          ? {
+              ...prev,
+              eWayBillStatus: "cancelled",
+            }
+          : prev,
+      );
+      setEwayMetaStatus("cancelled");
+      setEwayMsg(
+        typeof data.message === "string"
+          ? data.message
+          : t("dashboard.salesInvoices.view.ewayCancelled"),
+      );
+    } catch (err) {
+      setEwayMsg(err instanceof Error ? err.message : "Failed to cancel E-Way Bill");
+    } finally {
+      setEwayBusy(false);
+    }
+  };
+
   const previewModel = useMemo(() => {
     if (!invoice) return null;
     return buildLiveInvoicePreviewFromDetail(invoice, businessName, organisationSnapshot, party);
@@ -283,6 +410,85 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
   const printOptions = {
     documentTitle: printTitle,
     pageSize: resolveInvoicePageSizeFromTheme(storedSettings.themeId),
+  };
+
+  const canGenerateIrn =
+    enableEInvoicing &&
+    invoice != null &&
+    invoice.invoiceType === "gst_invoice" &&
+    Boolean(invoice.partyGstin?.trim()) &&
+    invoice.status !== "cancelled" &&
+    !invoice.irn &&
+    eInvoiceMeta?.status !== "generated";
+
+  const hasActiveIrn =
+    Boolean(invoice?.irn) &&
+    (eInvoiceMeta?.status === "generated" ||
+      (!eInvoiceMeta && invoice?.eInvoiceStatus !== "cancelled"));
+
+  const generateIrn = async () => {
+    const orgId = activeOrganisationId?.trim();
+    if (!orgId || !invoice) return;
+    setEInvoiceBusy(true);
+    setEInvoiceError(null);
+    setEInvoiceSuccess(null);
+    try {
+      const result = await generateSalesInvoiceEInvoice(orgId, invoice.invoiceId);
+      setEInvoiceMeta(result);
+      setInvoice((prev) =>
+        prev
+          ? {
+              ...prev,
+              irn: result.irn,
+              ackNo: result.ackNo,
+              ackDate: result.ackDate,
+              signedQr: result.signedQr,
+              eInvoiceStatus: result.status,
+              eInvoiceMode: result.mode,
+            }
+          : prev,
+      );
+      setEInvoiceSuccess(
+        result.isMock
+          ? `${t("dashboard.salesInvoices.view.irnGenerated")} (${t("dashboard.salesInvoices.view.mockBadge")})`
+          : t("dashboard.salesInvoices.view.irnGenerated"),
+      );
+    } catch (err) {
+      setEInvoiceError(
+        err instanceof Error ? err.message : t("dashboard.salesInvoices.view.irnGenerateError"),
+      );
+    } finally {
+      setEInvoiceBusy(false);
+    }
+  };
+
+  const cancelIrn = async () => {
+    const orgId = activeOrganisationId?.trim();
+    if (!orgId || !invoice) return;
+    setEInvoiceBusy(true);
+    setEInvoiceError(null);
+    setEInvoiceSuccess(null);
+    try {
+      const result = await cancelSalesInvoiceEInvoice(orgId, invoice.invoiceId);
+      setEInvoiceMeta(result);
+      setInvoice((prev) =>
+        prev
+          ? {
+              ...prev,
+              eInvoiceStatus: result.status,
+              eInvoiceCancelledAt: result.cancelledAt,
+              eInvoiceCancelReason: result.cancelReason,
+            }
+          : prev,
+      );
+      setEInvoiceSuccess(t("dashboard.salesInvoices.view.irnCancelled"));
+    } catch (err) {
+      setEInvoiceError(
+        err instanceof Error ? err.message : t("dashboard.salesInvoices.view.irnCancelError"),
+      );
+    } finally {
+      setEInvoiceBusy(false);
+    }
   };
 
   const previewProps = useMemo(() => {
@@ -467,6 +673,241 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
             ) : null}
           </div>
 
+          <div className="rounded-sm border border-slate-200/90 bg-white p-4 shadow-sm">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="text-sm font-bold text-brand-primary">
+                {t("dashboard.salesInvoices.view.irnSection")}
+              </h2>
+              {(eInvoiceMeta?.isMock || invoice.irn?.startsWith("MOCK")) && (
+                <span className="rounded-sm bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold uppercase text-amber-800">
+                  {t("dashboard.salesInvoices.view.mockBadge")}
+                </span>
+              )}
+            </div>
+            {eInvoiceError ? <p className="mt-2 text-xs text-red-600">{eInvoiceError}</p> : null}
+            {eInvoiceSuccess ? (
+              <p className="mt-2 text-xs text-emerald-700">{eInvoiceSuccess}</p>
+            ) : null}
+            {invoice.irn || eInvoiceMeta?.irn ? (
+              <div className="mt-3 space-y-2 text-xs text-brand-primary">
+                <div>
+                  <span className="text-brand-primary-muted">
+                    {t("dashboard.salesInvoices.view.irnLabel")}:{" "}
+                  </span>
+                  <span className="break-all font-mono font-semibold">
+                    {eInvoiceMeta?.irn ?? invoice.irn}
+                  </span>
+                </div>
+                {(eInvoiceMeta?.ackNo ?? invoice.ackNo) ? (
+                  <div>
+                    <span className="text-brand-primary-muted">
+                      {t("dashboard.salesInvoices.view.ackNoLabel")}:{" "}
+                    </span>
+                    <span className="font-semibold">{eInvoiceMeta?.ackNo ?? invoice.ackNo}</span>
+                  </div>
+                ) : null}
+                {(eInvoiceMeta?.ackDate ?? invoice.ackDate) ? (
+                  <div>
+                    <span className="text-brand-primary-muted">
+                      {t("dashboard.salesInvoices.view.ackDateLabel")}:{" "}
+                    </span>
+                    <span className="font-semibold">
+                      {eInvoiceMeta?.ackDate ?? invoice.ackDate}
+                    </span>
+                  </div>
+                ) : null}
+                {(eInvoiceMeta?.signedQr ?? invoice.signedQr) ? (
+                  <div>
+                    <span className="text-brand-primary-muted">
+                      {t("dashboard.salesInvoices.view.signedQrLabel")}:{" "}
+                    </span>
+                    <span className="break-all font-mono">
+                      {(eInvoiceMeta?.signedQr ?? invoice.signedQr)?.slice(0, 120)}
+                      {(eInvoiceMeta?.signedQr ?? invoice.signedQr) &&
+                      (eInvoiceMeta?.signedQr ?? invoice.signedQr)!.length > 120
+                        ? "…"
+                        : ""}
+                    </span>
+                  </div>
+                ) : null}
+                {hasActiveIrn && eInvoiceMeta?.status !== "cancelled" ? (
+                  <div className="mt-2 space-y-2">
+                    {!irnCancelOpen ? (
+                      <button
+                        type="button"
+                        disabled={eInvoiceBusy}
+                        onClick={() => setIrnCancelOpen(true)}
+                        className="inline-flex h-9 w-full items-center justify-center rounded-sm border border-slate-200 bg-white px-3 text-xs font-semibold text-brand-primary hover:bg-slate-50 disabled:opacity-60"
+                      >
+                        {t("dashboard.salesInvoices.view.irnCancel")}
+                      </button>
+                    ) : (
+                      <div className="rounded-sm border border-amber-200 bg-amber-50/80 p-3 space-y-2">
+                        <p className="text-xs text-amber-900">
+                          {t("dashboard.salesInvoices.view.irnCancelConfirm")}
+                        </p>
+                        <label className="block text-[11px] font-medium text-brand-primary-muted">
+                          {t("dashboard.salesInvoices.view.irnCancelReasonLabel")}
+                        </label>
+                        <select
+                          value={irnCancelReason}
+                          onChange={(e) => setIrnCancelReason(e.target.value)}
+                          className="h-9 w-full rounded-sm border border-slate-200 bg-white px-2 text-xs text-brand-primary"
+                        >
+                          <option value="1">{t("dashboard.salesInvoices.view.irnCancelReason1")}</option>
+                          <option value="2">{t("dashboard.salesInvoices.view.irnCancelReason2")}</option>
+                          <option value="3">{t("dashboard.salesInvoices.view.irnCancelReason3")}</option>
+                          <option value="4">{t("dashboard.salesInvoices.view.irnCancelReason4")}</option>
+                        </select>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            disabled={eInvoiceBusy}
+                            onClick={() => void cancelIrn()}
+                            className="inline-flex h-9 flex-1 items-center justify-center rounded-sm bg-red-600 px-3 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+                          >
+                            {eInvoiceBusy
+                              ? t("dashboard.salesInvoices.view.irnCancelling")
+                              : t("dashboard.salesInvoices.view.irnCancel")}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={eInvoiceBusy}
+                            onClick={() => setIrnCancelOpen(false)}
+                            className="inline-flex h-9 items-center justify-center rounded-sm border border-slate-200 bg-white px-3 text-xs font-semibold text-brand-primary hover:bg-slate-50"
+                          >
+                            {t("common.back")}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : null}
+              </div>
+            ) : canGenerateIrn ? (
+              <button
+                type="button"
+                disabled={eInvoiceBusy}
+                onClick={() => void generateIrn()}
+                className="mt-4 inline-flex h-10 w-full items-center justify-center rounded-md bg-gradient-to-r from-brand-primary to-brand-primary-light px-4 text-sm font-semibold text-white disabled:opacity-60"
+              >
+                {eInvoiceBusy
+                  ? t("dashboard.salesInvoices.view.generatingIrn")
+                  : t("dashboard.salesInvoices.view.generateIrn")}
+              </button>
+            ) : (
+              <p className="mt-3 text-xs text-brand-primary-muted">
+                {t("dashboard.salesInvoices.view.irnNotEligible")}
+              </p>
+            )}
+          </div>
+          <div className="rounded-sm border border-slate-200/90 bg-white p-4 shadow-sm">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="text-sm font-bold text-brand-primary">
+                {t("dashboard.salesInvoices.view.ewaySection")}
+              </h2>
+              {(invoice.eWayBillMode === "mock" || invoice.ewayBillNo?.startsWith("MOCK")) && (
+                <span className="rounded-sm bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold uppercase text-amber-800">
+                  {t("dashboard.salesInvoices.view.mockBadge")}
+                </span>
+              )}
+            </div>
+            {ewayMsg ? <p className="mt-2 text-xs text-brand-primary-muted">{ewayMsg}</p> : null}
+            {invoice.ewayBillNo ? (
+              <div className="mt-3 space-y-1 text-xs">
+                <p>
+                  <span className="text-brand-primary-muted">
+                    {t("dashboard.salesInvoices.view.ewayNoLabel")}:{" "}
+                  </span>
+                  <span className="font-semibold">{invoice.ewayBillNo}</span>
+                </p>
+                {(ewayMetaStatus || invoice.eWayBillStatus) ? (
+                  <p>
+                    <span className="text-brand-primary-muted">
+                      {t("dashboard.salesInvoices.view.ewayStatusLabel")}:{" "}
+                    </span>
+                    <span className="font-semibold">
+                      {ewayMetaStatus || invoice.eWayBillStatus}
+                    </span>
+                  </p>
+                ) : null}
+                {invoice.ewayBillDate ? (
+                  <p>
+                    <span className="text-brand-primary-muted">
+                      {t("dashboard.salesInvoices.view.ewayDateLabel")}:{" "}
+                    </span>
+                    {invoice.ewayBillDate}
+                  </p>
+                ) : null}
+                {invoice.ewayValidUpto ? (
+                  <p>
+                    <span className="text-brand-primary-muted">
+                      {t("dashboard.salesInvoices.view.ewayValidLabel")}:{" "}
+                    </span>
+                    {invoice.ewayValidUpto}
+                  </p>
+                ) : null}
+                {(ewayMetaStatus || invoice.eWayBillStatus) === "generated" ? (
+                  <button
+                    type="button"
+                    disabled={ewayBusy}
+                    onClick={() => void cancelEway()}
+                    className="mt-2 inline-flex h-9 w-full items-center justify-center rounded-sm border border-slate-200 bg-white px-3 text-xs font-semibold text-brand-primary hover:bg-slate-50 disabled:opacity-60"
+                  >
+                    {ewayBusy
+                      ? t("dashboard.salesInvoices.view.ewayCancelling")
+                      : t("dashboard.salesInvoices.view.ewayCancel")}
+                  </button>
+                ) : null}
+              </div>
+            ) : enableEWayBill && invoice.status !== "cancelled" ? (
+              <div className="mt-3 space-y-3">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-brand-primary-muted">
+                    {t("dashboard.salesInvoices.view.ewayVehicleLabel")}
+                  </label>
+                  <input
+                    type="text"
+                    value={ewayVehicle}
+                    onChange={(e) => setEwayVehicle(e.target.value.toUpperCase())}
+                    placeholder="MH12AB1234"
+                    className="h-9 w-full rounded-sm border border-slate-200/90 bg-white px-3 text-sm text-brand-primary outline-none focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15"
+                  />
+                  <p className="mt-1 text-[11px] text-brand-primary-muted">
+                    {t("dashboard.salesInvoices.view.ewayVehicleHint")}
+                  </p>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-brand-primary-muted">
+                    {t("dashboard.salesInvoices.view.ewayTransporterLabel")}
+                  </label>
+                  <input
+                    type="text"
+                    value={ewayTransporter}
+                    onChange={(e) => setEwayTransporter(e.target.value.toUpperCase())}
+                    placeholder="27AABCT1332F1ZV"
+                    className="h-9 w-full rounded-sm border border-slate-200/90 bg-white px-3 text-sm text-brand-primary outline-none focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15"
+                  />
+                </div>
+                <button
+                  type="button"
+                  disabled={ewayBusy}
+                  onClick={() => void generateEway()}
+                  className="inline-flex h-10 w-full items-center justify-center rounded-md border border-brand-primary/30 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50 disabled:opacity-60"
+                >
+                  {ewayBusy
+                    ? t("dashboard.salesInvoices.view.ewayGenerating")
+                    : t("dashboard.salesInvoices.view.ewayGenerate")}
+                </button>
+              </div>
+            ) : (
+              <p className="mt-3 text-xs text-brand-primary-muted">
+                {t("dashboard.salesInvoices.view.ewayEnableHint")}
+              </p>
+            )}
+          </div>
+
+
           {canRecordPayment ? (
             <div className="rounded-sm border border-slate-200/90 bg-white p-4 shadow-sm">
               <h2 className="text-sm font-bold text-brand-primary">
@@ -542,13 +983,18 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
         partyName={invoice.partyName}
         onSend={async (phone) => {
           const orgId = activeOrganisationId?.trim();
-          if (!orgId) throw new Error(t("dashboard.salesInvoices.create.noOrganisation"));
+          if (!orgId || !invoice) return;
           const result = await sendSalesInvoiceWhatsApp(orgId, invoice.invoiceId, phone);
           const displayPhone = result.phone.startsWith("91")
             ? result.phone.slice(2)
             : result.phone;
+          const successMsg =
+            result.mode === "template"
+              ? t("dashboard.salesInvoices.view.sendWhatsAppTemplateSuccess")
+              : t("dashboard.salesInvoices.view.sendWhatsAppSessionSuccess");
           setWhatsappSuccess(
-            t("dashboard.salesInvoices.view.sendWhatsAppSuccess").replace("{phone}", displayPhone),
+            successMsg.replace("{phone}", displayPhone) +
+              (result.hint ? ` ${result.hint}` : ""),
           );
         }}
       />

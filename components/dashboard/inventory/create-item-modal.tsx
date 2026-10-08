@@ -396,22 +396,27 @@ export function CreateItemModal({ open, onClose, organisationId, onSaved, editIt
     const list: { id: CreateItemSection; label: string; required?: boolean; group?: string }[] = [
       { id: "basic", label: t("dashboard.inventory.createItem.sections.basic"), required: true },
     ];
-    if (form.serialised) {
+    // Edit mode: hide serial + stock — adjust via Adjust Stock on the item page
+    if (!isEdit && form.serialised) {
       list.push({
         id: "serial",
         label: t("dashboard.inventory.createItem.sections.serial"),
         required: true,
       });
     }
+    if (!isEdit) {
+      list.push(
+        { id: "stock", label: t("dashboard.inventory.createItem.sections.stock"), group: "advance" },
+      );
+    }
     list.push(
-      { id: "stock", label: t("dashboard.inventory.createItem.sections.stock"), group: "advance" },
       { id: "pricing", label: t("dashboard.inventory.createItem.sections.pricing"), group: "advance" },
       { id: "suppliers", label: t("dashboard.inventory.createItem.sections.suppliers"), group: "advance" },
       { id: "party", label: t("dashboard.inventory.createItem.sections.party"), group: "advance" },
       { id: "custom", label: t("dashboard.inventory.createItem.sections.custom"), group: "advance" }
     );
     return list;
-  }, [form.serialised, t]);
+  }, [form.serialised, isEdit, t]);
 
   const primarySections = useMemo(
     () => sections.filter((s) => !s.group),
@@ -423,13 +428,17 @@ export function CreateItemModal({ open, onClose, organisationId, onSaved, editIt
   );
 
   useEffect(() => {
+    if (isEdit && (section === "stock" || section === "serial")) {
+      setSection("basic");
+      return;
+    }
     if (form.serialised && section !== "serial" && !sections.some((s) => s.id === section)) {
       setSection("basic");
     }
     if (!form.serialised && section === "serial") {
       setSection("basic");
     }
-  }, [form.serialised, section, sections]);
+  }, [form.serialised, isEdit, section, sections]);
 
   if (!mounted) return null;
   if (!open) return null;
@@ -522,6 +531,7 @@ export function CreateItemModal({ open, onClose, organisationId, onSaved, editIt
                   categories={categories}
                   industryLabel={industryLabel}
                   units={units}
+                  isEdit={isEdit}
                   onCategoryChange={(categoryId) => {
                     patch({ categoryId });
                     setCategoryError(false);
@@ -532,6 +542,11 @@ export function CreateItemModal({ open, onClose, organisationId, onSaved, editIt
                   t={t}
                 />
               )}
+              {isEdit && section === "basic" ? (
+                <p className="mt-4 rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-900">
+                  {t("dashboard.inventory.createItem.editStockHint")}
+                </p>
+              ) : null}
               {section === "serial" && form.serialised && (
                 <SerialNumbersSection
                   form={form}
@@ -888,6 +903,7 @@ function BasicSection({
   onAddCategory,
   onAddUnit,
   onSerialisationChange,
+  isEdit = false,
   t,
 }: {
   form: CreateItemFormState;
@@ -897,6 +913,7 @@ function BasicSection({
   categories: CategoryOption[];
   industryLabel: string | null;
   units: string[];
+  isEdit?: boolean;
   onCategoryChange: (categoryId: string) => void;
   onAddCategory: () => void;
   onAddUnit: () => void;
@@ -1004,22 +1021,33 @@ function BasicSection({
         <GstRateSelect value={form.gstRate} onChange={(gstRate) => patch({ gstRate })} t={t} />
       </div>
 
-      <div className={formGridClass}>
-        <AlignedFieldColumn label={t("dashboard.inventory.createItem.openingStock")}>
-          <div className="flex h-10 overflow-hidden rounded-md border border-slate-200/90 focus-within:border-brand-orange-1/50 focus-within:ring-2 focus-within:ring-brand-orange-1/15">
-            <input
-              type="text"
-              inputMode="decimal"
-              value={form.openingStock}
-              onChange={(e) => patch({ openingStock: e.target.value })}
-              placeholder={t("dashboard.inventory.createItem.stockPlaceholder")}
-              className="min-w-0 flex-1 border-0 bg-white px-3 text-sm text-brand-primary outline-none"
+      {!isEdit ? (
+        <div className={formGridClass}>
+          <AlignedFieldColumn label={t("dashboard.inventory.createItem.openingStock")}>
+            <div className="flex h-10 overflow-hidden rounded-md border border-slate-200/90 focus-within:border-brand-orange-1/50 focus-within:ring-2 focus-within:ring-brand-orange-1/15">
+              <input
+                type="text"
+                inputMode="decimal"
+                value={form.openingStock}
+                onChange={(e) => patch({ openingStock: e.target.value })}
+                placeholder={t("dashboard.inventory.createItem.stockPlaceholder")}
+                className="min-w-0 flex-1 border-0 bg-white px-3 text-sm text-brand-primary outline-none"
+              />
+              <span className="flex h-10 items-center border-l border-slate-200/90 bg-slate-50 px-3 text-xs font-semibold text-brand-primary-muted">
+                {form.unit}
+              </span>
+            </div>
+          </AlignedFieldColumn>
+          <AlignedFieldColumn label={t("dashboard.inventory.createItem.measuringUnit")}>
+            <UnitSelect
+              value={form.unit}
+              units={units}
+              onChange={(unit) => patch({ unit })}
+              onAddUnit={onAddUnit}
             />
-            <span className="flex h-10 items-center border-l border-slate-200/90 bg-slate-50 px-3 text-xs font-semibold text-brand-primary-muted">
-              {form.unit}
-            </span>
-          </div>
-        </AlignedFieldColumn>
+          </AlignedFieldColumn>
+        </div>
+      ) : (
         <AlignedFieldColumn label={t("dashboard.inventory.createItem.measuringUnit")}>
           <UnitSelect
             value={form.unit}
@@ -1028,18 +1056,24 @@ function BasicSection({
             onAddUnit={onAddUnit}
           />
         </AlignedFieldColumn>
-      </div>
+      )}
 
-      <div className="rounded-md border border-slate-200/80 bg-brand-surface/50 px-4 py-3.5">
-        <Toggle
-          checked={form.serialised}
-          onChange={onSerialisationChange}
-          label={t("dashboard.inventory.createItem.serialisation")}
-        />
-        <p className="mt-2 text-xs text-brand-primary-muted">
-          {t("dashboard.inventory.createItem.serialisationHint")}
+      {!isEdit ? (
+        <div className="rounded-md border border-slate-200/80 bg-brand-surface/50 px-4 py-3.5">
+          <Toggle
+            checked={form.serialised}
+            onChange={onSerialisationChange}
+            label={t("dashboard.inventory.createItem.serialisation")}
+          />
+          <p className="mt-2 text-xs text-brand-primary-muted">
+            {t("dashboard.inventory.createItem.serialisationHint")}
+          </p>
+        </div>
+      ) : (
+        <p className="text-xs text-brand-primary-muted">
+          {t("dashboard.inventory.createItem.editSerialHidden")}
         </p>
-      </div>
+      )}
     </div>
   );
 }
