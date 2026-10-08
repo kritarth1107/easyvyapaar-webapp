@@ -22,7 +22,9 @@ export async function POST(request: Request, context: RouteContext) {
     const { response, body } = await proxySalesBackend(
       request,
       `sales/organisations/${encodeURIComponent(organisationId)}/invoices/${encodeURIComponent(trimmedInvoiceId)}/e-way-bill/cancel`,
-      { method: "POST" },
+      // Forwarded headers always carry Content-Type: application/json, so send an explicit
+      // empty JSON object — Fastify rejects an empty body with that content type (400).
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" },
     );
 
     if (!response.ok) {

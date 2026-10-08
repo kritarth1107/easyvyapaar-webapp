@@ -396,7 +396,7 @@ export function CreateItemModal({ open, onClose, organisationId, onSaved, editIt
     const list: { id: CreateItemSection; label: string; required?: boolean; group?: string }[] = [
       { id: "basic", label: t("dashboard.inventory.createItem.sections.basic"), required: true },
     ];
-    // Edit mode: hide serial + stock — adjust via Adjust Stock on the item page
+    // Edit mode: hide serial section; opening stock is hidden inside the stock section — adjust via Adjust Stock
     if (!isEdit && form.serialised) {
       list.push({
         id: "serial",
@@ -404,12 +404,8 @@ export function CreateItemModal({ open, onClose, organisationId, onSaved, editIt
         required: true,
       });
     }
-    if (!isEdit) {
-      list.push(
-        { id: "stock", label: t("dashboard.inventory.createItem.sections.stock"), group: "advance" },
-      );
-    }
     list.push(
+      { id: "stock", label: t("dashboard.inventory.createItem.sections.stock"), group: "advance" },
       { id: "pricing", label: t("dashboard.inventory.createItem.sections.pricing"), group: "advance" },
       { id: "suppliers", label: t("dashboard.inventory.createItem.sections.suppliers"), group: "advance" },
       { id: "party", label: t("dashboard.inventory.createItem.sections.party"), group: "advance" },
@@ -428,7 +424,7 @@ export function CreateItemModal({ open, onClose, organisationId, onSaved, editIt
   );
 
   useEffect(() => {
-    if (isEdit && (section === "stock" || section === "serial")) {
+    if (isEdit && section === "serial") {
       setSection("basic");
       return;
     }
@@ -560,6 +556,7 @@ export function CreateItemModal({ open, onClose, organisationId, onSaved, editIt
                 <StockSection
                   form={form}
                   patch={patch}
+                  isEdit={isEdit}
                   units={units}
                   onAddUnit={() => setCreateUnitOpen(true)}
                   onOpenHsnPicker={() => setHsnPickerOpen(true)}
@@ -1087,6 +1084,7 @@ function StockSection({
   imagePreviewUrl,
   onImageSelect,
   onImageClear,
+  isEdit = false,
   t,
 }: {
   form: CreateItemFormState;
@@ -1097,6 +1095,7 @@ function StockSection({
   imagePreviewUrl: string | null;
   onImageSelect: (file: File) => void;
   onImageClear: () => void;
+  isEdit?: boolean;
   t: (key: TranslationKey) => string;
 }) {
   return (
@@ -1141,21 +1140,23 @@ function StockSection({
       </div>
 
       <div className={formGridClass}>
-        <FormField label={t("dashboard.inventory.createItem.openingStock")} reserveFooter>
-          <div className="flex h-10 overflow-hidden rounded-md border border-slate-200/90 focus-within:border-brand-orange-1/50 focus-within:ring-2 focus-within:ring-brand-orange-1/15">
-            <input
-              type="text"
-              inputMode="decimal"
-              value={form.openingStock}
-              onChange={(e) => patch({ openingStock: e.target.value })}
-              placeholder={t("dashboard.inventory.createItem.stockPlaceholder")}
-              className="min-w-0 flex-1 border-0 bg-white px-3 text-sm text-brand-primary outline-none"
-            />
-            <span className="flex h-10 items-center border-l border-slate-200/90 bg-slate-50 px-3 text-xs font-semibold text-brand-primary-muted">
-              {form.unit}
-            </span>
-          </div>
-        </FormField>
+        {!isEdit ? (
+          <FormField label={t("dashboard.inventory.createItem.openingStock")} reserveFooter>
+            <div className="flex h-10 overflow-hidden rounded-md border border-slate-200/90 focus-within:border-brand-orange-1/50 focus-within:ring-2 focus-within:ring-brand-orange-1/15">
+              <input
+                type="text"
+                inputMode="decimal"
+                value={form.openingStock}
+                onChange={(e) => patch({ openingStock: e.target.value })}
+                placeholder={t("dashboard.inventory.createItem.stockPlaceholder")}
+                className="min-w-0 flex-1 border-0 bg-white px-3 text-sm text-brand-primary outline-none"
+              />
+              <span className="flex h-10 items-center border-l border-slate-200/90 bg-slate-50 px-3 text-xs font-semibold text-brand-primary-muted">
+                {form.unit}
+              </span>
+            </div>
+          </FormField>
+        ) : null}
         <FormField
           label={t("dashboard.inventory.createItem.measuringUnit")}
           reserveFooter

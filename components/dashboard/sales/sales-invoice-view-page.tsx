@@ -469,8 +469,9 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
     setEInvoiceError(null);
     setEInvoiceSuccess(null);
     try {
-      const result = await cancelSalesInvoiceEInvoice(orgId, invoice.invoiceId);
+      const result = await cancelSalesInvoiceEInvoice(orgId, invoice.invoiceId, irnCancelReason);
       setEInvoiceMeta(result);
+      setIrnCancelOpen(false);
       setInvoice((prev) =>
         prev
           ? {
