@@ -33,8 +33,25 @@ jobs:
 
       - name: Install and build
         run: |
+          set -o pipefail
           npm ci
-          npm run build
+          # next/font/google downloads fonts at build time. Google Fonts sometimes
+          # serves extensionless fonts.gstatic.com/l/font?kit=...&skey=... URLs that
+          # Next.js cannot parse ("next/font/google queries have exactly one entry",
+          # vercel/next.js#99114), or the download itself flakes. Retry only those
+          # failures, from a clean .next so the bad font response is not reused.
+          for attempt in 1 2 3; do
+            rm -rf .next
+            if npm run build 2>&1 | tee build.log; then
+              break
+            fi
+            if [ "$attempt" -eq 3 ] || ! grep -qiE "next/font/google queries have exactly one entry|Failed to fetch .*from Google Fonts|Failed to fetch font" build.log; then
+              exit 1
+            fi
+            echo "::warning::next build hit a Google Fonts error (attempt $attempt/3); retrying in 30s"
+            sleep 30
+          done
+          rm -f build.log
         env:
           NEXT_PUBLIC_API_URL: ${{ env.NEXT_PUBLIC_API_URL }}
           NEXT_PUBLIC_APP_URL: ${{ env.NEXT_PUBLIC_APP_URL }}
