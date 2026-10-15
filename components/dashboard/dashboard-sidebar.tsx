@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type Ref } from "react";
 import {
   getGroupActive,
   useDashboardNav,
@@ -195,6 +195,7 @@ function NavGroupSection({
   onToggle,
   onFlyoutToggle,
   onNavigate,
+  sectionRef,
 }: {
   group: DashboardNavGroup;
   activeHref: string | null;
@@ -204,6 +205,7 @@ function NavGroupSection({
   onToggle: () => void;
   onFlyoutToggle?: () => void;
   onNavigate?: () => void;
+  sectionRef?: Ref<HTMLDivElement>;
 }) {
   const groupActive = group.items.some((item) => item.href === activeHref);
 
@@ -261,7 +263,7 @@ function NavGroupSection({
   }
 
   return (
-    <div className="mb-1">
+    <div ref={sectionRef} className="mb-1 scroll-mb-2">
       <button
         type="button"
         onClick={onToggle}
@@ -329,6 +331,9 @@ function SidebarPanel({
     getInitialOpenGroups(pathname)
   );
   const [flyoutGroupId, setFlyoutGroupId] = useState<string | null>(null);
+  const settingsSectionRef = useRef<HTMLDivElement>(null);
+  const settingsOpen = Boolean(settingsGroup && openGroups[settingsGroup.id]);
+  const settingsWasOpenRef = useRef(false);
 
   useEffect(() => {
     if (!collapsed) {
@@ -359,9 +364,26 @@ function SidebarPanel({
     setOpenGroups((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
+  useEffect(() => {
+    const justOpened = settingsOpen && !settingsWasOpenRef.current;
+    settingsWasOpenRef.current = settingsOpen;
+    if (!justOpened || collapsed) return;
+
+    const scrollSettingsIntoView = () => {
+      settingsSectionRef.current?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    };
+
+    const frame = requestAnimationFrame(scrollSettingsIntoView);
+    const timeout = window.setTimeout(scrollSettingsIntoView, 220);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.clearTimeout(timeout);
+    };
+  }, [collapsed, settingsOpen]);
+
   return (
     <aside
-      className={`dashboard-sidebar relative flex h-full shrink-0 flex-col overflow-x-hidden border-r border-slate-200/90 bg-white transition-[width] duration-200 ease-out ${
+      className={`dashboard-sidebar relative flex h-full min-h-0 shrink-0 flex-col overflow-hidden border-r border-slate-200/90 bg-white transition-[width] duration-200 ease-out ${
         collapsed ? "w-[72px]" : "w-[268px]"
       }`}
     >
@@ -376,7 +398,7 @@ function SidebarPanel({
         />
       </div>
 
-      <nav className="scrollbar-hidden flex-1 overflow-y-auto overflow-x-hidden py-3" aria-label="Main navigation">
+      <nav className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto overflow-x-hidden py-3" aria-label="Main navigation">
         <div className={collapsed ? "mb-2 space-y-1" : "mb-2"}>
           {top.map((item) => (
             <div key={item.id} className={!collapsed && item.accent === "ai" ? "mt-3" : undefined}>
@@ -441,6 +463,7 @@ function SidebarPanel({
               setFlyoutGroupId((prev) => (prev === settingsGroup.id ? null : settingsGroup.id))
             }
             onNavigate={onClose}
+            sectionRef={settingsSectionRef}
           />
         ) : null}
       </nav>
@@ -466,7 +489,7 @@ export function DashboardSidebar({
 
   return (
     <>
-      <div className="hidden h-full lg:block">
+      <div className="hidden h-full min-h-0 lg:flex lg:flex-col">
         <SidebarPanel collapsed={collapsed} onOpenBusinessSwitch={onOpenBusinessSwitch} />
       </div>
 
