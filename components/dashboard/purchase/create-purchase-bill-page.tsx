@@ -16,7 +16,11 @@ import {
 } from "@/lib/purchase/purchases-api-client";
 import { fetchParties } from "@/lib/parties/parties-api-client";
 import type { PartySummary } from "@/lib/types/parties-api";
-import type { CreatePurchaseBillRequest, PurchasePaymentMode } from "@/lib/types/purchase-api";
+import type {
+  CreatePurchaseBillRequest,
+  PurchaseBillDetail,
+  PurchasePaymentMode,
+} from "@/lib/types/purchase-api";
 import { useTranslation } from "@/lib/localization";
 
 type LineRow = CreatePurchaseBillRequest["lineItems"][number] & { key: string };
@@ -50,6 +54,12 @@ export function CreatePurchaseBillPage({ purchaseBillId }: { purchaseBillId?: st
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loadingBill, setLoadingBill] = useState(isEdit);
+  // Stored bill-level adjustments. The backend recomputes (and resets to defaults) charges,
+  // bill discount and round-off whenever lineItems are PATCHed without them, so keep and resend.
+  const [billAdjustments, setBillAdjustments] = useState<Pick<
+    PurchaseBillDetail,
+    "additionalCharges" | "discountAfterTax" | "discountType" | "discountTiming" | "autoRoundOff" | "roundOffAmount"
+  > | null>(null);
 
   useEffect(() => {
     if (!orgId || !purchaseBillId) return;
@@ -60,6 +70,14 @@ export function CreatePurchaseBillPage({ purchaseBillId }: { purchaseBillId?: st
         setBillNumber(bill.billNumber);
         setBillDate(bill.billDate.slice(0, 10));
         setNotes(bill.notes ?? "");
+        setBillAdjustments({
+          additionalCharges: bill.additionalCharges,
+          discountAfterTax: bill.discountAfterTax,
+          discountType: bill.discountType,
+          discountTiming: bill.discountTiming,
+          autoRoundOff: bill.autoRoundOff,
+          roundOffAmount: bill.roundOffAmount,
+        });
         setLines(
           bill.lineItems.map((line) => ({
             key: `${line.lineId}-${Math.random()}`,
@@ -136,6 +154,21 @@ export function CreatePurchaseBillPage({ purchaseBillId }: { purchaseBillId?: st
           billDate,
           notes: notes.trim() || null,
           lineItems: lines.map(({ key: _key, ...line }) => line),
+          ...(billAdjustments
+            ? {
+                additionalCharges: billAdjustments.additionalCharges.map(({ label, amount, taxPercent }) => ({
+                  label,
+                  amount,
+                  taxPercent,
+                })),
+                discountAfterTax: billAdjustments.discountAfterTax,
+                discountType: billAdjustments.discountType,
+                discountTiming: billAdjustments.discountTiming,
+                autoRoundOff: billAdjustments.autoRoundOff,
+                // With autoRoundOff the backend recomputes; a manual value is preserved as stored.
+                ...(billAdjustments.autoRoundOff ? {} : { roundOffAmount: billAdjustments.roundOffAmount }),
+              }
+            : {}),
         });
         router.push(`/dashboard/purchases/${updated.purchaseBillId}`);
         return;

@@ -230,6 +230,25 @@ export function normalizePurchaseBillDetail(raw: unknown): PurchaseBillDetail | 
     subtotal,
     lineTax,
     taxableAmount,
+    additionalCharges: Array.isArray(row.additionalCharges)
+      ? row.additionalCharges.flatMap((charge) => {
+          const c = asRecord(charge);
+          if (!c) return [];
+          return [
+            {
+              ...(pickString(c.chargeId) && { chargeId: pickString(c.chargeId) }),
+              label: pickString(c.label) ?? "",
+              amount: pickNumber(c.amount) ?? 0,
+              taxPercent: pickNumber(c.taxPercent) ?? 0,
+            },
+          ];
+        })
+      : [],
+    discountAfterTax: pickNumber(row.discountAfterTax) ?? 0,
+    discountType: row.discountType === "amount" ? "amount" : "percent",
+    discountTiming: row.discountTiming === "before_tax" ? "before_tax" : "after_tax",
+    autoRoundOff: row.autoRoundOff === true,
+    roundOffAmount: pickNumber(row.roundOffAmount) ?? 0,
     createdByUserId,
     createdAt,
     updatedAt,

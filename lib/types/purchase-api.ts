@@ -44,6 +44,15 @@ export type PurchaseBillBackendStatus =
   | "paid"
   | "cancelled";
 
+export type PurchaseAdditionalCharge = {
+  chargeId?: string;
+  label: string;
+  amount: number;
+  taxPercent: number;
+};
+
+export type PurchaseDiscountTiming = "before_tax" | "after_tax";
+
 export type PurchaseBillDetail = PurchaseBillSummary & {
   organisationId: string;
   backendStatus: PurchaseBillBackendStatus;
@@ -58,6 +67,13 @@ export type PurchaseBillDetail = PurchaseBillSummary & {
   subtotal: number;
   lineTax: number;
   taxableAmount: number;
+  /** Bill-level charges / discount / round-off. Must be echoed back on line-item edits (backend resets them otherwise). */
+  additionalCharges: PurchaseAdditionalCharge[];
+  discountAfterTax: number;
+  discountType: "percent" | "amount";
+  discountTiming: PurchaseDiscountTiming;
+  autoRoundOff: boolean;
+  roundOffAmount: number;
   createdByUserId: string;
   updatedByUserId?: string;
   createdAt: string;
@@ -247,4 +263,10 @@ export type UpdatePurchaseBillRequest = {
   notes?: string | null;
   status?: PurchaseBillBackendStatus;
   lineItems?: CreatePurchaseBillRequest["lineItems"];
+  additionalCharges?: Array<{ label?: string; amount?: number; taxPercent?: number }>;
+  discountAfterTax?: number;
+  discountType?: "percent" | "amount";
+  discountTiming?: PurchaseDiscountTiming;
+  autoRoundOff?: boolean;
+  roundOffAmount?: number;
 };
