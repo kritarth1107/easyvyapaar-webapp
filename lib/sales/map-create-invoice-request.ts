@@ -2,7 +2,7 @@ import type { CreateInvoiceFormState } from "@/lib/sales/create-invoice-form";
 import { calcInvoiceTotals } from "@/lib/sales/create-invoice-form";
 import { normalizeSalesTaxMode } from "@/lib/sales/invoice-tax";
 import type { StoredSalesInvoiceSettings } from "@/lib/sales/invoice-settings-config";
-import type { CreateSalesInvoiceRequest } from "@/lib/types/sales-api";
+import type { CreateSalesInvoiceRequest, UpdateSalesInvoiceRequest } from "@/lib/types/sales-api";
 import type { OrganisationBankAccount } from "@/lib/types/organisation-bank-api";
 import { WALK_IN_PARTY_ID } from "@/lib/parties/constants";
 import { normalizeGstin } from "@/lib/validators/gstin";
@@ -84,4 +84,19 @@ export function mapCreateInvoiceFormToRequest(
     fullyPaid: form.fullyPaid,
     theme: storedSettings?.themeId ?? form.settings.theme,
   };
+}
+
+/** PATCH body for an invoice edit: numbering, type and payment are fixed after creation. */
+export function mapInvoiceFormToUpdateRequest(
+  ...args: Parameters<typeof mapCreateInvoiceFormToRequest>
+): UpdateSalesInvoiceRequest {
+  const {
+    invoiceType: _type,
+    invoicePrefix: _prefix,
+    invoiceNumber: _number,
+    amountReceived: _received,
+    fullyPaid: _fullyPaid,
+    ...rest
+  } = mapCreateInvoiceFormToRequest(...args);
+  return rest;
 }

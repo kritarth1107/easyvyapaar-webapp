@@ -1,5 +1,6 @@
 "use client";
 
+import { saveErrorMessage } from "@/lib/api/conflict";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -33,6 +34,8 @@ import {
 } from "@/lib/sales/invoice-tax";
 import {
   calcInvoiceTotals,
+  enforceInvoiceTypeRules,
+  type SalesInvoiceDocumentType,
   clampInvoiceLineQty,
   createInitialInvoiceForm,
   formatInr,
@@ -42,7 +45,16 @@ import {
   type CreateInvoiceFormState,
   type InvoiceLineItem,
 } from "@/lib/sales/create-invoice-form";
-import { mapCreateInvoiceFormToRequest } from "@/lib/sales/map-create-invoice-request";
+import {
+  mapCreateInvoiceFormToRequest,
+  mapInvoiceFormToUpdateRequest,
+} from "@/lib/sales/map-create-invoice-request";
+import {
+  isSalesInvoiceEditable,
+  mapSalesInvoiceDetailToFormState,
+} from "@/lib/sales/map-sales-invoice-detail-to-form";
+import { fetchInventoryItemDetail } from "@/lib/inventory/inventory-api-client";
+import { useRef } from "react";
 import {
   mergeInvoiceSettingsIntoStored,
   storedSettingsToInvoiceSettings,
@@ -55,13 +67,22 @@ import {
   fetchSalesInvoiceSettings,
   updateSalesInvoiceSettings,
 } from "@/lib/sales/sales-invoice-settings-api-client";
-import { buildLiveInvoicePreviewModel } from "@/lib/sales/build-live-invoice-preview";
+import {
+  buildLiveInvoicePreviewModel,
+  localizeInvoiceSummaryRows,
+} from "@/lib/sales/build-live-invoice-preview";
+import { useInvoiceSummaryLabels } from "@/lib/sales/use-invoice-summary-labels";
 import {
   formatGstinOrPanLine,
   organisationProfileToSnapshot,
   type InvoiceOrganisationSnapshot,
 } from "@/lib/sales/invoice-preview-formatters";
-import { createSalesInvoice, fetchNextInvoiceNumber } from "@/lib/sales/sales-api-client";
+import {
+  createSalesInvoice,
+  fetchNextInvoiceNumber,
+  fetchSalesInvoiceDetail,
+  updateSalesInvoice,
+} from "@/lib/sales/sales-api-client";
 import type { InvoiceSettings } from "@/lib/sales/create-invoice-form";
 import type { LiveInvoicePreviewModel } from "@/lib/sales/build-live-invoice-preview";
 import { useTranslation } from "@/lib/localization";
@@ -173,13 +194,21 @@ function addDays(iso: string, days: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-export function CreateSalesInvoicePage() {
+export function CreateSalesInvoicePage({ editInvoiceId }: { editInvoiceId?: string } = {}) {
+  const isEdit = Boolean(editInvoiceId);
   const { t } = useTranslation();
+  const summaryLabels = useInvoiceSummaryLabels();
   const router = useRouter();
   const { activeOrganisation, activeOrganisationId } = useUserMe();
   const businessName = activeOrganisation?.name ?? "Your Business";
 
-  const [form, setForm] = useState<CreateInvoiceFormState>(createInitialInvoiceForm);
+  const [form, setFormRaw] = useState<CreateInvoiceFormState>(createInitialInvoiceForm);
+  // Every update passes through the invoice-type rules (Bill of Supply → 0% GST everywhere).
+  const setForm = useCallback(
+    (update: CreateInvoiceFormState | ((prev: CreateInvoiceFormState) => CreateInvoiceFormState)) =>
+      setFormRaw((prev) => enforceInvoiceTypeRules(typeof update === "function" ? update(prev) : update)),
+    [],
+  );
   const [selectedParty, setSelectedParty] = useState<SelectedInvoiceParty | null>(null);
   const [partyModalOpen, setPartyModalOpen] = useState(false);
   const [addItemsOpen, setAddItemsOpen] = useState(false);
@@ -199,6 +228,10 @@ export function CreateSalesInvoicePage() {
   const [partyGstinInput, setPartyGstinInput] = useState("");
   const [partyGstinLoading, setPartyGstinLoading] = useState(false);
   const [partyGstVerified, setPartyGstVerified] = useState(false);
+  const [orgGstScheme, setOrgGstScheme] = useState<"regular" | "composition" | null>(null);
+  const compositionDefaultApplied = useRef(false);
+  const [editLoading, setEditLoading] = useState(Boolean(editInvoiceId));
+  const [editBlocked, setEditBlocked] = useState<string | null>(null);
   const [organisationSnapshot, setOrganisationSnapshot] = useState<InvoiceOrganisationSnapshot>({
     businessAddress: "",
     businessPhone: "",
@@ -230,11 +263,12 @@ export function CreateSalesInvoicePage() {
 
   const patch = useCallback((partial: Partial<CreateInvoiceFormState>) => {
     setForm((prev) => ({ ...prev, ...partial }));
-  }, []);
+  }, [setForm]);
 
   const totals = useMemo(() => calcInvoiceTotals(form), [form]);
 
   const isGstInvoice = form.invoiceType === "gst_invoice";
+  const isBillOfSupply = form.invoiceType === "bill_of_supply";
   const hasRealParty =
     selectedParty !== null &&
     selectedParty.partyId !== WALK_IN_PARTY_ID &&
@@ -248,6 +282,8 @@ export function CreateSalesInvoicePage() {
 
   const canSave =
     !saving &&
+    !editLoading &&
+    !editBlocked &&
     !loadingMeta &&
     Boolean(activeOrganisationId) &&
     form.lineItems.length > 0 &&
@@ -273,7 +309,10 @@ export function CreateSalesInvoicePage() {
 
     fetchBusinessProfile(orgId)
       .then((profile) => {
-        if (!cancelled) setOrganisationSnapshot(organisationProfileToSnapshot(profile));
+        if (!cancelled) {
+          setOrganisationSnapshot(organisationProfileToSnapshot(profile));
+          setOrgGstScheme(profile.gstScheme ?? "regular");
+        }
       })
       .catch(() => {
         if (!cancelled) {
@@ -301,6 +340,11 @@ export function CreateSalesInvoicePage() {
       return;
     }
 
+    if (editInvoiceId) {
+      setLoadingMeta(false);
+      return;
+    }
+
     let cancelled = false;
     setLoadingMeta(true);
 
@@ -323,7 +367,82 @@ export function CreateSalesInvoicePage() {
     return () => {
       cancelled = true;
     };
-  }, [activeOrganisationId, patch]);
+  }, [activeOrganisationId, editInvoiceId, patch]);
+
+  // Composition dealers cannot charge GST: start new invoices as Bill of Supply (own number series).
+  useEffect(() => {
+    const orgId = activeOrganisationId?.trim();
+    if (editInvoiceId || !orgId || orgGstScheme !== "composition" || compositionDefaultApplied.current) return;
+    compositionDefaultApplied.current = true;
+    patch({ invoiceType: "bill_of_supply" });
+    void fetchNextInvoiceNumber(orgId, "bill_of_supply")
+      .then((next) => patch({ invoicePrefix: next.invoicePrefix, invoiceNumber: next.invoiceNumber }))
+      .catch(() => undefined);
+  }, [activeOrganisationId, editInvoiceId, orgGstScheme, patch]);
+
+  // Edit: load the invoice (after settings, so its own theme/settings win) and its party.
+  useEffect(() => {
+    const orgId = activeOrganisationId?.trim();
+    if (!editInvoiceId || !orgId) return;
+    let cancelled = false;
+    setEditLoading(true);
+    Promise.all([fetchSalesInvoiceDetail(orgId, editInvoiceId), fetchSalesInvoiceSettings(orgId).catch(() => null)])
+      .then(async ([invoice, settings]) => {
+        if (cancelled) return;
+        if (!isSalesInvoiceEditable(invoice)) {
+          setEditBlocked(t("dashboard.invoiceEdit.notEditable"));
+        }
+        const itemIds = [...new Set(invoice.lineItems.map((line) => line.itemId))];
+        const details = await Promise.all(
+          itemIds.map((itemId) =>
+            fetchInventoryItemDetail(orgId, itemId)
+              .then((detail) => [itemId, detail] as const)
+              .catch(() => null),
+          ),
+        );
+        if (cancelled) return;
+        const itemMap = new Map(details.filter((entry) => entry !== null));
+        if (settings) setStoredInvoiceSettings(settings);
+        setForm(mapSalesInvoiceDetailToFormState(invoice, itemMap, settings));
+        if (invoice.partyGstin) setPartyGstinInput(invoice.partyGstin);
+        if (invoice.isCashSale || !invoice.partyId) {
+          setSelectedParty({
+            partyId: WALK_IN_PARTY_ID,
+            name: invoice.partyName,
+            isCashSale: true,
+          } as SelectedInvoiceParty);
+        } else {
+          const party = await fetchPartyDetail(orgId, invoice.partyId).catch(() => null);
+          if (cancelled) return;
+          setSelectedParty({
+            partyId: invoice.partyId,
+            name: party?.name ?? invoice.partyName,
+            phone: party?.phone,
+            ...(party?.billingAddress?.trim() ? { billingAddress: party.billingAddress.trim() } : {}),
+            ...(party?.shippingAddress?.trim() ? { shippingAddress: party.shippingAddress.trim() } : {}),
+            ...((party?.gstin ?? invoice.partyGstin)?.trim()
+              ? { gstin: (party?.gstin ?? invoice.partyGstin)!.trim() }
+              : {}),
+            ...(party?.billingStateCode?.trim()
+              ? {
+                  billingStateCode: party.billingStateCode.trim(),
+                  placeOfSupply: stateCodeToLabel(party.billingStateCode.trim()),
+                }
+              : {}),
+            balance: party?.currentBalance,
+          } as SelectedInvoiceParty);
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err instanceof Error ? err.message : t("dashboard.invoiceEdit.loadError"));
+      })
+      .finally(() => {
+        if (!cancelled) setEditLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeOrganisationId, editInvoiceId, setForm, t]);
 
   const loadBankAccounts = useCallback(async () => {
     const orgId = activeOrganisationId?.trim();
@@ -355,6 +474,7 @@ export function CreateSalesInvoicePage() {
     fetchSalesInvoiceSettings(orgId)
       .then((data) => {
         if (cancelled) return;
+        if (editInvoiceId) return; // edit load applies settings + the invoice's own theme
         setStoredInvoiceSettings(data);
         patch({ settings: storedSettingsToInvoiceSettings(data) });
       })
@@ -365,7 +485,7 @@ export function CreateSalesInvoicePage() {
     return () => {
       cancelled = true;
     };
-  }, [activeOrganisationId, patch]);
+  }, [activeOrganisationId, editInvoiceId, patch]);
 
   const handleInvoiceSettingsSave = async (
     nextSettings: InvoiceSettings,
@@ -449,7 +569,14 @@ export function CreateSalesInvoicePage() {
     });
   };
 
-  const handleInvoiceTypeChange = (invoiceType: "gst_invoice" | "cash_memo") => {
+  const handleInvoiceTypeChange = (invoiceType: SalesInvoiceDocumentType) => {
+    // Bill of Supply runs its own number series; refresh the suggested number when crossing it.
+    const orgIdForNumber = activeOrganisationId?.trim();
+    if (orgIdForNumber && (invoiceType === "bill_of_supply") !== (form.invoiceType === "bill_of_supply")) {
+      void fetchNextInvoiceNumber(orgIdForNumber, invoiceType)
+        .then((next) => patch({ invoicePrefix: next.invoicePrefix, invoiceNumber: next.invoiceNumber }))
+        .catch(() => undefined);
+    }
     if (invoiceType === "gst_invoice") {
       const walkInSelected =
         selectedParty?.isCashSale || selectedParty?.partyId === WALK_IN_PARTY_ID;
@@ -583,10 +710,10 @@ export function CreateSalesInvoicePage() {
   const resetForNewInvoice = useCallback(async () => {
     const orgId = activeOrganisationId?.trim();
     setSelectedParty(null);
-    const fresh = createInitialInvoiceForm();
+    const fresh = { ...createInitialInvoiceForm(), invoiceType: form.invoiceType };
     if (orgId) {
       try {
-        const next = await fetchNextInvoiceNumber(orgId);
+        const next = await fetchNextInvoiceNumber(orgId, form.invoiceType);
         fresh.invoicePrefix = next.invoicePrefix;
         fresh.invoiceNumber = next.invoiceNumber;
       } catch {
@@ -594,7 +721,7 @@ export function CreateSalesInvoicePage() {
       }
     }
     setForm(fresh);
-  }, [activeOrganisationId]);
+  }, [activeOrganisationId, form.invoiceType, setForm]);
 
   const selectedBank = bankAccounts.find((b) => b.bankAccountId === form.bankAccountId) ?? null;
   const selectedBankLabel = selectedBank
@@ -621,15 +748,19 @@ export function CreateSalesInvoicePage() {
 
   const livePreviewModel = useMemo(
     () =>
-      buildLiveInvoicePreviewModel({
-        form,
-        party: previewParty,
-        businessName,
-        organisation: resolvedOrganisationSnapshot,
-        bankAccount: selectedBank,
-        storedSettings: storedInvoiceSettings,
-      }),
+      localizeInvoiceSummaryRows(
+        buildLiveInvoicePreviewModel({
+          form,
+          party: previewParty,
+          businessName,
+          organisation: resolvedOrganisationSnapshot,
+          bankAccount: selectedBank,
+          storedSettings: storedInvoiceSettings,
+        }),
+        summaryLabels,
+      ),
     [
+      summaryLabels,
       form,
       previewParty,
       businessName,
@@ -672,6 +803,17 @@ export function CreateSalesInvoicePage() {
     setError(null);
     setSaveSuccessMessage(null);
     try {
+      if (editInvoiceId) {
+        const updated = await updateSalesInvoice(
+          orgId,
+          editInvoiceId,
+          mapInvoiceFormToUpdateRequest(form, selectedParty?.name, selectedBank, storedInvoiceSettings, {
+            partyGstin: selectedParty?.gstin?.trim() || (isGstInvoice ? partyGstinInput : undefined),
+          }),
+        );
+        router.push(`/dashboard/sales/invoices/${encodeURIComponent(updated.invoiceId)}`);
+        return;
+      }
       const invoice = await createSalesInvoice(
         orgId,
         mapCreateInvoiceFormToRequest(
@@ -693,7 +835,7 @@ export function CreateSalesInvoicePage() {
         router.push(`/dashboard/sales/invoices/${encodeURIComponent(invoice.invoiceId)}`);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("dashboard.salesInvoices.create.saveError"));
+      setError(saveErrorMessage(err, t, t("dashboard.salesInvoices.create.saveError")));
     } finally {
       setSaving(false);
     }
@@ -712,7 +854,9 @@ export function CreateSalesInvoicePage() {
             <BackIcon />
           </Link>
           <h1 className="truncate text-lg font-bold text-brand-primary lg:text-xl">
-            {t("dashboard.salesInvoices.createTitle")}
+            {isEdit
+              ? t("dashboard.invoiceEdit.title").replace("{number}", `${form.invoicePrefix}${form.invoiceNumber}`)
+              : t("dashboard.salesInvoices.createTitle")}
           </h1>
         </div>
         <div className="flex shrink-0 items-center gap-2">
@@ -720,6 +864,7 @@ export function CreateSalesInvoicePage() {
             className="hidden items-center rounded-md border border-slate-200/90 p-0.5 text-xs font-semibold sm:flex"
             role="group"
             aria-label="Invoice type"
+            hidden={isEdit}
           >
             <button
               type="button"
@@ -745,6 +890,19 @@ export function CreateSalesInvoicePage() {
             >
               {t("dashboard.salesInvoices.create.invoiceTypeGstInvoice")}
             </button>
+            <button
+              type="button"
+              onClick={() => handleInvoiceTypeChange("bill_of_supply")}
+              title={t("dashboard.billOfSupply.hint")}
+              className={`rounded px-3 py-1.5 transition-colors ${
+                form.invoiceType === "bill_of_supply"
+                  ? "bg-brand-primary text-white"
+                  : "text-brand-primary hover:bg-slate-50"
+              }`}
+              aria-pressed={form.invoiceType === "bill_of_supply"}
+            >
+              {t("dashboard.billOfSupply.label")}
+            </button>
           </div>
           <button
             type="button"
@@ -767,6 +925,7 @@ export function CreateSalesInvoicePage() {
             type="button"
             disabled={!canSave}
             onClick={() => void validateAndSave(true)}
+            hidden={isEdit}
             className="hidden h-10 items-center rounded-sm border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 sm:inline-flex"
           >
             {t("dashboard.salesInvoices.create.saveAndNew")}
@@ -782,6 +941,11 @@ export function CreateSalesInvoicePage() {
         </div>
       </div>
 
+      {editBlocked ? (
+        <div className="mx-4 mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 lg:mx-6">
+          {editBlocked}
+        </div>
+      ) : null}
       {error && (
         <div className="mx-4 mt-3 rounded-sm border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-800 lg:mx-6">
           {error}
@@ -898,6 +1062,7 @@ export function CreateSalesInvoicePage() {
                 <input
                   value={form.invoicePrefix}
                   onChange={(e) => patch({ invoicePrefix: e.target.value })}
+                  disabled={isEdit}
                   className={inputSmClass}
                 />
               </FieldCell>
@@ -905,6 +1070,7 @@ export function CreateSalesInvoicePage() {
                 <input
                   value={form.invoiceNumber}
                   onChange={(e) => patch({ invoiceNumber: e.target.value })}
+                  disabled={isEdit}
                   className={inputSmClass}
                 />
               </FieldCell>
@@ -986,7 +1152,9 @@ export function CreateSalesInvoicePage() {
                   <th className="w-24 px-3 py-2">{t("dashboard.salesInvoices.create.colHsn")}</th>
                   <th className="w-28 px-3 py-2">{t("dashboard.salesInvoices.create.colQty")}</th>
                   <th className="w-28 px-3 py-2">{t("dashboard.salesInvoices.create.colPrice")}</th>
-                  <th className="w-20 px-3 py-2">{t("dashboard.salesInvoices.create.colTax")}</th>
+                  {isBillOfSupply ? null : (
+                    <th className="w-20 px-3 py-2">{t("dashboard.salesInvoices.create.colTax")}</th>
+                  )}
                   <th className="w-28 px-3 py-2 text-right">{t("dashboard.salesInvoices.create.colAmount")}</th>
                   <th className="w-10 px-2" />
                 </tr>
@@ -1107,10 +1275,12 @@ export function CreateSalesInvoicePage() {
                             className={`${inputSmClass} tabular-nums`}
                           />
                         </td>
-                        <td className="align-top px-3 py-2 pt-[10px] text-right tabular-nums text-brand-primary-muted">
-                          <p>{formatInr(lineDisplay.tax)}</p>
-                          <p className="text-[10px]">({line.gstPercent}%)</p>
-                        </td>
+                        {isBillOfSupply ? null : (
+                          <td className="align-top px-3 py-2 pt-[10px] text-right tabular-nums text-brand-primary-muted">
+                            <p>{formatInr(lineDisplay.tax)}</p>
+                            <p className="text-[10px]">({line.gstPercent}%)</p>
+                          </td>
+                        )}
                         <td className="align-top px-3 py-2 pt-[10px] text-right font-semibold tabular-nums text-brand-primary">
                           {formatInr(lineDisplay.amount)}
                         </td>
@@ -1379,7 +1549,7 @@ export function CreateSalesInvoicePage() {
                   />
                 ) : null}
 
-                {totals.gstSplit.map((row) => (
+                {(isBillOfSupply ? [] : totals.gstSplit).map((row) => (
                   <div key={`gst-${row.gstPercent}`}>
                     <TotalsRow
                       label={`${t("dashboard.salesInvoices.create.cgst")} (${row.cgstPercent}%)`}
@@ -1432,6 +1602,7 @@ export function CreateSalesInvoicePage() {
                     <input
                       type="checkbox"
                       checked={form.fullyPaid}
+                      disabled={isEdit}
                       onChange={(e) => handleFullyPaidToggle(e.target.checked)}
                       className="h-3.5 w-3.5 rounded-sm accent-brand-primary"
                     />
@@ -1450,7 +1621,7 @@ export function CreateSalesInvoicePage() {
                     onChange={(e) =>
                       patch({ amountReceived: Number(e.target.value) || 0, fullyPaid: false })
                     }
-                    disabled={form.fullyPaid}
+                    disabled={form.fullyPaid || isEdit}
                     className={`${inputGroupInnerClass} h-10 disabled:bg-slate-50 disabled:text-brand-primary-muted`}
                   />
                   <div className="h-full w-[108px] shrink-0">

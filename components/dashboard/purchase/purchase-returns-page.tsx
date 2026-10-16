@@ -50,11 +50,11 @@ export function PurchaseReturnsPage() {
       <div className="overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-sm">
         <div className="border-b p-4"><input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("dashboard.purchases.searchPlaceholder")} className="h-10 w-full rounded-sm border px-3 text-sm" /></div>
         <table className="w-full text-sm">
-          <thead><tr className="border-b bg-brand-surface/50 text-[11px] uppercase"><th className="px-4 py-3">{t("dashboard.purchases.colReturn")}</th><th className="px-4 py-3">{t("dashboard.purchases.colBill")}</th><th className="px-4 py-3">{t("dashboard.purchases.colDate")}</th><th className="px-4 py-3">{t("dashboard.purchases.colSupplier")}</th><th className="px-4 py-3 text-right">{t("dashboard.purchases.colAmount")}</th></tr></thead>
+          <thead><tr className="border-b bg-brand-surface/50 text-[11px] uppercase"><th className="px-4 py-3">{t("dashboard.purchases.colReturn")}</th><th className="px-4 py-3">{t("dashboard.purchases.colBill")}</th><th className="px-4 py-3">{t("dashboard.purchases.colDate")}</th><th className="px-4 py-3">{t("dashboard.purchases.colSupplier")}</th><th className="px-4 py-3 text-right">{t("dashboard.purchases.colAmount")}</th><th className="px-4 py-3 text-right">{t("dashboard.purchaseSummary.returnTdsReversed")}</th><th className="px-4 py-3 text-right">{t("dashboard.purchaseSummary.returnNet")}</th></tr></thead>
           <tbody>
-            {loading && <tr><td colSpan={5} className="px-4 py-8 text-center">{t("common.pleaseWait")}</td></tr>}
-            {!loading && loadError && <tr><td colSpan={5} className="px-4 py-8 text-center text-red-600">{loadError}</td></tr>}
-            {!loading && returns.length === 0 && <tr><td colSpan={5} className="px-4 py-8 text-center text-brand-primary-muted">{t("dashboard.purchases.returnsEmpty")}</td></tr>}
+            {loading && <tr><td colSpan={7} className="px-4 py-8 text-center">{t("common.pleaseWait")}</td></tr>}
+            {!loading && loadError && <tr><td colSpan={7} className="px-4 py-8 text-center text-red-600">{loadError}</td></tr>}
+            {!loading && returns.length === 0 && <tr><td colSpan={7} className="px-4 py-8 text-center text-brand-primary-muted">{t("dashboard.purchases.returnsEmpty")}</td></tr>}
             {!loading && returns.map((ret) => (
               <tr key={ret.purchaseReturnId} className="border-b">
                 <td className="px-4 py-3 font-semibold">{ret.displayNumber}</td>
@@ -62,6 +62,8 @@ export function PurchaseReturnsPage() {
                 <td className="px-4 py-3">{formatDate(ret.returnDate)}</td>
                 <td className="px-4 py-3">{ret.partyName}</td>
                 <td className="px-4 py-3 text-right">{formatInr(ret.totalAmount)}</td>
+                <td className="px-4 py-3 text-right">{ret.tdsReversed > 0 ? formatInr(ret.tdsReversed) : "—"}</td>
+                <td className="px-4 py-3 text-right font-semibold">{formatInr(ret.netReturnAmount)}</td>
               </tr>
             ))}
           </tbody>

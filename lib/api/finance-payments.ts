@@ -80,7 +80,8 @@ export function normalizeFinancePaymentSummary(raw: unknown): FinancePaymentSumm
     sourceType === "sales_return_refund" ||
     sourceType === "credit_note_refund" ||
     sourceType === "purchase_payment" ||
-    sourceType === "expense";
+    sourceType === "expense" ||
+    sourceType === "payment_reversal";
 
   if (
     !entryId ||
@@ -113,6 +114,10 @@ export function normalizeFinancePaymentSummary(raw: unknown): FinancePaymentSumm
     unallocatedAmount,
     ...(pickString(row.partyPhone) && { partyPhone: pickString(row.partyPhone) }),
     ...(pickString(row.invoiceId) && { invoiceId: pickString(row.invoiceId) }),
+    ...(pickString(row.purchaseBillId) && { purchaseBillId: pickString(row.purchaseBillId) }),
+    ...(pickString(row.purchaseBillDisplayNumber) && {
+      purchaseBillDisplayNumber: pickString(row.purchaseBillDisplayNumber),
+    }),
     ...(pickString(row.invoiceDisplayNumber) && {
       invoiceDisplayNumber: pickString(row.invoiceDisplayNumber),
     }),
@@ -175,6 +180,15 @@ export function normalizeFinancePaymentDetail(raw: unknown): FinancePaymentDetai
   };
 }
 
+function normalizeTotals(value: unknown): FinancePaymentListResponse["totals"] {
+  const t = asRecord(value);
+  if (!t) return undefined;
+  const totalIn = pickNumber(t.totalIn);
+  const totalOut = pickNumber(t.totalOut);
+  if (totalIn === undefined || totalOut === undefined) return undefined;
+  return { totalIn, totalOut, net: pickNumber(t.net) ?? Math.round((totalIn - totalOut) * 100) / 100 };
+}
+
 export function normalizeFinancePaymentListResponse(body: unknown): FinancePaymentListResponse {
   const data = unwrapData(body);
   const row = asRecord(data);
@@ -191,6 +205,7 @@ export function normalizeFinancePaymentListResponse(body: unknown): FinancePayme
       .map((item) => normalizeFinancePaymentSummary(item))
       .filter((item): item is FinancePaymentSummary => item !== null),
     pagination,
+    ...(normalizeTotals(row?.totals) ? { totals: normalizeTotals(row?.totals) } : {}),
   };
 }
 

@@ -1,3 +1,4 @@
+import { NotFoundError } from "@/lib/api/not-found";
 import {
   extractBackendError,
   normalizeFinancePaymentDetailResponse,
@@ -69,6 +70,7 @@ export async function fetchFinancePaymentDetail(
   );
   const body = await parseJsonResponse(res);
   if (!res.ok) {
+    if (res.status === 404) throw new NotFoundError(extractBackendError(body) ?? "Failed to load payment");
     throw new Error(extractBackendError(body) ?? "Failed to load payment");
   }
   const payment = normalizeFinancePaymentDetailResponse(body);

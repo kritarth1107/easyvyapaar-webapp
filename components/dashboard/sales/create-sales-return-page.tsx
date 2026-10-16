@@ -486,9 +486,10 @@ export function CreateSalesReturnPage() {
             <div className="flex flex-col gap-3 rounded-md border border-slate-200/90 bg-slate-50/50 p-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-brand-primary-muted">
-                  {t("dashboard.salesReturns.create.returnTotal")}
+                  {t("dashboard.salesReturns.create.returnTotal")} ({t("dashboard.returnEstimate.label")})
                 </p>
-                <p className="text-2xl font-bold tabular-nums text-brand-primary">{formatInr(returnTotal)}</p>
+                <p className="text-2xl font-bold tabular-nums text-brand-primary">≈ {formatInr(returnTotal)}</p>
+                <p className="mt-0.5 text-xs text-brand-primary-muted">{t("dashboard.returnEstimate.hint")}</p>
               </div>
               <button
                 type="button"

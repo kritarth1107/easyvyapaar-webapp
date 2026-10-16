@@ -27,11 +27,15 @@ import {
   getLedgerEntryHref,
   getLedgerEntryTypeLabel,
   ledgerFromDate,
+  isLedgerRangeInvalid,
+  LedgerRangeError,
 } from "@/lib/parties/party-ledger-utils";
 import { fetchPartyDetail, fetchPartyLedger } from "@/lib/parties/parties-api-client";
 import type { PartyDetail } from "@/lib/types/parties-api";
 import { ModernSelect } from "@/components/ui/modern-select";
 import { useTranslation } from "@/lib/localization";
+import { PdfDownloadButton } from "@/components/dashboard/shared/pdf-download-button";
+import { orgPdfUrl } from "@/lib/print/download-pdf";
 
 type PartyDetailPageProps = {
   partyId: string;
@@ -174,7 +178,13 @@ export function PartyDetailPage({ partyId }: PartyDetailPageProps) {
       setLedger(data);
     } catch (err) {
       setLedger(null);
-      setLedgerError(err instanceof Error ? err.message : t("dashboard.partyDetail.ledgerLoadError"));
+      setLedgerError(
+        err instanceof LedgerRangeError
+          ? t("dashboard.ledgerPeriod.invalidRange")
+          : err instanceof Error
+            ? err.message
+            : t("dashboard.partyDetail.ledgerLoadError"),
+      );
     } finally {
       setLedgerLoading(false);
     }
@@ -477,6 +487,8 @@ export function PartyDetailPage({ partyId }: PartyDetailPageProps) {
           dateRange={dateRange}
           onDateRangeChange={setDateRange}
           receivable={receivable}
+          organisationId={activeOrganisationId?.trim() || null}
+          partyId={partyId}
         />
       )}
 
@@ -636,6 +648,8 @@ function PartyLedgerTab({
   dateRange,
   onDateRangeChange,
   receivable,
+  organisationId,
+  partyId,
 }: {
   ledger: PartyLedgerStatement | null;
   loading: boolean;
@@ -643,6 +657,8 @@ function PartyLedgerTab({
   dateRange: string;
   onDateRangeChange: (value: string) => void;
   receivable: number;
+  organisationId: string | null;
+  partyId: string;
 }) {
   const { t } = useTranslation();
 
@@ -662,14 +678,30 @@ function PartyLedgerTab({
         />
         <KpiCard
           label={t("dashboard.partyDetail.kpiBalance")}
-          value={formatPartyBalance(ledger?.closingBalance ?? 0)}
+          value={formatPartyBalance(ledger?.currentBalance ?? 0)}
           accent="amber"
         />
       </div>
 
       <SectionCard
         title={t("dashboard.partyDetail.tabs.ledger")}
-        action={<LedgerDateFilter value={dateRange} onChange={onDateRangeChange} />}
+        action={
+          <div className="flex flex-wrap items-center gap-2">
+            <LedgerDateFilter value={dateRange} onChange={onDateRangeChange} />
+            <PdfDownloadButton
+              url={
+                organisationId && !isLedgerRangeInvalid(ledger?.from, ledger?.to)
+                  ? orgPdfUrl(`/api/parties/${encodeURIComponent(partyId)}/ledger/pdf`, organisationId, {
+                      from: ledger?.from,
+                      to: ledger?.to,
+                    })
+                  : null
+              }
+              fallbackFilename="party-ledger.pdf"
+              className="inline-flex h-9 items-center rounded-sm border border-slate-200/90 bg-white px-3 text-xs font-semibold text-brand-primary hover:bg-slate-50 disabled:opacity-60"
+            />
+          </div>
+        }
       >
         {loading ? (
           <p className="text-sm text-brand-primary-muted">{t("dashboard.partyDetail.ledgerLoading")}</p>
@@ -682,6 +714,11 @@ function PartyLedgerTab({
           />
         ) : (
           <div className="overflow-x-auto scrollbar-brand">
+            <p className="px-4 pb-2 text-xs text-brand-primary-muted">
+              {t("dashboard.ledgerPeriod.period")
+                .replace("{from}", ledger.from ? formatPartyDate(ledger.from) : t("dashboard.ledgerPeriod.beginning"))
+                .replace("{to}", formatPartyDate(ledger.to ?? new Date().toISOString()))}
+            </p>
             <table className="w-full min-w-[760px] text-left text-sm">
               <thead>
                 <tr className="border-b border-slate-200/90 bg-slate-50 text-[11px] font-bold uppercase tracking-wide text-brand-primary">
@@ -726,8 +763,15 @@ function PartyLedgerTab({
                     </td>
                   </tr>
                 ))}
+                <tr className="border-t border-slate-200 font-semibold">
+                  <td className="px-4 py-3.5 text-brand-primary-mid">—</td>
+                  <td className="px-4 py-3.5">{t("dashboard.ledgerPeriod.periodTotals")}</td>
+                  <td className="px-4 py-3.5 text-right tabular-nums">{formatPartyInr(ledger.totalDebit)}</td>
+                  <td className="px-4 py-3.5 text-right tabular-nums">{formatPartyInr(ledger.totalCredit)}</td>
+                  <td className="px-4 py-3.5 text-right">—</td>
+                </tr>
                 <tr className="bg-slate-50/60 font-semibold">
-                  <td className="px-4 py-3.5 text-brand-primary-mid">{formatPartyDate(new Date().toISOString())}</td>
+                  <td className="px-4 py-3.5 text-brand-primary-mid">{formatPartyDate(ledger.to ?? new Date().toISOString())}</td>
                   <td className="px-4 py-3.5">{t("dashboard.partyDetail.closingBalance")}</td>
                   <td className="px-4 py-3.5 text-right">—</td>
                   <td className="px-4 py-3.5 text-right">—</td>

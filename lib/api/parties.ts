@@ -330,9 +330,16 @@ export function normalizePartyLedgerStatement(body: unknown): PartyLedgerStateme
   }
 
   const entriesRaw = Array.isArray(row.entries) ? row.entries : [];
+  const from = typeof row.from === "string" && row.from.trim() ? row.from.trim() : undefined;
+  const to = typeof row.to === "string" && row.to.trim() ? row.to.trim() : undefined;
   return {
+    ...(from ? { from } : {}),
+    ...(to ? { to } : {}),
     openingBalance,
     closingBalance,
+    currentBalance: pickNumber(row.currentBalance) ?? closingBalance,
+    totalDebit: pickNumber(row.totalDebit) ?? 0,
+    totalCredit: pickNumber(row.totalCredit) ?? 0,
     totalSales,
     totalReceived,
     totalReturns,

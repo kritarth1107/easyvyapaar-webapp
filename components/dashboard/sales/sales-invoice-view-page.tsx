@@ -1,5 +1,7 @@
 "use client";
 
+import { saveErrorMessage } from "@/lib/api/conflict";
+import { PaymentHistorySection } from "@/components/dashboard/shared/payment-history-section";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { SelectedInvoiceParty } from "@/components/dashboard/sales/party-select-modal";
@@ -39,6 +41,9 @@ import {
   type ThermalRollWidth,
 } from "@/lib/sales/print-thermal";
 import { useThermalReceiptLabels } from "@/lib/sales/use-thermal-receipt-labels";
+import { useInvoiceSummaryLabels } from "@/lib/sales/use-invoice-summary-labels";
+import { formatAckDate } from "@/lib/sales/format-ack-date";
+import { localizeInvoiceSummaryRows } from "@/lib/sales/build-live-invoice-preview";
 import { fetchSalesInvoiceSettings } from "@/lib/sales/sales-invoice-settings-api-client";
 import { sharePaymentReminderWhatsApp } from "@/lib/sales/share-payment-reminder";
 import {
@@ -53,9 +58,19 @@ import {
   sendSalesInvoiceEmail,
   sendSalesInvoiceWhatsApp,
 } from "@/lib/sales/sales-api-client";
-import type { EInvoiceResult, SalesInvoiceDetail, SalesInvoiceStatus } from "@/lib/types/sales-api";
+import type {
+  EInvoiceResult,
+  MarkInvoiceUnpaidResult,
+  SalesInvoiceDetail,
+  SalesInvoiceStatus,
+} from "@/lib/types/sales-api";
+import { markSalesInvoiceUnpaid } from "@/lib/sales/sales-api-client";
 import type { PartyDetail } from "@/lib/types/parties-api";
 import { useTranslation } from "@/lib/localization";
+import { DocumentHistoryPanel } from "@/components/dashboard/reports/audit-log-list";
+import { SignedQrImage } from "./signed-qr-image";
+import { CancelInvoiceDialog } from "./cancel-invoice-dialog";
+import { isSalesInvoiceEditable } from "@/lib/sales/map-sales-invoice-detail-to-form";
 
 function WhatsAppIcon() {
   return (
@@ -121,7 +136,7 @@ function partyDetailToSelected(party: PartyDetail): SelectedInvoiceParty {
 }
 
 export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const { planFeatures, loading: permissionsLoading } = useOrganisationPermissions();
   const { activeOrganisation, activeOrganisationId } = useUserMe();
   const canSendInvoiceWhatsAppFeature =
@@ -131,6 +146,7 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
   const businessName = activeOrganisation?.name ?? "Your Business";
   const printAreaRef = useRef<HTMLDivElement>(null);
   const thermalLabels = useThermalReceiptLabels();
+  const summaryLabels = useInvoiceSummaryLabels();
 
   const [invoice, setInvoice] = useState<SalesInvoiceDetail | null>(null);
   const [party, setParty] = useState<SelectedInvoiceParty | null>(null);
@@ -165,6 +181,10 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
   const [ewayMetaStatus, setEwayMetaStatus] = useState<string | null>(null);
   const [eInvoiceBusy, setEInvoiceBusy] = useState(false);
   const [irnCancelOpen, setIrnCancelOpen] = useState(false);
+  const [invoiceCancelOpen, setInvoiceCancelOpen] = useState(false);
+  const [markUnpaidBusy, setMarkUnpaidBusy] = useState(false);
+  const [markUnpaidResult, setMarkUnpaidResult] = useState<MarkInvoiceUnpaidResult | null>(null);
+  const [markUnpaidError, setMarkUnpaidError] = useState<string | null>(null);
   const [irnCancelReason, setIrnCancelReason] = useState("1");
   const [eInvoiceError, setEInvoiceError] = useState<string | null>(null);
   const [eInvoiceSuccess, setEInvoiceSuccess] = useState<string | null>(null);
@@ -238,6 +258,10 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
       try {
         const eway = await fetchSalesInvoiceEWayBillStatus(orgId, invoiceDetail.invoiceId);
         setEwayMetaStatus(typeof eway.status === "string" ? eway.status : null);
+        if (eway.isMock === true) {
+          // GSP reports a mock response even if the stored mode is missing/live.
+          setInvoice((prev) => (prev ? { ...prev, eWayBillMode: "mock" } : prev));
+        }
         if (typeof eway.vehicleNumber === "string" && eway.vehicleNumber) setEwayVehicle(eway.vehicleNumber);
         if (typeof eway.transporterId === "string" && eway.transporterId) setEwayTransporter(eway.transporterId);
       } catch {
@@ -361,7 +385,7 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
               ewayBillDate: typeof data.ewayBillDate === "string" ? data.ewayBillDate : prev.ewayBillDate,
               ewayValidUpto: typeof data.ewayValidUpto === "string" ? data.ewayValidUpto : prev.ewayValidUpto,
               eWayBillStatus: "generated",
-              eWayBillMode: data.mode === "live" ? "live" : "mock",
+              eWayBillMode: data.mode === "live" && data.isMock !== true ? "live" : "mock",
               ...(ewayVehicle.trim() ? { vehicleNumber: ewayVehicle.trim().toUpperCase() } : {}),
               ...(ewayTransporter.trim() ? { transporterId: ewayTransporter.trim() } : {}),
             }
@@ -407,8 +431,11 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
 
   const previewModel = useMemo(() => {
     if (!invoice) return null;
-    return buildLiveInvoicePreviewFromDetail(invoice, businessName, organisationSnapshot, party);
-  }, [invoice, businessName, organisationSnapshot, party]);
+    return localizeInvoiceSummaryRows(
+      buildLiveInvoicePreviewFromDetail(invoice, businessName, organisationSnapshot, party),
+      summaryLabels,
+    );
+  }, [invoice, businessName, organisationSnapshot, party, summaryLabels]);
 
   const themeLabel =
     INVOICE_THEME_CARDS.find((theme) => theme.id === storedSettings.themeId)?.label ??
@@ -419,6 +446,19 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
     documentTitle: printTitle,
     pageSize: resolveInvoicePageSizeFromTheme(storedSettings.themeId),
   };
+
+  const activeIrn = (() => {
+    if (!invoice) return null;
+    const irn = eInvoiceMeta?.irn ?? invoice.irn;
+    const cancelled = eInvoiceMeta ? eInvoiceMeta.status === "cancelled" : invoice.eInvoiceStatus === "cancelled";
+    if (!irn || cancelled) return null;
+    return {
+      irn,
+      ackNo: eInvoiceMeta?.ackNo ?? invoice.ackNo,
+      ackDate: eInvoiceMeta?.ackDate ?? invoice.ackDate,
+      signedQr: eInvoiceMeta?.signedQr ?? invoice.signedQr,
+    };
+  })();
 
   const printThermal = (width: ThermalRollWidth) => {
     if (!previewModel || !invoice) return;
@@ -435,7 +475,7 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
             ? {
                 irn,
                 ackNo: eInvoiceMeta?.ackNo ?? invoice.ackNo,
-                ackDate: eInvoiceMeta?.ackDate ?? invoice.ackDate,
+                ackDate: formatAckDate(eInvoiceMeta?.ackDate ?? invoice.ackDate, locale),
                 qrDataUrl,
               }
             : null,
@@ -492,6 +532,23 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
       );
     } finally {
       setEInvoiceBusy(false);
+    }
+  };
+
+  const markUnpaid = async () => {
+    const orgId = activeOrganisationId?.trim();
+    if (!orgId || !invoice) return;
+    if (!window.confirm(t("dashboard.markUnpaid.confirm"))) return;
+    setMarkUnpaidBusy(true);
+    setMarkUnpaidError(null);
+    try {
+      const result = await markSalesInvoiceUnpaid(orgId, invoice.invoiceId);
+      setInvoice(result.invoice);
+      setMarkUnpaidResult(result);
+    } catch (err) {
+      setMarkUnpaidError(saveErrorMessage(err, t, t("dashboard.markUnpaid.error")));
+    } finally {
+      setMarkUnpaidBusy(false);
     }
   };
 
@@ -593,9 +650,46 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
                 </h1>
                 <StatusBadge status={invoice.status} />
               </div>
+              {invoice.status === "cancelled" && (invoice.cancelledAt || invoice.cancelReason) ? (
+                <p className="mt-0.5 text-xs text-brand-primary-muted">
+                  {t("dashboard.invoiceCancel.cancelledOn").replace(
+                    "{date}",
+                    invoice.cancelledAt ? formatAckDate(invoice.cancelledAt, locale) : "—",
+                  )}
+                  {invoice.cancelReason ? ` · ${invoice.cancelReason}` : ""}
+                </p>
+              ) : null}
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            {isSalesInvoiceEditable(invoice) ? (
+              <Link
+                href={`/dashboard/sales/invoices/${encodeURIComponent(invoice.invoiceId)}/edit`}
+                className="inline-flex h-10 items-center rounded-sm border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50"
+              >
+                {t("dashboard.invoiceEdit.cta")}
+              </Link>
+            ) : null}
+            {invoice.status === "paid" || invoice.status === "partial" ? (
+              <button
+                type="button"
+                disabled={markUnpaidBusy}
+                onClick={() => void markUnpaid()}
+                className="inline-flex h-10 items-center rounded-sm border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50 disabled:opacity-60"
+              >
+                {t("dashboard.invoiceCancel.markUnpaidCta")}
+              </button>
+            ) : null}
+            {invoice.status !== "cancelled" ? (
+              <button
+                type="button"
+                title={invoice.cancellable === false ? t("dashboard.invoiceCancel.blockedTitle") : undefined}
+                onClick={() => setInvoiceCancelOpen(true)}
+                className="inline-flex h-10 items-center rounded-sm border border-red-200 bg-white px-4 text-sm font-semibold text-red-700 hover:bg-red-50"
+              >
+                {t("dashboard.invoiceCancel.cta")}
+              </button>
+            ) : null}
             {showWhatsAppUpgrade ? (
               <Link
                 href="/dashboard/settings/subscription"
@@ -670,8 +764,36 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
           <div className="flex justify-center">
             <div ref={printAreaRef} className="w-full max-w-[210mm]">
               <InvoiceSettingsPreview {...previewProps} />
+              {activeIrn ? (
+                <div
+                  data-einvoice-block
+                  className="mx-auto mt-3 flex w-full max-w-[210mm] items-center gap-4 border border-slate-300 bg-white p-3 text-[11px] text-slate-800"
+                >
+                  <SignedQrImage value={activeIrn.signedQr} size={104} />
+                  <div className="min-w-0 space-y-1">
+                    <p className="font-bold uppercase">{t("dashboard.einvoiceExtras.printHeading")}</p>
+                    <p className="break-all">
+                      <span className="font-semibold">{t("dashboard.salesInvoices.view.irnLabel")}:</span> {activeIrn.irn}
+                    </p>
+                    {activeIrn.ackNo ? (
+                      <p>
+                        <span className="font-semibold">{t("dashboard.salesInvoices.view.ackNoLabel")}:</span>{" "}
+                        {activeIrn.ackNo}
+                      </p>
+                    ) : null}
+                    {activeIrn.ackDate ? (
+                      <p>
+                        <span className="font-semibold">{t("dashboard.salesInvoices.view.ackDateLabel")}:</span>{" "}
+                        {formatAckDate(activeIrn.ackDate, locale)}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
             </div>
           </div>
+          <PaymentHistorySection entries={invoice.paymentHistory} />
+          <DocumentHistoryPanel entityType="sales_invoice" entityId={invoice.invoiceId} />
         </div>
 
         <aside className="w-full shrink-0 lg:w-72 lg:self-start">
@@ -764,7 +886,7 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
                       {t("dashboard.salesInvoices.view.ackDateLabel")}:{" "}
                     </span>
                     <span className="font-semibold">
-                      {eInvoiceMeta?.ackDate ?? invoice.ackDate}
+                      {formatAckDate(eInvoiceMeta?.ackDate ?? invoice.ackDate, locale)}
                     </span>
                   </div>
                 ) : null}
@@ -773,13 +895,11 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
                     <span className="text-brand-primary-muted">
                       {t("dashboard.salesInvoices.view.signedQrLabel")}:{" "}
                     </span>
-                    <span className="break-all font-mono">
-                      {(eInvoiceMeta?.signedQr ?? invoice.signedQr)?.slice(0, 120)}
-                      {(eInvoiceMeta?.signedQr ?? invoice.signedQr) &&
-                      (eInvoiceMeta?.signedQr ?? invoice.signedQr)!.length > 120
-                        ? "…"
-                        : ""}
-                    </span>
+                    <SignedQrImage
+                      value={eInvoiceMeta?.signedQr ?? invoice.signedQr}
+                      size={148}
+                      className="mt-2 rounded-sm border border-slate-200"
+                    />
                   </div>
                 ) : null}
                 {hasActiveIrn && eInvoiceMeta?.status !== "cancelled" ? (
@@ -1026,6 +1146,65 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
           </div>
         </aside>
       </div>
+
+      {activeOrganisationId ? (
+        <CancelInvoiceDialog
+          open={invoiceCancelOpen}
+          onClose={() => setInvoiceCancelOpen(false)}
+          organisationId={activeOrganisationId}
+          invoice={invoice}
+          onCancelled={(updated) => setInvoice(updated)}
+          onMarkUnpaid={() => void markUnpaid()}
+        />
+      ) : null}
+
+      {markUnpaidResult || markUnpaidError ? (
+        <div
+          className={`fixed bottom-4 left-1/2 z-[120] max-w-md -translate-x-1/2 rounded-sm border px-4 py-3 text-sm shadow-md ${
+            markUnpaidError ? "border-red-200 bg-red-50 text-red-800" : "border-emerald-200 bg-emerald-50 text-emerald-900"
+          }`}
+          role="status"
+        >
+          {markUnpaidError ?? (
+            <>
+              <p className="font-semibold">
+                {t("dashboard.markUnpaid.done").replace("{amount}", formatInr(markUnpaidResult!.reversedAmount + markUnpaidResult!.releasedAllocations.reduce((s, r) => s + r.amount, 0)))}
+              </p>
+              {markUnpaidResult!.reversedByMode.length ? (
+                <p className="mt-1 text-xs">
+                  {t("dashboard.markUnpaid.byMode")}{" "}
+                  {markUnpaidResult!.reversedByMode
+                    .map((row) => `${row.paymentMode.toUpperCase()} ${formatInr(row.amount)}`)
+                    .join(" · ")}
+                </p>
+              ) : null}
+              {markUnpaidResult!.releasedAllocations.length ? (
+                <ul className="mt-1 list-disc pl-5 text-xs">
+                  {markUnpaidResult!.releasedAllocations.map((row) => (
+                    <li key={row.paymentId}>
+                      {t("dashboard.markUnpaid.released")
+                        .replace("{amount}", formatInr(row.amount))
+                        .replace("{voucher}", row.displayNumber)
+                        .replace("{advance}", formatInr(row.unallocatedAmount))}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              <p className="mt-1 text-xs">{t("dashboard.markUnpaid.advanceNote")}</p>
+            </>
+          )}
+          <button
+            type="button"
+            onClick={() => {
+              setMarkUnpaidResult(null);
+              setMarkUnpaidError(null);
+            }}
+            className="mt-2 text-xs font-semibold underline"
+          >
+            {t("common.close")}
+          </button>
+        </div>
+      ) : null}
 
       <SalesInvoiceSendWhatsAppModal
         open={sendWhatsAppOpen}

@@ -207,6 +207,13 @@ function finalize(
   };
 }
 
+const NIL_EXEMPT_SUPPLY_LABELS: Record<string, string> = {
+  inter_registered: "Inter-state to registered",
+  intra_registered: "Intra-state to registered",
+  inter_unregistered: "Inter-state to unregistered",
+  intra_unregistered: "Intra-state to unregistered",
+};
+
 function parseGstr1(row: Record<string, unknown>): ReportData {
   const b2b = toRows(Array.isArray(row.b2b) ? row.b2b : []);
   const b2c = toRows(Array.isArray(row.b2c) ? row.b2c : []);
@@ -229,6 +236,7 @@ function parseGstr1(row: Record<string, unknown>): ReportData {
       metric("Total amount", pickNumber(row.totalAmount), "currency"),
       metric("B2B rows", b2b.length, "number"),
       metric("B2C rows", b2c.length, "number"),
+      metric("Nil / exempt / non-GST", pickNumber(row.nilExemptTotal) ?? 0, "currency"),
     ],
   });
   if (b2b.length > 0) {
@@ -236,6 +244,32 @@ function parseGstr1(row: Record<string, unknown>): ReportData {
   }
   if (b2c.length > 0) {
     sections.push({ type: "table", table: makeTable("b2c", "B2C — Unregistered / retail sales", gstCols, b2c) });
+  }
+  // Table 8: nil-rated / exempted / non-GST outward supplies, by supply type.
+  const nilExempt: ReportRow[] = toRows(Array.isArray(row.nilExempt) ? row.nilExempt : []).map((r) => ({
+    ...r,
+    supplyType: NIL_EXEMPT_SUPPLY_LABELS[String(r.supplyType)] ?? r.supplyType,
+  }));
+  if (nilExempt.some((r) => (pickNumber(r.nilRated) ?? 0) + (pickNumber(r.exempted) ?? 0) + (pickNumber(r.nonGst) ?? 0) > 0)) {
+    sections.push({
+      type: "table",
+      table: makeTable(
+        "nilExempt",
+        "Nil rated, exempted & non-GST supplies (Table 8)",
+        [
+          col("supplyType", "Supply type"),
+          col("nilRated", "Nil rated", "currency"),
+          col("exempted", "Exempted", "currency"),
+          col("nonGst", "Non-GST", "currency"),
+        ],
+        nilExempt,
+        {
+          nilRated: nilExempt.reduce((sum, r) => sum + (pickNumber(r.nilRated) ?? 0), 0),
+          exempted: nilExempt.reduce((sum, r) => sum + (pickNumber(r.exempted) ?? 0), 0),
+          nonGst: nilExempt.reduce((sum, r) => sum + (pickNumber(r.nonGst) ?? 0), 0),
+        },
+      ),
+    });
   }
   const rateBars = [...b2b, ...b2c].map((r) => ({
     label: `${r.gstPercent ?? 0}%`,

@@ -13,6 +13,7 @@ import { PendingInvitesBanner } from "@/components/dashboard/pending-invites-ban
 import { PlanRenewalBanner } from "@/components/dashboard/plan-renewal-banner";
 import { PlanWorkspaceRefreshListener } from "@/components/dashboard/plan-workspace-refresh-listener";
 import { useIsMobileOrTablet } from "@/lib/hooks/use-is-mobile-or-tablet";
+import { useDashboardPageTitle } from "@/lib/dashboard/use-dashboard-page-title";
 import { AutoOpenOrganisationPicker, BusinessSwitchModal } from "./business-switch";
 import { DashboardSidebar } from "./dashboard-sidebar";
 import { DashboardTopbar } from "./dashboard-topbar";
@@ -33,6 +34,7 @@ function isTypingTarget(target: EventTarget | null): boolean {
 export function DashboardShell({ children, hasSession = false }: DashboardShellProps) {
   const router = useRouter();
   const pathname = usePathname();
+  useDashboardPageTitle();
   const isPosFullscreen = pathname?.startsWith("/dashboard/pos");
   const isAiChatFullscreen = pathname?.startsWith("/dashboard/ai-chat");
   const isMobileOrTablet = useIsMobileOrTablet();

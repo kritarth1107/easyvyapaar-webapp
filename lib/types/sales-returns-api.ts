@@ -91,7 +91,7 @@ export type CreateSalesReturnRequest = {
     hsn?: string;
     qty: number;
     unit?: string;
-    pricePerItem: number;
+    pricePerItem?: number;
     discount?: number;
     discountType?: "percent" | "amount";
     gstPercent?: number;

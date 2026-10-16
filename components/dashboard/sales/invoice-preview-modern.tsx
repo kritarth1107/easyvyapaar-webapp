@@ -44,6 +44,7 @@ export function InvoicePreviewModern(props: InvoicePreviewProps) {
     embedded = false,
   } = props;
   const content = resolveInvoicePreviewContent(props);
+  const hideTax = content.hideTax;
   const displayName = businessName.toUpperCase() || "MAYANK ELECTRONICS";
   const logoUrl = resolveInvoiceLogoUrl(props);
   const headerTextColor = getHeaderTextColor(accentHex);
@@ -145,12 +146,12 @@ export function InvoicePreviewModern(props: InvoicePreviewProps) {
             <col style={{ width: MODERN_COL.qty }} />
             <col style={{ width: MODERN_COL.rate }} />
             <col style={{ width: MODERN_COL.disc }} />
-            <col style={{ width: MODERN_COL.tax }} />
+            {hideTax ? null : <col style={{ width: MODERN_COL.tax }} />}
             <col style={{ width: MODERN_COL.amount }} />
           </colgroup>
           <thead>
             <tr style={barStyle}>
-              {(["S.NO.", "ITEMS", "HSN", "QTY.", "RATE", "DISC.", "TAX", "AMOUNT"] as const).map(
+              {(["S.NO.", "ITEMS", "HSN", "QTY.", "RATE", "DISC.", "TAX", "AMOUNT"] as const).filter((h) => !(hideTax && h === "TAX")).map(
                 (h, i) => (
                   <th
                     key={h}
@@ -189,11 +190,13 @@ export function InvoicePreviewModern(props: InvoicePreviewProps) {
                   <br />
                   <span style={{ fontSize: "10px", color: "#666" }}>{line.discSub}</span>
                 </td>
-                <td className="px-2 py-2.5 text-right">
-                  {line.tax}
-                  <br />
-                  <span style={{ fontSize: "10px", color: "#666" }}>{line.taxSub}</span>
-                </td>
+                {hideTax ? null : (
+                  <td className="px-2 py-2.5 text-right">
+                    {line.tax}
+                    <br />
+                    <span style={{ fontSize: "10px", color: "#666" }}>{line.taxSub}</span>
+                  </td>
+                )}
                 <td className="px-2 py-2.5 text-right font-semibold">{line.amount}</td>
               </tr>
             ))}
@@ -202,7 +205,9 @@ export function InvoicePreviewModern(props: InvoicePreviewProps) {
             <tr style={barStyle}>
               <td colSpan={5} className="px-2 py-2" />
               <td className="px-2 py-2 text-right font-bold">{fmtRupee(content.totalDisc)}</td>
-              <td className="px-2 py-2 text-right font-bold">{fmtRupee(content.totalTax)}</td>
+              {hideTax ? null : (
+                <td className="px-2 py-2 text-right font-bold">{fmtRupee(content.totalTax)}</td>
+              )}
               <td className="px-2 py-2 text-right font-bold">{fmtRupee(content.totalAmount)}</td>
             </tr>
           </tfoot>

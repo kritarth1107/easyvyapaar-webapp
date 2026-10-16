@@ -1,3 +1,5 @@
+import { throwIfConflict } from "@/lib/api/conflict";
+import { isLedgerRangeInvalid, LedgerRangeError } from "@/lib/parties/party-ledger-utils";
 import {
   extractBackendError,
   normalizePartyDashboardSummary,
@@ -87,6 +89,7 @@ export async function fetchPartyLedger(
   partyId: string,
   params: PartyLedgerParams = {},
 ): Promise<PartyLedgerStatement> {
+  if (isLedgerRangeInvalid(params.from?.trim(), params.to?.trim())) throw new LedgerRangeError();
   const search = new URLSearchParams({ organisationId });
   if (params.from?.trim()) search.set("from", params.from.trim());
   if (params.to?.trim()) search.set("to", params.to.trim());
@@ -188,6 +191,7 @@ export async function updateParty(
     },
   );
   const body = await parseJsonResponse(res);
+  throwIfConflict(res, extractBackendError(body));
   if (!res.ok) {
     throw new Error(extractBackendError(body) ?? "Failed to update party");
   }

@@ -1,3 +1,4 @@
+import { NotFoundError } from "@/lib/api/not-found";
 import {
   extractBackendError,
   normalizeCreditNoteDetailResponse,
@@ -69,6 +70,7 @@ export async function fetchCreditNoteDetail(
   );
   const body = await parseJsonResponse(res);
   if (!res.ok) {
+    if (res.status === 404) throw new NotFoundError(extractBackendError(body) ?? "Failed to load credit note");
     throw new Error(extractBackendError(body) ?? "Failed to load credit note");
   }
   const creditNote = normalizeCreditNoteDetailResponse(body);

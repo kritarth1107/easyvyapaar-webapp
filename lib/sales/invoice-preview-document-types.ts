@@ -1,3 +1,14 @@
+/** Stable ids for invoice summary rows (labels are translated, keys are not). */
+export type InvoiceSummaryRowKey =
+  | "taxableAmount"
+  | "discountBeforeTax"
+  | "netTaxable"
+  | "discountAfterTax"
+  | "roundOff"
+  | "totalAmount"
+  | "receivedAmount"
+  | "balanceAmount";
+
 import type { BillbookLine, InvoiceGstRow, SampleLine } from "@/lib/sales/invoice-preview-data";
 
 export type { InvoiceGstRow };
@@ -40,11 +51,13 @@ export type LiveInvoicePreviewModel = {
   notes?: string;
   terms?: string;
   bankLabel?: string;
-  summaryRows: Array<{ label: string; value: string; bold?: boolean }>;
+  summaryRows: Array<{ key?: InvoiceSummaryRowKey; label: string; value: string; bold?: boolean }>;
   amountReceived: string;
   balanceAmount: string;
   paymentMode: string;
   documentTitle?: string;
+  /** Bill of Supply: drop the tax column, tax total and GST breakdown. */
+  hideTax?: boolean;
 };
 
 export type InvoicePreviewDocument = {
@@ -64,7 +77,7 @@ export type InvoicePreviewDocument = {
   lines?: SampleLine[];
   billbookLines?: BillbookLine[];
   gstRows?: InvoiceGstRow[];
-  summaryRows?: Array<{ label: string; value: string; bold?: boolean }>;
+  summaryRows?: Array<{ key?: InvoiceSummaryRowKey; label: string; value: string; bold?: boolean }>;
   totalDisc?: string;
   totalTax?: string;
   totalAmount?: string;
@@ -75,6 +88,7 @@ export type InvoicePreviewDocument = {
   notes?: string;
   terms?: string;
   bankDetails?: string;
+  hideTax?: boolean;
   documentTitle?: string;
   dueDateLabel?: string;
   hidePaymentSummary?: boolean;

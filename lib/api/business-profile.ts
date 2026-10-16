@@ -147,6 +147,7 @@ export function normalizeOrganisationProfile(raw: unknown): OrganisationProfile 
     enableTCS: Boolean(root.enableTCS ?? root.enableTcs ?? root.enable_tcs),
     enableEInvoicing: Boolean(root.enableEInvoicing ?? root.enableEinvoicing ?? root.enable_e_invoicing),
     enableEWayBill: Boolean(root.enableEWayBill ?? root.enableEwayBill ?? root.enable_e_way_bill),
+    gstScheme: pickString(root.gstScheme, root.gst_scheme) === "composition" ? "composition" : "regular",
     additionalDetails,
     registrationNumber: pickString(root.registrationNumber, root.registration_number),
     gstin: pickString(root.gstin, root.gstIN, root.GSTIN),

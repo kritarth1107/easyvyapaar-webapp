@@ -1,10 +1,12 @@
 "use client";
 
+import { PaymentHistorySection } from "@/components/dashboard/shared/payment-history-section";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useUserMe } from "@/components/providers/user-me-provider";
 import { PurchaseBillPdfPreviewModal } from "@/components/dashboard/purchase/purchase-bill-pdf-preview-modal";
+import { PurchaseBillSummary } from "@/components/dashboard/purchase/purchase-bill-summary";
 import { ModernSelect } from "@/components/ui/modern-select";
 import { formatDate, formatInr, inputClass, StatCard } from "@/lib/dashboard/page-utils";
 import {
@@ -17,6 +19,7 @@ import {
 } from "@/lib/purchase/purchases-api-client";
 import type { PurchaseBillDetail, PurchasePaymentMode } from "@/lib/types/purchase-api";
 import { useTranslation } from "@/lib/localization";
+import { DocumentHistoryPanel } from "@/components/dashboard/reports/audit-log-list";
 
 export function PurchaseBillViewPage() {
   const { t } = useTranslation();
@@ -312,6 +315,10 @@ export function PurchaseBillViewPage() {
         </table>
       </div>
 
+      <div className="mt-4">
+        <PurchaseBillSummary bill={bill} />
+      </div>
+
       {bill.balanceAmount > 0 && status !== "cancelled" && status !== "draft" && (
         <div className="mt-6 max-w-md rounded-sm border border-slate-200/90 bg-white p-4">
           <p className="text-sm font-semibold text-brand-primary">{t("dashboard.purchases.view.recordPayment")}</p>
@@ -338,6 +345,9 @@ export function PurchaseBillViewPage() {
           </div>
         </div>
       )}
+
+      <PaymentHistorySection entries={bill.paymentHistory} />
+      <DocumentHistoryPanel entityType="purchase_bill" entityId={bill.purchaseBillId} />
 
       <PurchaseBillPdfPreviewModal
         open={previewOpen}

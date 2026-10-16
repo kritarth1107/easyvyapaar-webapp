@@ -40,6 +40,7 @@ export function InvoicePreviewGstAdvanceA5(props: InvoicePreviewProps) {
     embedded = false,
   } = props;
   const content = resolveInvoicePreviewContent(props);
+  const hideTax = content.hideTax;
   const displayName = businessName.toUpperCase() || "MAYANK ELECTRONICS";
   const logoUrl = resolveInvoiceLogoUrl(props);
   const headerTextColor = getHeaderTextColor(accentHex);
@@ -146,7 +147,7 @@ export function InvoicePreviewGstAdvanceA5(props: InvoicePreviewProps) {
                 <col style={{ width: COL.qty }} />
                 <col style={{ width: COL.rate }} />
                 <col style={{ width: COL.disc }} />
-                <col style={{ width: COL.tax }} />
+                {hideTax ? null : <col style={{ width: COL.tax }} />}
                 <col style={{ width: COL.amount }} />
               </colgroup>
               <thead>
@@ -172,9 +173,11 @@ export function InvoicePreviewGstAdvanceA5(props: InvoicePreviewProps) {
                   <th className={`${headerCell("border-t-0 text-right")}`} style={headerStyle}>
                     DISC.
                   </th>
-                  <th className={`${headerCell("border-t-0 text-right")}`} style={headerStyle}>
-                    IGST
-                  </th>
+                  {hideTax ? null : (
+                    <th className={`${headerCell("border-t-0 text-right")}`} style={headerStyle}>
+                      IGST
+                    </th>
+                  )}
                   <th
                     className={`${headerCell("border-t-0 border-r-0 text-right")}`}
                     style={headerStyle}
@@ -205,11 +208,13 @@ export function InvoicePreviewGstAdvanceA5(props: InvoicePreviewProps) {
                       <br />
                       <span style={{ fontSize: "9px" }}>{line.discSub}</span>
                     </td>
-                    <td className={`${VC} text-right`}>
-                      {line.tax}
-                      <br />
-                      <span style={{ fontSize: "9px" }}>{line.taxSub}</span>
-                    </td>
+                    {hideTax ? null : (
+                      <td className={`${VC} text-right`}>
+                        {line.tax}
+                        <br />
+                        <span style={{ fontSize: "9px" }}>{line.taxSub}</span>
+                      </td>
+                    )}
                     <td className={`${VC} border-r-0 text-right`} style={{ fontWeight: 600 }}>
                       {line.amount}
                     </td>
@@ -230,7 +235,7 @@ export function InvoicePreviewGstAdvanceA5(props: InvoicePreviewProps) {
                 <col style={{ width: COL.qty }} />
                 <col style={{ width: COL.rate }} />
                 <col style={{ width: COL.disc }} />
-                <col style={{ width: COL.tax }} />
+                {hideTax ? null : <col style={{ width: COL.tax }} />}
                 <col style={{ width: COL.amount }} />
               </colgroup>
               <tbody className="h-full">
@@ -241,7 +246,7 @@ export function InvoicePreviewGstAdvanceA5(props: InvoicePreviewProps) {
                   <td className={VC} style={{ height: "100%", verticalAlign: "top" }} />
                   <td className={VC} style={{ height: "100%", verticalAlign: "top" }} />
                   <td className={VC} style={{ height: "100%", verticalAlign: "top" }} />
-                  <td className={VC} style={{ height: "100%", verticalAlign: "top" }} />
+                  {hideTax ? null : <td className={VC} style={{ height: "100%", verticalAlign: "top" }} />}
                   <td
                     className={`${VC} border-r-0`}
                     style={{ height: "100%", verticalAlign: "top" }}
@@ -261,7 +266,7 @@ export function InvoicePreviewGstAdvanceA5(props: InvoicePreviewProps) {
                 <col style={{ width: COL.qty }} />
                 <col style={{ width: COL.rate }} />
                 <col style={{ width: COL.disc }} />
-                <col style={{ width: COL.tax }} />
+                {hideTax ? null : <col style={{ width: COL.tax }} />}
                 <col style={{ width: COL.amount }} />
               </colgroup>
               <tbody>
@@ -273,9 +278,11 @@ export function InvoicePreviewGstAdvanceA5(props: InvoicePreviewProps) {
                   <td className={`${SB} border-t text-right`} style={{ fontWeight: 700 }}>
                     {fmtRupee(content.totalDisc)}
                   </td>
-                  <td className={`${SB} border-t text-right`} style={{ fontWeight: 700 }}>
-                    {fmtRupee(content.totalTax)}
-                  </td>
+                  {hideTax ? null : (
+                    <td className={`${SB} border-t text-right`} style={{ fontWeight: 700 }}>
+                      {fmtRupee(content.totalTax)}
+                    </td>
+                  )}
                   <td className={`${SBR} border-t text-right`} style={{ fontWeight: 700 }}>
                     {fmtRupee(content.totalAmount)}
                   </td>

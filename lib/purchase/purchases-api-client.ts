@@ -1,3 +1,4 @@
+import { throwIfConflict } from "@/lib/api/conflict";
 import {
   extractBackendError,
   normalizeNextPurchaseNumber,
@@ -8,6 +9,7 @@ import {
   normalizePurchaseReturnDetailResponse,
   normalizePurchaseReturnListResponse,
 } from "@/lib/api/purchases";
+import { ApiValidationError, extractErrorDetails, parseFieldErrorDetails } from "@/lib/api/field-errors";
 import type {
   ConvertPurchaseOrderRequest,
   CreatePurchaseBillRequest,
@@ -136,7 +138,12 @@ export async function createPurchaseBill(
     );
   }
   const body = await parseJsonResponse(res);
-  if (!res.ok) throw new Error(extractBackendError(body) ?? "Failed to create purchase bill");
+  if (!res.ok) {
+    const message = extractBackendError(body) ?? "Failed to create purchase bill";
+    const fieldErrors = res.status === 400 ? parseFieldErrorDetails(extractErrorDetails(body)) : [];
+    // 400 → per-field Zod issues; 422 (e.g. upfront payment above payable) → message as-is.
+    throw fieldErrors.length ? new ApiValidationError(message, fieldErrors) : new Error(message);
+  }
   const bill = normalizePurchaseBillDetailResponse(body);
   if (!bill) throw new Error("Failed to create purchase bill");
   return bill;
@@ -193,6 +200,7 @@ export async function updatePurchaseBill(
     },
   );
   const body = await parseJsonResponse(res);
+  throwIfConflict(res, extractBackendError(body));
   if (!res.ok) throw new Error(extractBackendError(body) ?? "Failed to update purchase bill");
   const bill = normalizePurchaseBillDetailResponse(body);
   if (!bill) throw new Error("Failed to update purchase bill");

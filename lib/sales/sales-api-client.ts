@@ -1,3 +1,4 @@
+import { throwIfConflict } from "@/lib/api/conflict";
 import {
   extractBackendError,
   normalizeNextInvoiceNumber,
@@ -5,7 +6,10 @@ import {
   normalizeSalesInvoiceListResponse,
 } from "@/lib/api/sales";
 import type {
+  SalesInvoiceType,
   CreateSalesInvoiceRequest,
+  UpdateSalesInvoiceRequest,
+  MarkInvoiceUnpaidResult,
   EInvoiceResult,
   NextInvoiceNumber,
   RecordSalesInvoicePaymentRequest,
@@ -33,9 +37,11 @@ function buildListQuery(organisationId: string, params: SalesInvoiceListParams =
 
 export async function fetchNextInvoiceNumber(
   organisationId: string,
+  invoiceType?: SalesInvoiceType,
 ): Promise<NextInvoiceNumber> {
+  const typeQuery = invoiceType ? `&invoiceType=${encodeURIComponent(invoiceType)}` : "";
   const res = await fetch(
-    `/api/sales/invoices/next-number?organisationId=${encodeURIComponent(organisationId)}`,
+    `/api/sales/invoices/next-number?organisationId=${encodeURIComponent(organisationId)}${typeQuery}`,
   );
   const body = await parseJsonResponse(res);
   if (!res.ok) {
@@ -123,6 +129,84 @@ export async function createSalesInvoice(
     throw new Error("Failed to create invoice");
   }
   return invoice;
+}
+
+export async function updateSalesInvoice(
+  organisationId: string,
+  invoiceId: string,
+  payload: UpdateSalesInvoiceRequest,
+): Promise<SalesInvoiceDetail> {
+  const res = await fetch(
+    `/api/sales/invoices/${encodeURIComponent(invoiceId)}?organisationId=${encodeURIComponent(organisationId)}`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    },
+  );
+  const body = await parseJsonResponse(res);
+  // 422 carries the reason (paid / IRN / E-Way Bill / returns); surface it verbatim.
+  throwIfConflict(res, extractBackendError(body));
+  if (!res.ok) throw new Error(extractBackendError(body) ?? "Failed to update invoice");
+  const invoice = normalizeSalesInvoiceDetailResponse(body);
+  if (!invoice) throw new Error("Failed to update invoice");
+  return invoice;
+}
+
+export async function cancelSalesInvoice(
+  organisationId: string,
+  invoiceId: string,
+  reason?: string,
+): Promise<SalesInvoiceDetail> {
+  const res = await fetch(
+    `/api/sales/invoices/${encodeURIComponent(invoiceId)}/cancel?organisationId=${encodeURIComponent(organisationId)}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(reason?.trim() ? { reason: reason.trim() } : {}),
+    },
+  );
+  const body = await parseJsonResponse(res);
+  throwIfConflict(res, extractBackendError(body));
+  if (!res.ok) throw new Error(extractBackendError(body) ?? "Failed to cancel invoice");
+  const invoice = normalizeSalesInvoiceDetailResponse(body);
+  if (!invoice) throw new Error("Failed to cancel invoice");
+  return invoice;
+}
+
+export async function markSalesInvoiceUnpaid(
+  organisationId: string,
+  invoiceId: string,
+): Promise<MarkInvoiceUnpaidResult> {
+  const res = await fetch(
+    `/api/sales/invoices/${encodeURIComponent(invoiceId)}/mark-unpaid?organisationId=${encodeURIComponent(organisationId)}`,
+    { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" },
+  );
+  const body = await parseJsonResponse(res);
+  throwIfConflict(res, extractBackendError(body));
+  if (!res.ok) throw new Error(extractBackendError(body) ?? "Failed to mark invoice unpaid");
+  const invoice = normalizeSalesInvoiceDetailResponse(body);
+  if (!invoice) throw new Error("Failed to mark invoice unpaid");
+  const data = ((body as { data?: Record<string, unknown> } | null)?.data ?? {}) as Record<string, unknown>;
+  const released = Array.isArray(data.releasedAllocations) ? data.releasedAllocations : [];
+  return {
+    invoice,
+    reversedAmount: Number(data.reversedAmount) || 0,
+    releasedAllocations: released
+      .map((raw) => (raw && typeof raw === "object" ? (raw as Record<string, unknown>) : null))
+      .filter((row): row is Record<string, unknown> => row !== null)
+      .map((row) => ({
+        paymentId: String(row.paymentId ?? ""),
+        displayNumber: String(row.displayNumber ?? ""),
+        amount: Number(row.amount) || 0,
+        unallocatedAmount: Number(row.unallocatedAmount) || 0,
+      })),
+    reversedByMode: (Array.isArray(data.reversedByMode) ? data.reversedByMode : [])
+      .map((raw) => (raw && typeof raw === "object" ? (raw as Record<string, unknown>) : null))
+      .filter((row): row is Record<string, unknown> => row !== null)
+      .map((row) => ({ paymentMode: String(row.paymentMode ?? "cash"), amount: Number(row.amount) || 0 }))
+      .filter((row) => row.amount > 0),
+  };
 }
 
 export function buildSalesInvoicePdfUrl(

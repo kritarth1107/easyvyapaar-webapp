@@ -27,6 +27,7 @@ export function useThermalReceiptLabels(): ThermalReceiptLabels {
       balance: t("dashboard.thermalPrint.balance"),
       paymentMode: t("dashboard.thermalPrint.paymentMode"),
       qrPlaceholder: t("dashboard.thermalPrint.qrPlaceholder"),
+      ackNo: t("dashboard.thermalPrint.ackNo"),
       thankYou: t("dashboard.thermalPrint.thankYou"),
     }),
     [t],

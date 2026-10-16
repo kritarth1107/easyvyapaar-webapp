@@ -11,7 +11,7 @@ import {
   getPaymentActivityHref,
   getPaymentSourceLabelKey,
 } from "@/lib/finance/payment-activity-utils";
-import type { FinancePaymentSummary, FinancePaymentType } from "@/lib/types/finance-payments-api";
+import type { FinancePaymentListResponse, FinancePaymentSummary, FinancePaymentType } from "@/lib/types/finance-payments-api";
 import { useTranslation } from "@/lib/localization";
 
 function formatInr(amount: number): string {
@@ -79,6 +79,7 @@ export function PaymentsPage() {
   const [query, setQuery] = useState("");
   const [paymentType, setPaymentType] = useState<string>("all");
   const [payments, setPayments] = useState<FinancePaymentSummary[]>([]);
+  const [totals, setTotals] = useState<FinancePaymentListResponse["totals"]>(undefined);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -98,8 +99,10 @@ export function PaymentsPage() {
         page: 1,
       });
       setPayments(data.items);
+      setTotals(data.totals);
     } catch (err) {
       setPayments([]);
+      setTotals(undefined);
       setLoadError(err instanceof Error ? err.message : t("dashboard.financePayments.empty"));
     } finally {
       setLoading(false);
@@ -159,6 +162,14 @@ export function PaymentsPage() {
         <StatCard label={t("dashboard.financePayments.monthIn")} value={formatInr(summary.monthIn)} accent="navy" />
         <StatCard label={t("dashboard.financePayments.totalCount")} value={String(summary.totalCount)} />
       </div>
+
+      {totals ? (
+        <div className="mb-6 flex flex-wrap gap-x-6 gap-y-1 rounded-sm border border-slate-200/90 bg-white px-4 py-3 text-sm text-brand-primary">
+          <span>{t("dashboard.paymentActivity.totalsIn")}: <strong className="text-emerald-700">{formatInr(totals.totalIn)}</strong></span>
+          <span>{t("dashboard.paymentActivity.totalsOut")}: <strong className="text-amber-700">{formatInr(totals.totalOut)}</strong></span>
+          <span>{t("dashboard.paymentActivity.totalsNet")}: <strong>{formatInr(totals.net)}</strong></span>
+        </div>
+      ) : null}
 
       <div className="overflow-hidden rounded-sm border border-slate-200/90 bg-white">
         <div className="flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-center">

@@ -1,5 +1,6 @@
 "use client";
 
+import { saveErrorMessage } from "@/lib/api/conflict";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -183,7 +184,7 @@ export function EditPartyPage() {
       await updateParty(organisationId, partyId, mapUpdatePartyFormToRequest(form, t));
       router.push(`/dashboard/parties/${encodeURIComponent(partyId)}`);
     } catch (err) {
-      window.alert(err instanceof Error ? err.message : t("dashboard.editParty.saveError"));
+      window.alert(saveErrorMessage(err, t, t("dashboard.editParty.saveError")));
     } finally {
       setSaving(false);
     }

@@ -79,7 +79,7 @@ export function mapCreateCreditNoteFormToRequest(
         hsn: invoiceLine.hsn,
         qty: draft.noteQty,
         unit: invoiceLine.unit,
-        pricePerItem: invoiceLine.pricePerItem,
+        // pricePerItem omitted: the backend uses the invoice line's price.
         discount: invoiceLine.discount,
         discountType: invoiceLine.discountType,
         gstPercent: invoiceLine.gstPercent,

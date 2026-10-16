@@ -50,14 +50,8 @@ export function CreatePurchaseReturnPage() {
         billLineId: line.lineId,
         itemId: line.itemId,
         name: line.name,
+        // Only qty: the backend takes price, tax and (prorated) discounts from the bill line.
         qty: qtyMap[line.lineId] ?? 0,
-        pricePerItem: line.pricePerItem,
-        hsn: line.hsn,
-        unit: line.unit,
-        gstPercent: line.gstPercent,
-        discount: line.discount,
-        discountType: line.discountType,
-        purchaseTaxMode: line.purchaseTaxMode,
       }));
     if (lineItems.length === 0) { setError(t("dashboard.purchases.create.validation")); return; }
     setSaving(true);

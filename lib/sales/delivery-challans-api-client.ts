@@ -1,3 +1,4 @@
+import { throwIfConflict } from "@/lib/api/conflict";
 import {
   extractBackendError,
   normalizeDeliveryChallanDetailResponse,
@@ -109,6 +110,7 @@ export async function updateDeliveryChallan(
     },
   );
   const body = await parseJsonResponse(res);
+  throwIfConflict(res, extractBackendError(body));
   if (!res.ok) {
     throw new Error(extractBackendError(body) ?? "Failed to update delivery challan");
   }

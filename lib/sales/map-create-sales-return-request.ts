@@ -72,16 +72,10 @@ export function mapCreateSalesReturnFormToRequest(
         hsn: invoiceLine.hsn,
         qty: draft.returnQty,
         unit: invoiceLine.unit,
-        pricePerItem: invoiceLine.pricePerItem,
-        discount: invoiceLine.discount,
-        discountType: invoiceLine.discountType,
-        gstPercent: invoiceLine.gstPercent,
-        salesTaxMode: invoiceLine.salesTaxMode,
+        // Price, tax and (prorated) discounts come from the invoice line on the backend.
         ...(draft.selectedSerials.length > 0 ? { serialNumbers: draft.selectedSerials } : {}),
       };
     });
-
-  const refundAmount = calcReturnTotal(invoice, form.lines);
 
   return {
     invoiceId: form.invoiceId,
@@ -92,7 +86,7 @@ export function mapCreateSalesReturnFormToRequest(
     reason: form.reason.trim() || undefined,
     notes: form.notes.trim() || undefined,
     lineItems,
-    refundAmount,
+    // refundAmount omitted: backend refunds its own prorated total.
     refundMode: form.refundMode,
   };
 }

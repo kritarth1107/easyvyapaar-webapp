@@ -1,3 +1,4 @@
+import type { InvoiceSummaryRowKey } from "./invoice-preview-document-types";
 import type { LiveInvoicePreviewModel } from "@/lib/sales/invoice-preview-document-types";
 import {
   BILLBOOK_LINES,
@@ -57,7 +58,7 @@ export type ResolvedInvoicePreview = {
   lines: SampleLine[];
   billbookLines: BillbookLine[];
   gstRows: InvoiceGstRow[];
-  summaryRows: Array<{ label: string; value: string; bold?: boolean }>;
+  summaryRows: Array<{ key?: InvoiceSummaryRowKey; label: string; value: string; bold?: boolean }>;
   totalDisc: string;
   totalTax: string;
   totalAmount: string;
@@ -69,6 +70,7 @@ export type ResolvedInvoicePreview = {
   terms: string;
   bankDetails: string;
   documentTitle: string;
+  hideTax: boolean;
   dueDateLabel: string;
   hidePaymentSummary: boolean;
 };
@@ -128,6 +130,7 @@ export function mapLivePreviewToDocument(model: LiveInvoicePreviewModel): Invoic
     billbookLines,
     gstRows: model.gstRows,
     summaryRows: model.summaryRows.map((row) => ({
+      key: row.key,
       label: row.label,
       value: stripRupee(row.value),
       bold: row.bold,
@@ -143,6 +146,7 @@ export function mapLivePreviewToDocument(model: LiveInvoicePreviewModel): Invoic
     terms: model.terms ?? "",
     bankDetails: model.bankLabel ?? "",
     ...(model.documentTitle ? { documentTitle: model.documentTitle } : {}),
+    ...(model.hideTax ? { hideTax: true } : {}),
   };
 }
 
@@ -210,8 +214,9 @@ export function resolveInvoicePreviewContent(props: InvoicePreviewProps): Resolv
     lines,
     billbookLines,
     gstRows:
-      hasLive && doc?.gstRows?.length
-        ? doc.gstRows.map((row) => normalizeGstRow(row))
+      // Live docs with no GST rows (e.g. Bill of Supply) must not fall back to sample rows.
+      hasLive
+        ? (doc?.gstRows ?? []).map((row) => normalizeGstRow(row))
         : GST_ROWS,
     summaryRows,
     totalDisc: doc?.totalDisc ?? SAMPLE.totalDisc,
@@ -225,6 +230,7 @@ export function resolveInvoicePreviewContent(props: InvoicePreviewProps): Resolv
     terms: doc?.terms ?? SAMPLE.terms,
     bankDetails: doc?.bankDetails ?? SAMPLE.bankDetails,
     documentTitle: doc?.documentTitle ?? "TAX INVOICE",
+    hideTax: hasLive ? (doc?.hideTax ?? false) : false,
     dueDateLabel: doc?.dueDateLabel ?? "Due Date",
     hidePaymentSummary: doc?.hidePaymentSummary ?? false,
   };

@@ -10,6 +10,9 @@ import type {
   CreditNoteStatus,
   CreditNoteType,
 } from "@/lib/types/credit-notes-api";
+import { NotFoundError } from "@/lib/api/not-found";
+import { NotFoundState, PdfDownloadButton } from "@/components/dashboard/shared/pdf-download-button";
+import { orgPdfUrl } from "@/lib/print/download-pdf";
 import { useTranslation } from "@/lib/localization";
 import type { TranslationKey } from "@/lib/localization";
 
@@ -82,6 +85,7 @@ export function CreditNoteViewPage({ creditNoteId }: { creditNoteId: string }) {
   const [creditNote, setCreditNote] = useState<CreditNoteDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [notFound, setNotFound] = useState(false);
 
   const load = useCallback(async () => {
     const orgId = activeOrganisationId?.trim();
@@ -92,10 +96,12 @@ export function CreditNoteViewPage({ creditNoteId }: { creditNoteId: string }) {
 
     setLoading(true);
     setError(null);
+    setNotFound(false);
     try {
       const detail = await fetchCreditNoteDetail(orgId, creditNoteId.trim());
       setCreditNote(detail);
     } catch (err) {
+      if (err instanceof NotFoundError) setNotFound(true);
       setCreditNote(null);
       setError(err instanceof Error ? err.message : t("dashboard.creditNotes.view.loadError"));
     } finally {
@@ -111,6 +117,14 @@ export function CreditNoteViewPage({ creditNoteId }: { creditNoteId: string }) {
     return (
       <div className="p-4 lg:p-6">
         <p className="text-sm text-brand-primary-muted">{t("common.pleaseWait")}</p>
+      </div>
+    );
+  }
+
+  if (notFound) {
+    return (
+      <div className="p-4 lg:p-6">
+        <NotFoundState title={t("dashboard.pdfDownload.creditNoteNotFound")} backHref="/dashboard/sales/credit-notes" backLabel={t("dashboard.creditNotes.backToList")} />
       </div>
     );
   }
@@ -147,6 +161,14 @@ export function CreditNoteViewPage({ creditNoteId }: { creditNoteId: string }) {
               {formatDate(creditNote.noteDate)} · {creditNote.partyName}
             </p>
           </div>
+          <PdfDownloadButton
+            url={
+              activeOrganisationId
+                ? orgPdfUrl(`/api/sales/credit-notes/${encodeURIComponent(creditNoteId.trim())}/pdf`, activeOrganisationId)
+                : null
+            }
+            fallbackFilename={`${creditNote.displayNumber}.pdf`}
+          />
           <div className="flex flex-wrap gap-2">
             <TypeBadge noteType={creditNote.noteType} />
             <StatusBadge status={creditNote.status} />

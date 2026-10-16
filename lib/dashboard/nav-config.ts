@@ -39,6 +39,7 @@ export const DASHBOARD_NAV_GROUPS: NavGroupConfig[] = [
     items: [
       { id: "invoices", href: "/dashboard/sales/invoices", icon: "document" },
       { id: "quotations", href: "/dashboard/sales/quotations", icon: "document" },
+      { id: "proforma-invoices", href: "/dashboard/sales/proforma-invoices", icon: "document" },
       { id: "delivery-challan", href: "/dashboard/sales/delivery-challan", icon: "document" },
       { id: "credit-notes", href: "/dashboard/sales/credit-notes", icon: "document" },
       { id: "sales-returns", href: "/dashboard/sales/sales-returns", icon: "sales" },
@@ -95,6 +96,7 @@ export const DASHBOARD_NAV_GROUPS: NavGroupConfig[] = [
       { id: "financial-reports", href: "/dashboard/reports/financial-reports", icon: "chart" },
       { id: "inventory-reports", href: "/dashboard/reports/inventory-reports", icon: "warehouse" },
       { id: "party-reports", href: "/dashboard/reports/party-reports", icon: "parties" },
+      { id: "audit-log", href: "/dashboard/reports/audit-log", icon: "document" },
     ],
   },
   {
@@ -111,9 +113,7 @@ export const DASHBOARD_NAV_GROUPS: NavGroupConfig[] = [
   },
 ];
 
-export const DASHBOARD_NAV_BOTTOM: Omit<DashboardNavLink, "label">[] = [
-  { id: "whatsapp-integration", href: "/dashboard/integrations/whatsapp-integration", icon: "whatsapp" },
-];
+export const DASHBOARD_NAV_BOTTOM: Omit<DashboardNavLink, "label">[] = [];
 
 export const DASHBOARD_SETTINGS_GROUP: NavGroupConfig = {
   id: "settings",

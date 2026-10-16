@@ -47,6 +47,7 @@ export function InvoicePreviewAdvancedGst(props: GstAdvancePreviewProps) {
     embedded = false,
   } = props;
   const content = resolveInvoicePreviewContent(props);
+  const hideTax = content.hideTax;
   const displayName = businessName.toUpperCase() || "MAYANK ELECTRONICS";
   const logoUrl = resolveInvoiceLogoUrl(props);
   const headerTextColor = getHeaderTextColor(accentHex);
@@ -167,7 +168,7 @@ export function InvoicePreviewAdvancedGst(props: GstAdvancePreviewProps) {
                 <col style={{ width: COL.qty }} />
                 <col style={{ width: COL.rate }} />
                 <col style={{ width: COL.disc }} />
-                <col style={{ width: COL.tax }} />
+                {hideTax ? null : <col style={{ width: COL.tax }} />}
                 <col style={{ width: COL.amount }} />
               </colgroup>
               <thead>
@@ -193,9 +194,11 @@ export function InvoicePreviewAdvancedGst(props: GstAdvancePreviewProps) {
                   <th className={`${headerCell("border-t-0 text-right")}`} style={headerStyle}>
                     DISC.
                   </th>
-                  <th className={`${headerCell("border-t-0 text-right")}`} style={headerStyle}>
-                    TAX
-                  </th>
+                  {hideTax ? null : (
+                    <th className={`${headerCell("border-t-0 text-right")}`} style={headerStyle}>
+                      TAX
+                    </th>
+                  )}
                   <th
                     className={`${headerCell("border-t-0 border-r-0 text-right")}`}
                     style={headerStyle}
@@ -225,11 +228,13 @@ export function InvoicePreviewAdvancedGst(props: GstAdvancePreviewProps) {
                       <br />
                       <span style={{ fontSize: "10px" }}>{line.discSub}</span>
                     </td>
-                    <td className={`${VC} text-right`}>
-                      {line.tax}
-                      <br />
-                      <span style={{ fontSize: "10px" }}>{line.taxSub}</span>
-                    </td>
+                    {hideTax ? null : (
+                      <td className={`${VC} text-right`}>
+                        {line.tax}
+                        <br />
+                        <span style={{ fontSize: "10px" }}>{line.taxSub}</span>
+                      </td>
+                    )}
                     <td className={`${VC} border-r-0 text-right`} style={{ fontWeight: 600 }}>
                       {line.amount}
                     </td>
@@ -250,7 +255,7 @@ export function InvoicePreviewAdvancedGst(props: GstAdvancePreviewProps) {
                 <col style={{ width: COL.qty }} />
                 <col style={{ width: COL.rate }} />
                 <col style={{ width: COL.disc }} />
-                <col style={{ width: COL.tax }} />
+                {hideTax ? null : <col style={{ width: COL.tax }} />}
                 <col style={{ width: COL.amount }} />
               </colgroup>
               <tbody className="h-full">
@@ -261,7 +266,7 @@ export function InvoicePreviewAdvancedGst(props: GstAdvancePreviewProps) {
                   <td className={VC} style={{ height: "100%", verticalAlign: "top" }} />
                   <td className={VC} style={{ height: "100%", verticalAlign: "top" }} />
                   <td className={VC} style={{ height: "100%", verticalAlign: "top" }} />
-                  <td className={VC} style={{ height: "100%", verticalAlign: "top" }} />
+                  {hideTax ? null : <td className={VC} style={{ height: "100%", verticalAlign: "top" }} />}
                   <td
                     className={`${VC} border-r-0`}
                     style={{ height: "100%", verticalAlign: "top" }}
@@ -281,7 +286,7 @@ export function InvoicePreviewAdvancedGst(props: GstAdvancePreviewProps) {
                 <col style={{ width: COL.qty }} />
                 <col style={{ width: COL.rate }} />
                 <col style={{ width: COL.disc }} />
-                <col style={{ width: COL.tax }} />
+                {hideTax ? null : <col style={{ width: COL.tax }} />}
                 <col style={{ width: COL.amount }} />
               </colgroup>
               <tbody>
@@ -293,15 +298,17 @@ export function InvoicePreviewAdvancedGst(props: GstAdvancePreviewProps) {
                   <td className={`${SB} border-t text-right`} style={{ fontWeight: 700 }}>
                     {fmtRupee(content.totalDisc)}
                   </td>
-                  <td className={`${SB} border-t text-right`} style={{ fontWeight: 700 }}>
-                    {fmtRupee(content.totalTax)}
-                  </td>
+                  {hideTax ? null : (
+                    <td className={`${SB} border-t text-right`} style={{ fontWeight: 700 }}>
+                      {fmtRupee(content.totalTax)}
+                    </td>
+                  )}
                   <td className={`${SBR} border-t text-right`} style={{ fontWeight: 700 }}>
                     {fmtRupee(content.totalAmount)}
                   </td>
                 </tr>
                 <tr>
-                  <td className={SBL} colSpan={7} style={{ textAlign: "right", fontWeight: 700 }}>
+                  <td className={SBL} colSpan={hideTax ? 6 : 7} style={{ textAlign: "right", fontWeight: 700 }}>
                     TOTAL
                   </td>
                   <td className={`${SBR} text-right`} style={{ fontWeight: 700 }}>
@@ -310,7 +317,7 @@ export function InvoicePreviewAdvancedGst(props: GstAdvancePreviewProps) {
                 </tr>
                 {!content.hidePaymentSummary && (
                   <tr>
-                    <td className={SBL} colSpan={7} style={{ textAlign: "right" }}>
+                    <td className={SBL} colSpan={hideTax ? 6 : 7} style={{ textAlign: "right" }}>
                       RECEIVED AMOUNT
                     </td>
                     <td className={`${SBR} text-right`}>{fmtRupee(content.receivedAmount)}</td>
@@ -318,7 +325,7 @@ export function InvoicePreviewAdvancedGst(props: GstAdvancePreviewProps) {
                 )}
                 {showPartyBalance && !content.hidePaymentSummary && (
                   <tr>
-                    <td className={SBL} colSpan={7} style={{ textAlign: "right" }}>
+                    <td className={SBL} colSpan={hideTax ? 6 : 7} style={{ textAlign: "right" }}>
                       PREVIOUS BALANCE
                     </td>
                     <td className={`${SBR} text-right`}>{fmtRupee(content.previousBalance)}</td>
@@ -326,7 +333,7 @@ export function InvoicePreviewAdvancedGst(props: GstAdvancePreviewProps) {
                 )}
                 {!content.hidePaymentSummary && (
                   <tr>
-                    <td className={SBL} colSpan={7} style={{ textAlign: "right", fontWeight: 700 }}>
+                    <td className={SBL} colSpan={hideTax ? 6 : 7} style={{ textAlign: "right", fontWeight: 700 }}>
                       CURRENT BALANCE
                     </td>
                     <td className={`${SBR} text-right`} style={{ fontWeight: 700 }}>

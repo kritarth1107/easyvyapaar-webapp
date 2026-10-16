@@ -9,9 +9,14 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "organisationId is required" }, { status: 400 });
     }
 
+    const invoiceType = new URL(request.url).searchParams.get("invoiceType")?.trim();
+    const typeQuery =
+      invoiceType && ["gst_invoice", "cash_memo", "bill_of_supply"].includes(invoiceType)
+        ? `?invoiceType=${encodeURIComponent(invoiceType)}`
+        : "";
     const { response, body } = await proxySalesBackend(
       request,
-      `sales/organisations/${encodeURIComponent(organisationId)}/invoices/next-number`,
+      `sales/organisations/${encodeURIComponent(organisationId)}/invoices/next-number${typeQuery}`,
       { method: "GET" },
     );
 

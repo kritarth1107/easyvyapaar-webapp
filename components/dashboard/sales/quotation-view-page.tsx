@@ -1,5 +1,6 @@
 "use client";
 
+import { saveErrorMessage } from "@/lib/api/conflict";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { InvoiceSettingsPreview } from "@/components/dashboard/sales/invoice-settings-preview";
@@ -26,10 +27,15 @@ import {
   type StoredSalesInvoiceSettings,
 } from "@/lib/sales/invoice-settings-config";
 import { printInvoiceElement, triggerInvoiceSavePdf } from "@/lib/sales/print-invoice";
-import { fetchQuotationDetail } from "@/lib/sales/quotations-api-client";
+import { quotationLikeApi, type QuotationLikeKind } from "@/lib/sales/sales-doc-kind";
+import { deleteProforma, updateProforma } from "@/lib/sales/proformas-api-client";
+import { ConvertProformaDialog } from "@/components/dashboard/sales/convert-proforma-dialog";
+import { useRouter } from "next/navigation";
 import { fetchSalesInvoiceSettings } from "@/lib/sales/sales-invoice-settings-api-client";
 import type { QuotationDetail, QuotationStatus } from "@/lib/types/quotations-api";
 import type { PartyDetail } from "@/lib/types/parties-api";
+import { PdfDownloadButton } from "@/components/dashboard/shared/pdf-download-button";
+import { orgPdfUrl } from "@/lib/print/download-pdf";
 import { useTranslation } from "@/lib/localization";
 
 function BackIcon() {
@@ -55,6 +61,7 @@ function StatusBadge({ status }: { status: QuotationStatus }) {
     rejected: "bg-red-50 text-red-800 ring-red-600/15",
     expired: "bg-amber-50 text-amber-900 ring-amber-600/15",
     converted: "bg-violet-50 text-violet-800 ring-violet-600/15",
+    cancelled: "bg-red-50 text-red-800 ring-red-600/15",
   };
   const labels: Record<QuotationStatus, string> = {
     draft: t("dashboard.quotations.statusDraft"),
@@ -63,6 +70,7 @@ function StatusBadge({ status }: { status: QuotationStatus }) {
     rejected: t("dashboard.quotations.statusRejected"),
     expired: t("dashboard.quotations.statusExpired"),
     converted: t("dashboard.quotations.statusConverted"),
+    cancelled: t("dashboard.proformas.statusCancelled"),
   };
 
   return (
@@ -85,8 +93,19 @@ function partyDetailToSelected(party: PartyDetail): SelectedInvoiceParty {
   };
 }
 
-export function QuotationViewPage({ quotationId }: { quotationId: string }) {
+export function QuotationViewPage({
+  quotationId,
+  kind = "quotation",
+}: {
+  quotationId: string;
+  kind?: QuotationLikeKind;
+}) {
   const { t } = useTranslation();
+  const router = useRouter();
+  const docApi = useMemo(() => quotationLikeApi(kind), [kind]);
+  const isProforma = kind === "proforma";
+  const [convertOpen, setConvertOpen] = useState(false);
+  const [statusBusy, setStatusBusy] = useState(false);
   const { activeOrganisation, activeOrganisationId } = useUserMe();
   const businessName = activeOrganisation?.name ?? "Your Business";
   const printAreaRef = useRef<HTMLDivElement>(null);
@@ -118,7 +137,7 @@ export function QuotationViewPage({ quotationId }: { quotationId: string }) {
     setError(null);
     try {
       const [quotationDetail, settings, profile] = await Promise.all([
-        fetchQuotationDetail(orgId, quotationId.trim()),
+        docApi.fetchDetail(orgId, quotationId.trim()),
         fetchSalesInvoiceSettings(orgId).catch(() => DEFAULT_STORED_SALES_INVOICE_SETTINGS),
         fetchBusinessProfile(orgId).catch(() => null),
       ]);
@@ -151,7 +170,7 @@ export function QuotationViewPage({ quotationId }: { quotationId: string }) {
     } finally {
       setLoading(false);
     }
-  }, [activeOrganisation?.gstNumber, activeOrganisation?.pan, activeOrganisationId, quotationId, t]);
+  }, [activeOrganisation?.gstNumber, activeOrganisation?.pan, activeOrganisationId, quotationId, t, docApi]);
 
   useEffect(() => {
     void loadQuotation();
@@ -159,14 +178,45 @@ export function QuotationViewPage({ quotationId }: { quotationId: string }) {
 
   const previewModel = useMemo(() => {
     if (!quotation) return null;
-    return buildLiveQuotationPreviewFromDetail(quotation, businessName, organisationSnapshot, party);
-  }, [quotation, businessName, organisationSnapshot, party]);
+    const model = buildLiveQuotationPreviewFromDetail(quotation, businessName, organisationSnapshot, party);
+    return isProforma ? { ...model, documentTitle: "PROFORMA INVOICE" } : model;
+  }, [quotation, businessName, organisationSnapshot, party, isProforma]);
 
   const themeLabel =
     INVOICE_THEME_CARDS.find((theme) => theme.id === storedSettings.themeId)?.label ??
     storedSettings.themeId;
 
-  const printTitle = quotation ? `Quotation ${quotation.displayNumber}` : "Quotation";
+  const docWord = isProforma ? "Proforma Invoice" : "Quotation";
+  const printTitle = quotation ? `${docWord} ${quotation.displayNumber}` : docWord;
+
+  const removeProforma = async () => {
+    const orgId = activeOrganisationId?.trim();
+    if (!orgId || !quotation) return;
+    if (!window.confirm(t("dashboard.proformas.deleteConfirm"))) return;
+    setStatusBusy(true);
+    try {
+      await deleteProforma(orgId, quotation.quotationId);
+      router.push(docApi.basePath);
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : t("dashboard.proformas.deleteError"));
+      setStatusBusy(false);
+    }
+  };
+
+  const setProformaStatus = async (status: "draft" | "sent" | "cancelled") => {
+    if (status === quotation?.status) return;
+    const orgId = activeOrganisationId?.trim();
+    if (!orgId || !quotation) return;
+    if (status === "cancelled" && !window.confirm(t("dashboard.proformas.cancelConfirm"))) return;
+    setStatusBusy(true);
+    try {
+      setQuotation(await updateProforma(orgId, quotation.quotationId, { status }));
+    } catch (err) {
+      window.alert(saveErrorMessage(err, t, t("dashboard.proformas.statusError")));
+    } finally {
+      setStatusBusy(false);
+    }
+  };
   const printOptions = {
     documentTitle: printTitle,
     pageSize: resolveInvoicePageSizeFromTheme(storedSettings.themeId),
@@ -227,7 +277,7 @@ export function QuotationViewPage({ quotationId }: { quotationId: string }) {
       <div className="flex min-h-full flex-col items-center justify-center gap-4 p-8">
         <p className="text-sm text-red-600">{error ?? t("dashboard.quotations.view.loadError")}</p>
         <Link
-          href="/dashboard/sales/quotations"
+          href={docApi.basePath}
           className="text-sm font-semibold text-brand-primary hover:underline"
         >
           {t("dashboard.quotations.backToList")}
@@ -242,7 +292,7 @@ export function QuotationViewPage({ quotationId }: { quotationId: string }) {
         <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 lg:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <Link
-              href="/dashboard/sales/quotations"
+              href={docApi.basePath}
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm border border-slate-200/90 text-brand-primary transition-colors hover:bg-slate-50"
               aria-label={t("common.back")}
             >
@@ -251,21 +301,78 @@ export function QuotationViewPage({ quotationId }: { quotationId: string }) {
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="truncate text-lg font-bold text-brand-primary lg:text-xl">
-                  {t("dashboard.quotations.view.title").replace("{number}", quotation.displayNumber)}
+                  {(isProforma ? t("dashboard.proformas.viewTitle") : t("dashboard.quotations.view.title")).replace(
+                    "{number}",
+                    quotation.displayNumber,
+                  )}
                 </h1>
                 <StatusBadge status={quotation.status} />
+                {quotation.convertedInvoiceId ? (
+                  <Link
+                    href={`/dashboard/sales/invoices/${encodeURIComponent(quotation.convertedInvoiceId)}`}
+                    className="text-xs font-semibold text-violet-700 hover:underline"
+                  >
+                    {t("dashboard.proformas.viewConvertedInvoice")} →
+                  </Link>
+                ) : null}
               </div>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            {quotation.status !== "converted" ? (
+            {isProforma && quotation.status !== "converted" ? (
+              <>
+                {quotation.status !== "cancelled" ? (
+                  <button
+                    type="button"
+                    onClick={() => setConvertOpen(true)}
+                    className="inline-flex h-10 items-center rounded-sm border border-violet-200 bg-violet-50 px-4 text-sm font-semibold text-violet-800 hover:bg-violet-100"
+                  >
+                    {t("dashboard.proformas.convertCta")}
+                  </button>
+                ) : null}
+                <label className="inline-flex h-10 items-center gap-2 rounded-sm border border-slate-200/90 bg-white px-3 text-sm font-semibold text-brand-primary">
+                  <span className="text-xs text-brand-primary-muted">{t("dashboard.proformas.statusLabel")}</span>
+                  <select
+                    value={quotation.status === "sent" || quotation.status === "cancelled" ? quotation.status : "draft"}
+                    disabled={statusBusy}
+                    onChange={(e) => void setProformaStatus(e.target.value as "draft" | "sent" | "cancelled")}
+                    className="bg-transparent text-sm outline-none disabled:opacity-60"
+                  >
+                    <option value="draft">{t("dashboard.proformas.statusDraft")}</option>
+                    <option value="sent">{t("dashboard.proformas.statusSent")}</option>
+                    <option value="cancelled">{t("dashboard.proformas.statusCancelled")}</option>
+                  </select>
+                </label>
+                <button
+                  type="button"
+                  disabled={statusBusy}
+                  onClick={() => void removeProforma()}
+                  className="inline-flex h-10 items-center rounded-sm border border-red-200 bg-white px-4 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60"
+                >
+                  {t("dashboard.proformas.delete")}
+                </button>
+              </>
+            ) : null}
+            <PdfDownloadButton
+              url={
+                activeOrganisationId
+                  ? orgPdfUrl(
+                      `/api/sales/${isProforma ? "proformas" : "quotations"}/${encodeURIComponent(quotation.quotationId)}/pdf`,
+                      activeOrganisationId,
+                    )
+                  : null
+              }
+              fallbackFilename={`${quotation.displayNumber}.pdf`}
+            />
+            {quotation.status !== "converted" && quotation.status !== "cancelled" ? (
               <Link
-                href={`/dashboard/sales/quotations/${encodeURIComponent(quotation.quotationId)}/edit`}
+                href={`${docApi.basePath}/${encodeURIComponent(quotation.quotationId)}/edit`}
                 className="inline-flex h-10 items-center rounded-sm border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50"
               >
                 {t("dashboard.quotations.view.edit")}
               </Link>
             ) : null}
+            {isProforma ? null : (
             <button
               type="button"
               onClick={() => setSendModalOpen(true)}
@@ -273,6 +380,7 @@ export function QuotationViewPage({ quotationId }: { quotationId: string }) {
             >
               {t("dashboard.quotations.view.send")}
             </button>
+            )}
             <button
               type="button"
               onClick={() => printInvoiceElement(printAreaRef.current, printOptions)}
@@ -296,6 +404,21 @@ export function QuotationViewPage({ quotationId }: { quotationId: string }) {
           <InvoiceSettingsPreview {...previewProps} />
         </div>
       </div>
+
+      {isProforma && convertOpen && activeOrganisationId ? (
+        <ConvertProformaDialog
+          open={convertOpen}
+          onClose={() => setConvertOpen(false)}
+          organisationId={activeOrganisationId}
+          proforma={quotation}
+          onConverted={({ proforma, invoice }) => {
+            setQuotation(proforma);
+            setConvertOpen(false);
+            const invoiceId = invoice?.invoiceId ?? proforma.convertedInvoiceId;
+            if (invoiceId) router.push(`/dashboard/sales/invoices/${encodeURIComponent(invoiceId)}`);
+          }}
+        />
+      ) : null}
 
       {shareInput ? (
         <QuotationSendModal

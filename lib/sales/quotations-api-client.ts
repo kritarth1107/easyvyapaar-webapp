@@ -1,3 +1,4 @@
+import { throwIfConflict } from "@/lib/api/conflict";
 import {
   extractBackendError,
   normalizeNextQuotationNumber,
@@ -87,6 +88,7 @@ export async function updateQuotation(
     },
   );
   const body = await parseJsonResponse(res);
+  throwIfConflict(res, extractBackendError(body));
   if (!res.ok) {
     throw new Error(extractBackendError(body) ?? "Failed to update quotation");
   }

@@ -50,6 +50,7 @@ export const PERMISSION_LABEL_KEYS: Record<Permission, TranslationKey> = {
   "reports.read": "dashboard.teamSettings.permissions.reportsRead",
   "staff.read": "dashboard.teamSettings.permissions.staffRead",
   "staff.write": "dashboard.teamSettings.permissions.staffWrite",
+  "audit.read": "dashboard.auditLog.permissionLabel",
 };
 
 const ROLE_BADGE_CLASS: Record<UserRole, string> = {

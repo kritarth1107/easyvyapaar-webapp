@@ -5,6 +5,9 @@ import { useCallback, useEffect, useState } from "react";
 import { useUserMe } from "@/components/providers/user-me-provider";
 import { fetchFinancePaymentDetail } from "@/lib/finance/finance-payments-api-client";
 import type { FinancePaymentDetail, FinancePaymentMode, FinancePaymentType } from "@/lib/types/finance-payments-api";
+import { NotFoundError } from "@/lib/api/not-found";
+import { NotFoundState, PdfDownloadButton } from "@/components/dashboard/shared/pdf-download-button";
+import { orgPdfUrl } from "@/lib/print/download-pdf";
 import { useTranslation } from "@/lib/localization";
 import type { TranslationKey } from "@/lib/localization";
 
@@ -57,6 +60,7 @@ export function PaymentViewPage({ paymentId }: { paymentId: string }) {
   const [payment, setPayment] = useState<FinancePaymentDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [notFound, setNotFound] = useState(false);
 
   const load = useCallback(async () => {
     const orgId = activeOrganisationId?.trim();
@@ -67,10 +71,12 @@ export function PaymentViewPage({ paymentId }: { paymentId: string }) {
 
     setLoading(true);
     setError(null);
+    setNotFound(false);
     try {
       const detail = await fetchFinancePaymentDetail(orgId, paymentId.trim());
       setPayment(detail);
     } catch (err) {
+      if (err instanceof NotFoundError) setNotFound(true);
       setPayment(null);
       setError(err instanceof Error ? err.message : t("dashboard.financePayments.view.loadError"));
     } finally {
@@ -86,6 +92,14 @@ export function PaymentViewPage({ paymentId }: { paymentId: string }) {
     return (
       <div className="p-4 lg:p-6">
         <p className="text-sm text-brand-primary-muted">{t("common.pleaseWait")}</p>
+      </div>
+    );
+  }
+
+  if (notFound) {
+    return (
+      <div className="p-4 lg:p-6">
+        <NotFoundState title={t("dashboard.pdfDownload.paymentNotFound")} backHref="/dashboard/finance/payments" backLabel={t("dashboard.financePayments.backToList")} />
       </div>
     );
   }
@@ -122,6 +136,14 @@ export function PaymentViewPage({ paymentId }: { paymentId: string }) {
               {formatDate(payment.paymentDate)} · {payment.partyName}
             </p>
           </div>
+          <PdfDownloadButton
+            url={
+              activeOrganisationId
+                ? orgPdfUrl(`/api/finance/payments/${encodeURIComponent(paymentId.trim())}/pdf`, activeOrganisationId)
+                : null
+            }
+            fallbackFilename={`${payment.displayNumber}.pdf`}
+          />
           <TypeBadge paymentType={payment.paymentType} />
         </div>
       </div>

@@ -22,6 +22,7 @@ import {
 } from "@/lib/inventory/item-detail-utils";
 import type { InventoryItemDetail, InventoryStockAdjustment } from "@/lib/types/inventory-api";
 import { useTranslation } from "@/lib/localization";
+import { DocumentHistoryPanel } from "@/components/dashboard/reports/audit-log-list";
 
 type InventoryItemDetailPageProps = {
   itemId: string;
@@ -653,6 +654,8 @@ export function InventoryItemDetailPage({ itemId }: InventoryItemDetailPageProps
               )}
             </SectionCard>
           </div>
+
+          <DocumentHistoryPanel entityType="inventory_item" entityId={itemId} />
 
           {activeOrganisationId &&
             (item.serialised ? (

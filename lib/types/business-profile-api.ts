@@ -26,6 +26,8 @@ export type OrganisationProfile = {
   enableTCS?: boolean;
   enableEInvoicing?: boolean;
   enableEWayBill?: boolean;
+  /** GST registration scheme; composition dealers issue Bills of Supply. */
+  gstScheme?: "regular" | "composition";
   additionalDetails?: OrganisationAdditionalDetail[];
   registrationNumber?: string;
   gstin?: string;

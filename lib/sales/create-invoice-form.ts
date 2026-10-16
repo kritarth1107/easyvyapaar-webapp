@@ -95,7 +95,20 @@ export type InvoiceSettings = {
   theme: string;
 };
 
-export type SalesInvoiceDocumentType = "gst_invoice" | "cash_memo";
+export type SalesInvoiceDocumentType = "gst_invoice" | "cash_memo" | "bill_of_supply";
+
+/** Bill of Supply carries no tax (backend forces 0%): zero GST on every line and charge. */
+export function enforceInvoiceTypeRules(form: CreateInvoiceFormState): CreateInvoiceFormState {
+  if (form.invoiceType !== "bill_of_supply") return form;
+  const linesTaxed = form.lineItems.some((line) => line.gstPercent !== 0);
+  const chargesTaxed = form.additionalCharges.some((row) => row.taxPercent !== 0);
+  if (!linesTaxed && !chargesTaxed) return form;
+  return {
+    ...form,
+    lineItems: form.lineItems.map((line) => (line.gstPercent === 0 ? line : { ...line, gstPercent: 0 })),
+    additionalCharges: form.additionalCharges.map((row) => (row.taxPercent === 0 ? row : { ...row, taxPercent: 0 })),
+  };
+}
 
 export type CreateInvoiceFormState = {
   partyId: string | null;

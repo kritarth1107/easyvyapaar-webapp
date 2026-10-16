@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { extractBackendError, normalizeSalesInvoiceDetailResponse } from "@/lib/api/sales";
 import { proxySalesBackend, requireOrganisationId } from "@/lib/api/sales-proxy";
+import { forwardOrganisationRequest } from "@/lib/api/passthrough-route";
 
 type RouteContext = {
   params: Promise<{ invoiceId: string }>;
@@ -42,4 +43,14 @@ export async function GET(request: Request, context: RouteContext) {
     console.error("Sales invoice detail error:", error);
     return NextResponse.json({ error: "Failed to load invoice" }, { status: 500 });
   }
+}
+
+/** Edit an unpaid invoice with no IRN, E-Way Bill or returns; backend answers 422 otherwise. */
+export async function PATCH(request: Request, context: RouteContext) {
+  const { invoiceId } = await context.params;
+  return forwardOrganisationRequest(request, {
+    scope: "sales",
+    path: `invoices/${encodeURIComponent(invoiceId.trim())}`,
+    errorMessage: "Failed to update invoice",
+  });
 }

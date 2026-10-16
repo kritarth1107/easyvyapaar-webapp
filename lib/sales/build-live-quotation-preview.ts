@@ -31,7 +31,7 @@ type BuildPreviewInput = {
 function stripPaymentFromModel(model: LiveInvoicePreviewModel): LiveInvoicePreviewModel {
   return {
     ...model,
-    summaryRows: model.summaryRows.filter((row) => row.label !== "Received Amount"),
+    summaryRows: model.summaryRows.filter((row) => row.key !== "receivedAmount"),
     amountReceived: "₹ 0",
     balanceAmount: "₹ 0",
     paymentMode: "",

@@ -1,3 +1,4 @@
+import { buildContentDisposition, parseContentDispositionFilename } from "@/lib/print/content-disposition";
 import { NextResponse } from "next/server";
 import { extractBackendError } from "@/lib/api/purchases";
 import { getApiBaseUrl } from "@/lib/api/backend";
@@ -50,7 +51,7 @@ export async function GET(request: Request, context: RouteContext) {
       headers: {
         "Content-Type": "application/pdf",
         "Cache-Control": "private, max-age=300",
-        ...(disposition ? { "Content-Disposition": disposition } : {}),
+        "Content-Disposition": buildContentDisposition(parseContentDispositionFilename(disposition) ?? "purchase-bill.pdf"),
       },
     });
   } catch (error) {

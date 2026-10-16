@@ -1,3 +1,4 @@
+import type { PaymentHistoryEntry } from "@/lib/api/payment-history";
 export type PurchasePaymentStatus = "paid" | "partial" | "pending" | "unpaid";
 export type PurchaseBillStatus = "draft" | "completed" | "cancelled";
 export type PurchaseOrderStatus = "draft" | "open" | "partial" | "received" | "cancelled";
@@ -74,6 +75,21 @@ export type PurchaseBillDetail = PurchaseBillSummary & {
   discountTiming: PurchaseDiscountTiming;
   autoRoundOff: boolean;
   roundOffAmount: number;
+  /** Server-computed bill-level totals (0 when absent on older bills). */
+  additionalChargesTotal: number;
+  additionalChargesTax: number;
+  discountAmount: number;
+  totalBeforeRound?: number;
+  /** TDS (Income-tax) deducted at source; netPayable = totalAmount − tdsAmount. */
+  tdsSection?: string;
+  tdsRate: number;
+  tdsBaseAmount: number;
+  tdsBaseOverridden: boolean;
+  tdsAmount: number;
+  netPayable: number;
+  /** Gross of completed purchase returns; netPayable is already reduced. */
+  returnedAmount?: number;
+  paymentHistory?: PaymentHistoryEntry[];
   createdByUserId: string;
   updatedByUserId?: string;
   createdAt: string;
@@ -116,6 +132,10 @@ export type PurchaseReturnSummary = {
   partyName: string;
   returnDate: string;
   totalAmount: number;
+  /** TDS released back on this return (bill TDS pro-rated). */
+  tdsReversed: number;
+  /** totalAmount − tdsReversed: what the supplier balance actually drops by. */
+  netReturnAmount: number;
   status: PurchaseReturnStatus;
 };
 
@@ -203,6 +223,16 @@ export type CreatePurchaseBillRequest = {
   }>;
   paidAmount?: number;
   paymentMode?: PurchasePaymentMode;
+  tds?: PurchaseBillTdsInput | null;
+};
+
+export const PURCHASE_TDS_SECTIONS = ["194C", "194H", "194I", "194J", "194Q", "194A", "194O", "other"] as const;
+export type PurchaseTdsSection = (typeof PURCHASE_TDS_SECTIONS)[number];
+export type PurchaseBillTdsInput = {
+  section: PurchaseTdsSection;
+  sectionLabel?: string;
+  rate: number;
+  baseAmount?: number;
 };
 
 export type CreatePurchaseOrderRequest = {
@@ -231,7 +261,7 @@ export type CreatePurchaseReturnRequest = {
     hsn?: string;
     qty: number;
     unit?: string;
-    pricePerItem: number;
+    pricePerItem?: number;
     discount?: number;
     discountType?: "percent" | "amount";
     gstPercent?: number;
@@ -269,4 +299,5 @@ export type UpdatePurchaseBillRequest = {
   discountTiming?: PurchaseDiscountTiming;
   autoRoundOff?: boolean;
   roundOffAmount?: number;
+  tds?: PurchaseBillTdsInput | null;
 };

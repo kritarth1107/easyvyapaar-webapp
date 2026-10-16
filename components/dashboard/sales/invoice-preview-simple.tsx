@@ -34,6 +34,7 @@ export function InvoicePreviewSimple(props: InvoicePreviewProps) {
     embedded = false,
   } = props;
   const content = resolveInvoicePreviewContent(props);
+  const hideTax = content.hideTax;
   const displayName = businessName.toUpperCase() || "MAYANK ELECTRONICS";
   const logoUrl = resolveInvoiceLogoUrl(props);
   const headerTextColor = getHeaderTextColor(accentHex);
@@ -137,12 +138,12 @@ export function InvoicePreviewSimple(props: InvoicePreviewProps) {
               <col style={{ width: COL.qty }} />
               <col style={{ width: COL.rate }} />
               <col style={{ width: COL.disc }} />
-              <col style={{ width: COL.tax }} />
+              {hideTax ? null : <col style={{ width: COL.tax }} />}
               <col style={{ width: COL.amount }} />
             </colgroup>
             <thead>
               <tr style={barStyle}>
-                {(["S.NO.", "ITEMS", "HSN", "QTY.", "RATE", "DISC.", "TAX", "AMOUNT"] as const).map(
+                {(["S.NO.", "ITEMS", "HSN", "QTY.", "RATE", "DISC.", "TAX", "AMOUNT"] as const).filter((h) => !(hideTax && h === "TAX")).map(
                   (h, i) => (
                     <th
                       key={h}
@@ -181,11 +182,13 @@ export function InvoicePreviewSimple(props: InvoicePreviewProps) {
                     <br />
                     <span style={{ fontSize: "9px", color: "#666" }}>{line.discSub}</span>
                   </td>
-                  <td className="border-b border-black px-2 py-2 text-right">
-                    {line.tax}
-                    <br />
-                    <span style={{ fontSize: "9px", color: "#666" }}>{line.taxSub}</span>
-                  </td>
+                  {hideTax ? null : (
+                    <td className="border-b border-black px-2 py-2 text-right">
+                      {line.tax}
+                      <br />
+                      <span style={{ fontSize: "9px", color: "#666" }}>{line.taxSub}</span>
+                    </td>
+                  )}
                   <td className="border-b border-black px-2 py-2 text-right font-semibold">
                     {line.amount}
                   </td>
@@ -199,7 +202,9 @@ export function InvoicePreviewSimple(props: InvoicePreviewProps) {
                 </td>
                 <td className="px-2 py-1.5" />
                 <td className="px-2 py-1.5 text-right font-bold">{fmtRupee(content.totalDisc)}</td>
-                <td className="px-2 py-1.5 text-right font-bold">{fmtRupee(content.totalTax)}</td>
+                {hideTax ? null : (
+                  <td className="px-2 py-1.5 text-right font-bold">{fmtRupee(content.totalTax)}</td>
+                )}
                 <td className="px-2 py-1.5 text-right font-bold">{fmtRupee(content.totalAmount)}</td>
               </tr>
             </tfoot>

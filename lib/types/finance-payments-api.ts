@@ -8,7 +8,8 @@ export type PaymentActivitySourceType =
   | "sales_return_refund"
   | "credit_note_refund"
   | "purchase_payment"
-  | "expense";
+  | "expense"
+  | "payment_reversal";
 
 export type FinancePaymentAllocation = {
   invoiceId: string;
@@ -32,6 +33,8 @@ export type FinancePaymentSummary = {
   unallocatedAmount: number;
   invoiceId?: string;
   invoiceDisplayNumber?: string;
+  purchaseBillId?: string;
+  purchaseBillDisplayNumber?: string;
   grossAmount?: number;
   refundedAmount?: number;
   netAmount?: number;
@@ -68,8 +71,12 @@ export type FinancePaymentListParams = {
   limit?: number;
 };
 
+export type FinancePaymentTotals = { totalIn: number; totalOut: number; net: number };
+
 export type FinancePaymentListResponse = {
   items: FinancePaymentSummary[];
+  /** Totals across the full filtered set (not just this page). */
+  totals?: FinancePaymentTotals;
   pagination: {
     page: number;
     limit: number;

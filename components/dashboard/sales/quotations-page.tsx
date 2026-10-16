@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUserMe } from "@/components/providers/user-me-provider";
 import { ModernSelect } from "@/components/ui/modern-select";
-import { fetchQuotations } from "@/lib/sales/quotations-api-client";
+import { quotationLikeApi, type QuotationLikeKind } from "@/lib/sales/sales-doc-kind";
 import type { QuotationStatus, QuotationSummary } from "@/lib/types/quotations-api";
 import { useTranslation } from "@/lib/localization";
 
@@ -52,6 +52,7 @@ function StatusBadge({ status }: { status: QuotationStatus }) {
     rejected: "bg-red-50 text-red-800 ring-red-600/15",
     expired: "bg-amber-50 text-amber-900 ring-amber-600/15",
     converted: "bg-violet-50 text-violet-800 ring-violet-600/15",
+    cancelled: "bg-red-50 text-red-800 ring-red-600/15",
   };
   const labels: Record<QuotationStatus, string> = {
     draft: t("dashboard.quotations.statusDraft"),
@@ -60,6 +61,7 @@ function StatusBadge({ status }: { status: QuotationStatus }) {
     rejected: t("dashboard.quotations.statusRejected"),
     expired: t("dashboard.quotations.statusExpired"),
     converted: t("dashboard.quotations.statusConverted"),
+    cancelled: t("dashboard.proformas.statusCancelled"),
   };
 
   return (
@@ -69,8 +71,10 @@ function StatusBadge({ status }: { status: QuotationStatus }) {
   );
 }
 
-export function QuotationsPage() {
+export function QuotationsPage({ kind = "quotation" }: { kind?: QuotationLikeKind } = {}) {
   const { t } = useTranslation();
+  const docApi = useMemo(() => quotationLikeApi(kind), [kind]);
+  const isProforma = kind === "proforma";
   const { activeOrganisationId } = useUserMe();
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<string>("all");
@@ -87,7 +91,7 @@ export function QuotationsPage() {
     setLoading(true);
     setLoadError(null);
     try {
-      const data = await fetchQuotations(orgId, {
+      const data = await docApi.fetchList(orgId, {
         status: status as QuotationStatus | "all",
         search: query.trim() || undefined,
         limit: 100,
@@ -100,7 +104,7 @@ export function QuotationsPage() {
     } finally {
       setLoading(false);
     }
-  }, [activeOrganisationId, query, status, t]);
+  }, [activeOrganisationId, query, status, t, docApi]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -131,19 +135,21 @@ export function QuotationsPage() {
     <div className="p-4 lg:p-6">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-sm font-medium text-brand-primary-muted">{t("dashboard.quotations.subtitle")}</p>
+          <p className="text-sm font-medium text-brand-primary-muted">
+            {isProforma ? t("dashboard.proformas.subtitle") : t("dashboard.quotations.subtitle")}
+          </p>
           <h2 className="mt-1 text-xl font-bold tracking-tight text-brand-primary lg:text-2xl">
-            {t("dashboard.nav.quotations")}
+            {isProforma ? t("dashboard.proformas.navLabel") : t("dashboard.nav.quotations")}
           </h2>
         </div>
         <Link
-          href="/dashboard/sales/quotations/new"
+          href={`${docApi.basePath}/new`}
           className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-gradient-to-r from-brand-primary to-brand-primary-light px-4 text-sm font-semibold text-white shadow-[0_2px_10px_-4px_rgba(3,31,73,0.45)] transition-all hover:brightness-110"
         >
           <span aria-hidden className="text-lg leading-none">
             +
           </span>
-          {t("dashboard.quotations.createNew")}
+          {isProforma ? t("dashboard.proformas.createNew") : t("dashboard.quotations.createNew")}
         </Link>
       </div>
 
@@ -178,10 +184,17 @@ export function QuotationsPage() {
                 { value: "all", label: t("dashboard.quotations.allStatuses") },
                 { value: "draft", label: t("dashboard.quotations.statusDraft") },
                 { value: "sent", label: t("dashboard.quotations.statusSent") },
-                { value: "accepted", label: t("dashboard.quotations.statusAccepted") },
-                { value: "rejected", label: t("dashboard.quotations.statusRejected") },
-                { value: "expired", label: t("dashboard.quotations.statusExpired") },
-                { value: "converted", label: t("dashboard.quotations.statusConverted") },
+                ...(isProforma
+                  ? [
+                      { value: "converted", label: t("dashboard.quotations.statusConverted") },
+                      { value: "cancelled", label: t("dashboard.proformas.statusCancelled") },
+                    ]
+                  : [
+                      { value: "accepted", label: t("dashboard.quotations.statusAccepted") },
+                      { value: "rejected", label: t("dashboard.quotations.statusRejected") },
+                      { value: "expired", label: t("dashboard.quotations.statusExpired") },
+                      { value: "converted", label: t("dashboard.quotations.statusConverted") },
+                    ]),
               ]}
               aria-label={t("dashboard.quotations.filterStatus")}
             />
@@ -221,7 +234,7 @@ export function QuotationsPage() {
                 </tr>
               ) : (
                 quotations.map((quotation) => (
-                  <QuotationRow key={quotation.quotationId} quotation={quotation} />
+                  <QuotationRow key={quotation.quotationId} quotation={quotation} basePath={docApi.basePath} />
                 ))
               )}
             </tbody>
@@ -232,9 +245,9 @@ export function QuotationsPage() {
   );
 }
 
-function QuotationRow({ quotation }: { quotation: QuotationSummary }) {
+function QuotationRow({ quotation, basePath }: { quotation: QuotationSummary; basePath: string }) {
   const router = useRouter();
-  const href = `/dashboard/sales/quotations/${encodeURIComponent(quotation.quotationId)}`;
+  const href = `${basePath}/${encodeURIComponent(quotation.quotationId)}`;
 
   const openQuotation = () => {
     router.push(href);

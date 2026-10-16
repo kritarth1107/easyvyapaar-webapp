@@ -1,5 +1,6 @@
 "use client";
 
+import { saveErrorMessage } from "@/lib/api/conflict";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useUserMe } from "@/components/providers/user-me-provider";
@@ -9,6 +10,8 @@ import {
 } from "@/lib/sales/delivery-challans-api-client";
 import { canCancelChallan, nextStatusForAction } from "@/lib/sales/map-create-delivery-challan-request";
 import type { DeliveryChallanDetail, DeliveryChallanStatus } from "@/lib/types/delivery-challans-api";
+import { PdfDownloadButton } from "@/components/dashboard/shared/pdf-download-button";
+import { orgPdfUrl } from "@/lib/print/download-pdf";
 import { useTranslation } from "@/lib/localization";
 
 function formatDate(iso: string): string {
@@ -85,7 +88,7 @@ export function DeliveryChallanViewPage({ deliveryChallanId }: { deliveryChallan
       });
       setChallan(updated);
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("dashboard.deliveryChallans.view.updateError"));
+      setError(saveErrorMessage(err, t, t("dashboard.deliveryChallans.view.updateError")));
     } finally {
       setUpdating(false);
     }
@@ -129,6 +132,14 @@ export function DeliveryChallanViewPage({ deliveryChallanId }: { deliveryChallan
         </div>
 
         <div className="flex flex-wrap gap-2">
+          <PdfDownloadButton
+            url={
+              activeOrganisationId
+                ? orgPdfUrl(`/api/sales/delivery-challans/${encodeURIComponent(challan.deliveryChallanId)}/pdf`, activeOrganisationId)
+                : null
+            }
+            fallbackFilename={`${challan.displayNumber}.pdf`}
+          />
           {challan.status === "draft" ? (
             <button
               type="button"

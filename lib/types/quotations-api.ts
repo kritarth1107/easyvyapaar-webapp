@@ -1,4 +1,12 @@
-export type QuotationStatus = "draft" | "sent" | "accepted" | "rejected" | "expired" | "converted";
+export type QuotationStatus =
+  | "draft"
+  | "sent"
+  | "accepted"
+  | "rejected"
+  | "expired"
+  | "converted"
+  /** Proforma only (proformas reuse the quotation shapes). */
+  | "cancelled";
 
 export type QuotationSummary = {
   quotationId: string;

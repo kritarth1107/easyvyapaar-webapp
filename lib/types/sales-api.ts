@@ -1,4 +1,24 @@
-export type SalesInvoiceType = "gst_invoice" | "cash_memo";
+export const INVOICE_CANCEL_BLOCKERS = [
+  "already_cancelled",
+  "irn_active",
+  "ewb_active",
+  "has_payments",
+  "has_returns",
+  "has_credit_notes",
+] as const;
+export type InvoiceCancelBlocker = (typeof INVOICE_CANCEL_BLOCKERS)[number];
+
+import type { PaymentHistoryEntry } from "@/lib/api/payment-history";
+
+export type MarkInvoiceUnpaidResult = {
+  invoice: SalesInvoiceDetail;
+  reversedAmount: number;
+  /** Voucher allocations released; the money stays with the party as an advance. */
+  releasedAllocations: Array<{ paymentId: string; displayNumber: string; amount: number; unallocatedAmount: number }>;
+  reversedByMode: Array<{ paymentMode: string; amount: number }>;
+};
+
+export type SalesInvoiceType = "gst_invoice" | "cash_memo" | "bill_of_supply";
 
 export type SalesInvoiceStatus =
   | "paid"
@@ -97,6 +117,13 @@ export type SalesInvoiceDetail = SalesInvoiceSummary & {
   eWayBillMode?: "mock" | "live";
   vehicleNumber?: string;
   transporterId?: string;
+  /** Set when the invoice itself is cancelled (not just its IRN). */
+  cancelledAt?: string;
+  cancelReason?: string;
+  /** Backend verdict for Cancel; blockers explain why not. */
+  cancellable?: boolean;
+  cancelBlockers?: InvoiceCancelBlocker[];
+  paymentHistory?: PaymentHistoryEntry[];
   createdByUserId: string;
   updatedByUserId?: string;
   createdAt: string;
@@ -183,6 +210,12 @@ export type SalesInvoiceListResponse = {
     totalPages: number;
   };
 };
+
+/** PATCH body: create body minus type, numbering and payment fields (unpaid, no IRN/EWB/returns only). */
+export type UpdateSalesInvoiceRequest = Omit<
+  CreateSalesInvoiceRequest,
+  "invoiceType" | "invoicePrefix" | "invoiceNumber" | "amountReceived" | "fullyPaid"
+>;
 
 export type EInvoiceResult = {
   mode: 'mock' | 'live';

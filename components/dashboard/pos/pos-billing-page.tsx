@@ -14,7 +14,10 @@ import { fetchBusinessProfile } from "@/lib/business/business-profile-api-client
 import {
   buildLiveInvoicePreviewFromDetail,
   buildLiveInvoicePreviewModel,
+  localizeInvoiceSummaryRows,
 } from "@/lib/sales/build-live-invoice-preview";
+import { useInvoiceSummaryLabels } from "@/lib/sales/use-invoice-summary-labels";
+import { formatAckDate } from "@/lib/sales/format-ack-date";
 import {
   organisationProfileToSnapshot,
   type InvoiceOrganisationSnapshot,
@@ -88,8 +91,9 @@ function EmptyItemsIcon() {
 }
 
 export function PosBillingPage() {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const thermalLabels = useThermalReceiptLabels();
+  const summaryLabels = useInvoiceSummaryLabels();
   const router = useRouter();
   const { activeOrganisationId, activeOrganisation } = useUserMe();
 
@@ -407,11 +411,14 @@ export function PosBillingPage() {
           }
           if (thermalWidth && printWindow) {
             // Receipt is built from the saved invoice (server totals, number, IRN), not the cart.
-            const savedModel = buildLiveInvoicePreviewFromDetail(
-              invoice,
-              activeOrganisation?.name ?? "",
-              orgSnapshot,
-              activeBill.party,
+            const savedModel = localizeInvoiceSummaryRows(
+              buildLiveInvoicePreviewFromDetail(
+                invoice,
+                activeOrganisation?.name ?? "",
+                orgSnapshot,
+                activeBill.party,
+              ),
+              summaryLabels,
             );
             const qrDataUrl = await renderSignedQrDataUrl(invoice.signedQr);
             printThermalReceipt(
@@ -419,13 +426,13 @@ export function PosBillingPage() {
               thermalWidth,
               thermalLabels,
               invoice.irn
-                ? { irn: invoice.irn, ackNo: invoice.ackNo, ackDate: invoice.ackDate, qrDataUrl }
+                ? { irn: invoice.irn, ackNo: invoice.ackNo, ackDate: formatAckDate(invoice.ackDate, locale), qrDataUrl }
                 : null,
               printWindow,
             );
             printWindow = null;
           } else {
-          const model = buildLiveInvoicePreviewModel({
+          const model = localizeInvoiceSummaryRows(buildLiveInvoicePreviewModel({
             form: activeBill.form,
             party: activeBill.party,
             businessName: activeOrganisation?.name ?? "",
@@ -435,7 +442,7 @@ export function PosBillingPage() {
               ...storedInvoiceSettings,
               themeId: posPrinterToTheme(posSettings.printerType),
             },
-          });
+          }), summaryLabels);
           setPreviewModel(model);
           setPreviewOrganisation(orgSnapshot);
           setPreviewOpen(true);
@@ -467,6 +474,8 @@ export function PosBillingPage() {
       activeOrganisationId,
       activeOrganisation?.name,
       bills,
+      locale,
+      summaryLabels,
       initBillWithNumber,
       posSettings,
       router,

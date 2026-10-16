@@ -8,7 +8,10 @@ import {
   type InvoiceLineItem,
 } from "@/lib/sales/create-invoice-form";
 import type { InvoiceGstRow } from "@/lib/sales/invoice-preview-data";
-import type { LiveInvoicePreviewModel } from "@/lib/sales/invoice-preview-document-types";
+import type {
+  InvoiceSummaryRowKey,
+  LiveInvoicePreviewModel,
+} from "@/lib/sales/invoice-preview-document-types";
 import { getInvoiceLineDisplay, normalizeSalesTaxMode } from "@/lib/sales/invoice-tax";
 import {
   formatGstinOrPanLine,
@@ -259,7 +262,7 @@ function amountInWordsPlaceholder(amount: number): string {
   return `${formatPlainInr(amount)} Rupees Only`;
 }
 
-export function buildLiveInvoicePreviewModel({
+function buildLiveInvoicePreviewModelBase({
   form,
   party,
   businessName,
@@ -295,7 +298,7 @@ export function buildLiveInvoicePreviewModel({
   const grossTaxable = totals.subtotal + totals.additionalChargesTotal;
   const summaryRows: LiveInvoicePreviewModel["summaryRows"] = [
     {
-      label: "Taxable Amount",
+      key: "taxableAmount" as const, label: "Taxable Amount",
       value: formatPlainInr(
         form.discountTiming === "before_tax" && totals.discountAmount > 0
           ? grossTaxable
@@ -305,18 +308,18 @@ export function buildLiveInvoicePreviewModel({
     ...(form.discountTiming === "before_tax" && totals.discountAmount > 0
       ? [
           {
-            label: "Discount (Before Tax)",
+            key: "discountBeforeTax" as const, label: "Discount (Before Tax)",
             value: `-${formatPlainInr(totals.discountAmount)}`,
           },
-          { label: "Net Taxable Amount", value: formatPlainInr(totals.taxableAmount) },
+          { key: "netTaxable" as const, label: "Net Taxable Amount", value: formatPlainInr(totals.taxableAmount) },
         ]
       : []),
     ...(form.discountTiming === "after_tax" && totals.discountAmount > 0
-      ? [{ label: "Discount (After Tax)", value: `-${formatPlainInr(totals.discountAmount)}` }]
+      ? [{ key: "discountAfterTax" as const, label: "Discount (After Tax)", value: `-${formatPlainInr(totals.discountAmount)}` }]
       : []),
-    ...(totals.roundOff !== 0 ? [{ label: "Round Off", value: formatPlainInr(totals.roundOff) }] : []),
-    { label: "Total Amount", value: formatPlainInr(totals.totalAmount), bold: true },
-    { label: "Received Amount", value: formatPlainInr(received) },
+    ...(totals.roundOff !== 0 ? [{ key: "roundOff" as const, label: "Round Off", value: formatPlainInr(totals.roundOff) }] : []),
+    { key: "totalAmount" as const, label: "Total Amount", value: formatPlainInr(totals.totalAmount), bold: true },
+    { key: "receivedAmount" as const, label: "Received Amount", value: formatPlainInr(received) },
   ];
 
   return {
@@ -361,7 +364,7 @@ export function buildLiveInvoicePreviewModel({
   };
 }
 
-export function buildLiveInvoicePreviewFromDetail(
+function buildLiveInvoicePreviewFromDetailBase(
   invoice: SalesInvoiceDetail,
   businessName: string,
   organisation: InvoiceOrganisationSnapshot,
@@ -381,7 +384,7 @@ export function buildLiveInvoicePreviewFromDetail(
 
   const summaryRows: LiveInvoicePreviewModel["summaryRows"] = [
     {
-      label: "Taxable Amount",
+      key: "taxableAmount" as const, label: "Taxable Amount",
       value: formatPlainInr(
         invoice.discountTiming === "before_tax" && invoice.discountAmount > 0
           ? grossTaxable
@@ -391,20 +394,20 @@ export function buildLiveInvoicePreviewFromDetail(
     ...(invoice.discountTiming === "before_tax" && invoice.discountAmount > 0
       ? [
           {
-            label: "Discount (Before Tax)",
+            key: "discountBeforeTax" as const, label: "Discount (Before Tax)",
             value: `-${formatPlainInr(invoice.discountAmount)}`,
           },
-          { label: "Net Taxable Amount", value: formatPlainInr(invoice.taxableAmount) },
+          { key: "netTaxable" as const, label: "Net Taxable Amount", value: formatPlainInr(invoice.taxableAmount) },
         ]
       : []),
     ...(invoice.discountTiming === "after_tax" && invoice.discountAmount > 0
-      ? [{ label: "Discount (After Tax)", value: `-${formatPlainInr(invoice.discountAmount)}` }]
+      ? [{ key: "discountAfterTax" as const, label: "Discount (After Tax)", value: `-${formatPlainInr(invoice.discountAmount)}` }]
       : []),
     ...(invoice.roundOffAmount !== 0
-      ? [{ label: "Round Off", value: formatPlainInr(invoice.roundOffAmount) }]
+      ? [{ key: "roundOff" as const, label: "Round Off", value: formatPlainInr(invoice.roundOffAmount) }]
       : []),
-    { label: "Total Amount", value: formatPlainInr(invoice.totalAmount), bold: true },
-    { label: "Received Amount", value: formatPlainInr(invoice.amountReceived) },
+    { key: "totalAmount" as const, label: "Total Amount", value: formatPlainInr(invoice.totalAmount), bold: true },
+    { key: "receivedAmount" as const, label: "Received Amount", value: formatPlainInr(invoice.amountReceived) },
   ];
 
   const gstRows = buildGstRowsFromStored(invoice.lineItems, invoice.additionalCharges, taxRatio);
@@ -448,5 +451,47 @@ export function buildLiveInvoicePreviewFromDetail(
     balanceAmount: formatInr(invoice.balanceAmount),
     paymentMode: invoice.paymentMode.charAt(0).toUpperCase() + invoice.paymentMode.slice(1),
     documentTitle: invoiceType === "gst_invoice" ? "TAX INVOICE" : "CASH MEMO",
+  };
+}
+
+/** Bill of Supply: no tax lines, no GST breakdown, own document title. */
+function applyBillOfSupply(model: LiveInvoicePreviewModel): LiveInvoicePreviewModel {
+  const taxRow = /\b(GST|CGST|SGST|IGST|Tax)\b/i;
+  return {
+    ...model,
+    documentTitle: "BILL OF SUPPLY",
+    hideTax: true,
+    gstRows: [],
+    totalTax: "",
+    lines: model.lines.map((line) => ({ ...line, tax: "", taxSub: "" })),
+    summaryRows: model.summaryRows.filter((row) => row.key != null || !taxRow.test(row.label)),
+  };
+}
+
+export function buildLiveInvoicePreviewModel(
+  input: Parameters<typeof buildLiveInvoicePreviewModelBase>[0],
+): LiveInvoicePreviewModel {
+  const model = buildLiveInvoicePreviewModelBase(input);
+  return input.form.invoiceType === "bill_of_supply" ? applyBillOfSupply(model) : model;
+}
+
+export function buildLiveInvoicePreviewFromDetail(
+  ...args: Parameters<typeof buildLiveInvoicePreviewFromDetailBase>
+): LiveInvoicePreviewModel {
+  const model = buildLiveInvoicePreviewFromDetailBase(...args);
+  return args[0].invoiceType === "bill_of_supply" ? applyBillOfSupply(model) : model;
+}
+
+/** English fallbacks; UI passes translated labels to {@link localizeInvoiceSummaryRows}. */
+export type InvoiceSummaryLabels = Record<InvoiceSummaryRowKey, string>;
+
+/** Replace builder labels with translated ones by row key (rows without a key are left as-is). */
+export function localizeInvoiceSummaryRows<M extends { summaryRows: LiveInvoicePreviewModel["summaryRows"] }>(
+  model: M,
+  labels: InvoiceSummaryLabels,
+): M {
+  return {
+    ...model,
+    summaryRows: model.summaryRows.map((row) => (row.key ? { ...row, label: labels[row.key] } : row)),
   };
 }

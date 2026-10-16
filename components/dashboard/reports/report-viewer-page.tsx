@@ -12,6 +12,7 @@ import { ReportSectionView } from "@/components/dashboard/reports/report-primiti
 import { formatDateIndian } from "@/lib/dashboard/date-format";
 import { AS_OF_DATE_REPORTS, getDefaultReportDateRange } from "@/lib/reports/report-backend-map";
 import { canAccessReportSlug } from "@/lib/reports/report-config";
+import { localizeReportData } from "@/lib/reports/report-labels-i18n";
 import { fetchReport, isReportSlug } from "@/lib/reports/reports-api-client";
 import { downloadGstr1PortalJson, downloadTallyXml } from "@/lib/reports/gstr-portal-export-client";
 import type { ReportData } from "@/lib/types/reports-api";
@@ -27,7 +28,7 @@ const PAGINATED_REPORTS = new Set([
 ]);
 
 export function ReportViewerPage() {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const params = useParams<{ reportSlug: string }>();
   const { planFeatures } = useOrganisationPermissions();
   const { activeOrganisationId, activeOrganisation } = useUserMe();
@@ -41,7 +42,8 @@ export function ReportViewerPage() {
   const [fromDate, setFromDate] = useState(defaults.fromDate);
   const [toDate, setToDate] = useState(defaults.toDate);
   const [page, setPage] = useState(1);
-  const [report, setReport] = useState<ReportData | null>(null);
+  const [rawReport, setReport] = useState<ReportData | null>(null);
+  const report = useMemo(() => (rawReport ? localizeReportData(rawReport, locale) : null), [rawReport, locale]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);

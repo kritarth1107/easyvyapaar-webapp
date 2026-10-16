@@ -5,6 +5,9 @@ import { useCallback, useEffect, useState } from "react";
 import { useUserMe } from "@/components/providers/user-me-provider";
 import { fetchSalesReturnDetail } from "@/lib/sales/sales-returns-api-client";
 import type { SalesRefundMode, SalesReturnDetail, SalesReturnStatus } from "@/lib/types/sales-returns-api";
+import { NotFoundError } from "@/lib/api/not-found";
+import { NotFoundState, PdfDownloadButton } from "@/components/dashboard/shared/pdf-download-button";
+import { orgPdfUrl } from "@/lib/print/download-pdf";
 import { useTranslation } from "@/lib/localization";
 import type { TranslationKey } from "@/lib/localization";
 
@@ -61,6 +64,7 @@ export function SalesReturnViewPage({ salesReturnId }: { salesReturnId: string }
   const [salesReturn, setSalesReturn] = useState<SalesReturnDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [notFound, setNotFound] = useState(false);
 
   const load = useCallback(async () => {
     const orgId = activeOrganisationId?.trim();
@@ -71,10 +75,12 @@ export function SalesReturnViewPage({ salesReturnId }: { salesReturnId: string }
 
     setLoading(true);
     setError(null);
+    setNotFound(false);
     try {
       const detail = await fetchSalesReturnDetail(orgId, salesReturnId.trim());
       setSalesReturn(detail);
     } catch (err) {
+      if (err instanceof NotFoundError) setNotFound(true);
       setSalesReturn(null);
       setError(err instanceof Error ? err.message : t("dashboard.salesReturns.view.loadError"));
     } finally {
@@ -90,6 +96,14 @@ export function SalesReturnViewPage({ salesReturnId }: { salesReturnId: string }
     return (
       <div className="p-4 lg:p-6">
         <p className="text-sm text-brand-primary-muted">{t("common.pleaseWait")}</p>
+      </div>
+    );
+  }
+
+  if (notFound) {
+    return (
+      <div className="p-4 lg:p-6">
+        <NotFoundState title={t("dashboard.pdfDownload.salesReturnNotFound")} backHref="/dashboard/sales/sales-returns" backLabel={t("dashboard.salesReturns.backToList")} />
       </div>
     );
   }
@@ -126,6 +140,14 @@ export function SalesReturnViewPage({ salesReturnId }: { salesReturnId: string }
               {formatDate(salesReturn.returnDate)} · {salesReturn.partyName}
             </p>
           </div>
+          <PdfDownloadButton
+            url={
+              activeOrganisationId
+                ? orgPdfUrl(`/api/sales/sales-returns/${encodeURIComponent(salesReturnId.trim())}/pdf`, activeOrganisationId)
+                : null
+            }
+            fallbackFilename={`${salesReturn.displayNumber}.pdf`}
+          />
           <StatusBadge status={salesReturn.status} />
         </div>
       </div>
@@ -201,6 +223,14 @@ export function SalesReturnViewPage({ salesReturnId }: { salesReturnId: string }
               </tr>
               <tr className="bg-slate-50/50">
                 <td colSpan={4} className="px-4 py-3 text-right text-sm font-semibold text-brand-primary">
+                  {t("dashboard.returnEstimate.taxable")}
+                </td>
+                <td className="px-4 py-3 text-right text-sm font-bold tabular-nums text-brand-primary">
+                  {formatInr(salesReturn.taxableAmount)}
+                </td>
+              </tr>
+              <tr className="bg-slate-50/50">
+                <td colSpan={4} className="px-4 py-3 text-right text-sm font-semibold text-brand-primary">
                   {t("dashboard.salesReturns.view.tax")}
                 </td>
                 <td className="px-4 py-3 text-right text-sm font-bold tabular-nums text-brand-primary">
@@ -213,6 +243,14 @@ export function SalesReturnViewPage({ salesReturnId }: { salesReturnId: string }
                 </td>
                 <td className="px-4 py-3 text-right text-base font-bold tabular-nums text-brand-primary">
                   {formatInr(salesReturn.totalAmount)}
+                </td>
+              </tr>
+              <tr className="bg-slate-50/50">
+                <td colSpan={4} className="px-4 py-3 text-right text-sm font-semibold text-brand-primary">
+                  {t("dashboard.salesReturns.view.refundAmount")}
+                </td>
+                <td className="px-4 py-3 text-right text-sm font-bold tabular-nums text-brand-primary">
+                  {formatInr(salesReturn.refundAmount)}
                 </td>
               </tr>
             </tfoot>

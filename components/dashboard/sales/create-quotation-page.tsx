@@ -55,12 +55,8 @@ import {
   fetchSalesInvoiceSettings,
   updateSalesInvoiceSettings,
 } from "@/lib/sales/sales-invoice-settings-api-client";
-import {
-  createQuotation,
-  fetchNextQuotationNumber,
-  fetchQuotationDetail,
-  updateQuotation,
-} from "@/lib/sales/quotations-api-client";
+import { quotationLikeApi, type QuotationLikeKind } from "@/lib/sales/sales-doc-kind";
+import type { TranslationKey } from "@/lib/localization";
 import type { QuotationStatus } from "@/lib/types/quotations-api";
 import type { LiveInvoicePreviewModel } from "@/lib/sales/invoice-preview-document-types";
 import { useTranslation } from "@/lib/localization";
@@ -150,8 +146,20 @@ function SettingsIcon() {
   );
 }
 
-export function CreateQuotationPage({ quotationId }: { quotationId?: string }) {
+export function CreateQuotationPage({
+  quotationId,
+  kind = "quotation",
+}: {
+  quotationId?: string;
+  /** "proforma" reuses this page for proforma invoices (same body + proformaDate/validUntil/status). */
+  kind?: QuotationLikeKind;
+}) {
   const { t } = useTranslation();
+  const docApi = useMemo(() => quotationLikeApi(kind), [kind]);
+  const isProforma = kind === "proforma";
+  /** Pick the proforma wording where the quotation wording would be wrong. */
+  const tk = (quotationKey: TranslationKey, proformaKey: TranslationKey) =>
+    t(isProforma ? proformaKey : quotationKey);
   const router = useRouter();
   const { activeOrganisation, activeOrganisationId } = useUserMe();
   const businessName = activeOrganisation?.name ?? "Your Business";
@@ -247,12 +255,12 @@ export function CreateQuotationPage({ quotationId }: { quotationId?: string }) {
       setError(null);
 
       Promise.all([
-        fetchQuotationDetail(orgId, editQuotationId),
+        docApi.fetchDetail(orgId, editQuotationId),
         fetchSalesInvoiceSettings(orgId).catch(() => DEFAULT_STORED_SALES_INVOICE_SETTINGS),
       ])
         .then(async ([quotation, settings]) => {
           if (cancelled) return;
-          if (quotation.status === "converted") {
+          if (quotation.status === "converted" || quotation.status === "cancelled") {
             throw new Error(t("dashboard.quotations.edit.notEditable"));
           }
 
@@ -332,7 +340,7 @@ export function CreateQuotationPage({ quotationId }: { quotationId?: string }) {
     let cancelled = false;
     setLoadingMeta(true);
 
-    fetchNextQuotationNumber(orgId)
+    docApi.fetchNext(orgId)
       .then((next) => {
         if (!cancelled) {
           patch({
@@ -504,7 +512,7 @@ export function CreateQuotationPage({ quotationId }: { quotationId?: string }) {
     setError(null);
     try {
       const quotation = isEditMode
-        ? await updateQuotation(
+        ? await docApi.update(
             orgId,
             editQuotationId,
             mapUpdateQuotationFormToRequest(
@@ -515,11 +523,11 @@ export function CreateQuotationPage({ quotationId }: { quotationId?: string }) {
               { status: editStatus },
             ),
           )
-        : await createQuotation(
+        : await docApi.create(
             orgId,
             mapCreateQuotationFormToRequest(form, selectedParty.partyId, null, storedInvoiceSettings),
           );
-      router.push(`/dashboard/sales/quotations/${encodeURIComponent(quotation.quotationId)}`);
+      router.push(`${docApi.basePath}/${encodeURIComponent(quotation.quotationId)}`);
     } catch (err) {
       setError(
         err instanceof Error
@@ -548,8 +556,8 @@ export function CreateQuotationPage({ quotationId }: { quotationId?: string }) {
           <Link
             href={
               isEditMode
-                ? `/dashboard/sales/quotations/${encodeURIComponent(editQuotationId)}`
-                : "/dashboard/sales/quotations"
+                ? `${docApi.basePath}/${encodeURIComponent(editQuotationId)}`
+                : docApi.basePath
             }
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm border border-slate-200/90 text-brand-primary transition-colors hover:bg-slate-50"
             aria-label={t("common.back")}
@@ -557,7 +565,9 @@ export function CreateQuotationPage({ quotationId }: { quotationId?: string }) {
             <BackIcon />
           </Link>
           <h1 className="truncate text-lg font-bold text-brand-primary lg:text-xl">
-            {isEditMode ? t("dashboard.quotations.editTitle") : t("dashboard.quotations.createTitle")}
+            {isEditMode
+              ? tk("dashboard.quotations.editTitle", "dashboard.proformas.editTitle")
+              : tk("dashboard.quotations.createTitle", "dashboard.proformas.createTitle")}
           </h1>
         </div>
         <div className="flex shrink-0 items-center gap-2">
@@ -570,7 +580,7 @@ export function CreateQuotationPage({ quotationId }: { quotationId?: string }) {
             }}
             className="hidden h-10 items-center rounded-sm border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 sm:inline-flex"
           >
-            {t("dashboard.quotations.create.previewQuotation")}
+            {tk("dashboard.quotations.create.previewQuotation", "dashboard.proformas.preview")}
           </button>
           <button
             type="button"
@@ -589,8 +599,8 @@ export function CreateQuotationPage({ quotationId }: { quotationId?: string }) {
             {saving
               ? t("dashboard.quotations.create.saving")
               : isEditMode
-                ? t("dashboard.quotations.edit.saveQuotation")
-                : t("dashboard.quotations.create.saveQuotation")}
+                ? tk("dashboard.quotations.edit.saveQuotation", "dashboard.proformas.save")
+                : tk("dashboard.quotations.create.saveQuotation", "dashboard.proformas.save")}
           </button>
         </div>
       </div>
@@ -638,7 +648,7 @@ export function CreateQuotationPage({ quotationId }: { quotationId?: string }) {
 
           <div className="min-w-0 space-y-3">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <FieldCell label={t("dashboard.quotations.create.quotationPrefix")}>
+              <FieldCell label={tk("dashboard.quotations.create.quotationPrefix", "dashboard.proformas.prefix")}>
                 <input
                   value={form.invoicePrefix}
                   onChange={(e) => patch({ invoicePrefix: e.target.value })}
@@ -646,7 +656,7 @@ export function CreateQuotationPage({ quotationId }: { quotationId?: string }) {
                   className={`${inputSmClass}${isEditMode ? " cursor-not-allowed bg-slate-50 text-brand-primary-muted" : ""}`}
                 />
               </FieldCell>
-              <FieldCell label={t("dashboard.quotations.create.quotationNumber")}>
+              <FieldCell label={tk("dashboard.quotations.create.quotationNumber", "dashboard.proformas.number")}>
                 <input
                   value={form.invoiceNumber}
                   onChange={(e) => patch({ invoiceNumber: e.target.value })}
@@ -654,7 +664,7 @@ export function CreateQuotationPage({ quotationId }: { quotationId?: string }) {
                   className={`${inputSmClass}${isEditMode ? " cursor-not-allowed bg-slate-50 text-brand-primary-muted" : ""}`}
                 />
               </FieldCell>
-              <FieldCell label={t("dashboard.quotations.create.quotationDate")}>
+              <FieldCell label={tk("dashboard.quotations.create.quotationDate", "dashboard.proformas.date")}>
                 <input
                   type="date"
                   value={form.invoiceDate}
@@ -929,7 +939,7 @@ export function CreateQuotationPage({ quotationId }: { quotationId?: string }) {
         model={previewModel}
         storedSettings={storedInvoiceSettings}
         organisation={resolvedOrganisationSnapshot}
-        title={t("dashboard.quotations.create.previewQuotation")}
+        title={tk("dashboard.quotations.create.previewQuotation", "dashboard.proformas.preview")}
         quotation
       />
     </div>

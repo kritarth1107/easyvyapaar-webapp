@@ -16,6 +16,8 @@ export const PERMISSIONS = [
   "reports.read",
   "staff.read",
   "staff.write",
+  /** Audit trail: Owner, Admin, CA. */
+  "audit.read",
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];
@@ -68,7 +70,7 @@ const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
   ],
   InventoryManager: [...ALL_READ, "inventory.write", "purchases.write"],
   Accountant: [...ALL_READ, "finance.write"],
-  CA: [...ALL_READ],
+  CA: [...ALL_READ, "audit.read"],
   Cashier: [...ALL_READ, "sales.write", "pos.use", "finance.write"],
   Salesperson: [...ALL_READ, "sales.write", "pos.use"],
   Staff: [...ALL_READ],
@@ -105,4 +107,5 @@ export const ROLE_PERMISSION_LABELS: Record<Permission, string> = {
   "reports.read": "View reports",
   "staff.read": "View staff & payroll",
   "staff.write": "Manage staff & payroll",
+  "audit.read": "View audit log",
 };

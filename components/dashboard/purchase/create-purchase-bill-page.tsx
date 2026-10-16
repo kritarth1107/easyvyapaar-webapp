@@ -1,7 +1,14 @@
 "use client";
 
+import { saveErrorMessage } from "@/lib/api/conflict";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import { ApiValidationError, fieldErrorsFor, type ApiFieldError } from "@/lib/api/field-errors";
+import {
+  FieldErrorText,
+  OtherFieldErrors,
+  purchaseFieldLabel,
+} from "@/components/dashboard/purchase/purchase-field-errors";
 import { useRouter } from "next/navigation";
 import { useUserMe } from "@/components/providers/user-me-provider";
 import { AddItemsToBillModal } from "@/components/dashboard/sales/add-items-to-bill-modal";
@@ -22,10 +29,25 @@ import type {
   PurchasePaymentMode,
 } from "@/lib/types/purchase-api";
 import { useTranslation } from "@/lib/localization";
+import {
+  calcLiveTds,
+  EMPTY_TDS_FORM,
+  PurchaseTdsFields,
+  tdsFormFromBill,
+  tdsFormToInput,
+  type TdsFormState,
+} from "@/components/dashboard/purchase/purchase-tds-fields";
 
 type LineRow = CreatePurchaseBillRequest["lineItems"][number] & { key: string };
 
 /** Line total as stored by the API: inclusive rate already contains GST, exclusive adds it. */
+/** Taxable value of a line (GST excluded), the default TDS base. */
+function lineTaxable(line: LineRow): number {
+  const base = line.qty * line.pricePerItem;
+  const gst = Number(line.gstPercent) || 0;
+  return line.purchaseTaxMode === "with_tax" ? base / (1 + gst / 100) : base;
+}
+
 function lineGross(line: LineRow): number {
   const base = line.qty * line.pricePerItem;
   const gst = Number(line.gstPercent) || 0;
@@ -53,7 +75,10 @@ export function CreatePurchaseBillPage({ purchaseBillId }: { purchaseBillId?: st
   const [addItemsOpen, setAddItemsOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<ApiFieldError[]>([]);
   const [loadingBill, setLoadingBill] = useState(isEdit);
+  const [tdsForm, setTdsForm] = useState<TdsFormState>(EMPTY_TDS_FORM);
+  const [hadTds, setHadTds] = useState(false);
   // Stored bill-level adjustments. The backend recomputes (and resets to defaults) charges,
   // bill discount and round-off whenever lineItems are PATCHed without them, so keep and resend.
   const [billAdjustments, setBillAdjustments] = useState<Pick<
@@ -70,6 +95,8 @@ export function CreatePurchaseBillPage({ purchaseBillId }: { purchaseBillId?: st
         setBillNumber(bill.billNumber);
         setBillDate(bill.billDate.slice(0, 10));
         setNotes(bill.notes ?? "");
+        setTdsForm(tdsFormFromBill(bill));
+        setHadTds(bill.tdsAmount > 0);
         setBillAdjustments({
           additionalCharges: bill.additionalCharges,
           discountAfterTax: bill.discountAfterTax,
@@ -120,6 +147,10 @@ export function CreatePurchaseBillPage({ purchaseBillId }: { purchaseBillId?: st
     [lines],
   );
 
+  const taxableTotal = useMemo(() => lines.reduce((sum, line) => sum + lineTaxable(line), 0), [lines]);
+  const tdsInput = tdsFormToInput(tdsForm);
+  const liveTds = calcLiveTds(tdsForm, total, taxableTotal);
+
   const handleAddItems = (picks: InventoryBillPick[]) => {
     setLines((prev) => [
       ...prev,
@@ -147,6 +178,7 @@ export function CreatePurchaseBillPage({ purchaseBillId }: { purchaseBillId?: st
     }
     setSaving(true);
     setError(null);
+    setFieldErrors([]);
     try {
       if (isEdit && purchaseBillId) {
         const updated = await updatePurchaseBill(orgId, purchaseBillId, {
@@ -154,6 +186,8 @@ export function CreatePurchaseBillPage({ purchaseBillId }: { purchaseBillId?: st
           billDate,
           notes: notes.trim() || null,
           lineItems: lines.map(({ key: _key, ...line }) => line),
+          // null removes TDS; omitted keeps it (only send null when the bill had TDS).
+          ...(tdsInput ? { tds: tdsInput } : hadTds ? { tds: null } : {}),
           ...(billAdjustments
             ? {
                 additionalCharges: billAdjustments.additionalCharges.map(({ label, amount, taxPercent }) => ({
@@ -180,8 +214,9 @@ export function CreatePurchaseBillPage({ purchaseBillId }: { purchaseBillId?: st
         billDate,
         notes: notes.trim() || undefined,
         lineItems: lines.map(({ key: _key, ...line }) => line),
+        ...(tdsInput ? { tds: tdsInput } : {}),
         ...(paymentType === "paid"
-          ? { paidAmount: total, paymentMode }
+          ? { paidAmount: liveTds.netPayable, paymentMode }
           : paymentType === "partial"
             ? { paidAmount: Number(paidAmount) || 0, paymentMode }
             : {}),
@@ -189,7 +224,12 @@ export function CreatePurchaseBillPage({ purchaseBillId }: { purchaseBillId?: st
       const bill = await createPurchaseBill(orgId, payload, pdfFile);
       router.push(`/dashboard/purchases/${bill.purchaseBillId}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("dashboard.purchases.create.saveError"));
+      if (err instanceof ApiValidationError) {
+        setFieldErrors(err.fieldErrors);
+        setError(t("dashboard.purchaseFieldErrors.fixFields"));
+      } else {
+        setError(saveErrorMessage(err, t, t("dashboard.purchases.create.saveError")));
+      }
     } finally {
       setSaving(false);
     }
@@ -229,6 +269,7 @@ export function CreatePurchaseBillPage({ purchaseBillId }: { purchaseBillId?: st
                 {t("dashboard.purchases.colDate")}
               </label>
               <input type="date" value={billDate} onChange={(e) => setBillDate(e.target.value)} className={inputClass} />
+              <FieldErrorText messages={fieldErrorsFor(fieldErrors, "billDate")} />
             </div>
             <div>
               <label className="mb-1 block text-xs font-semibold uppercase text-brand-primary-muted">
@@ -238,6 +279,7 @@ export function CreatePurchaseBillPage({ purchaseBillId }: { purchaseBillId?: st
                 <input value={billPrefix} disabled={isEdit} onChange={(e) => setBillPrefix(e.target.value)} className={`${inputSmClass} w-20`} />
                 <input value={billNumber} disabled={isEdit} onChange={(e) => setBillNumber(e.target.value)} className={inputSmClass} />
               </div>
+              <FieldErrorText messages={[...fieldErrorsFor(fieldErrors, "billPrefix"), ...fieldErrorsFor(fieldErrors, "billNumber")]} />
             </div>
             {!isEdit ? (
             <div>
@@ -296,8 +338,9 @@ export function CreatePurchaseBillPage({ purchaseBillId }: { purchaseBillId?: st
                     </tr>
                   </thead>
                   <tbody>
-                    {lines.map((line) => (
-                      <tr key={line.key} className="border-b border-slate-50">
+                    {lines.map((line, lineIndex) => (
+                      <Fragment key={line.key}>
+                      <tr className="border-b border-slate-50">
                         <td className="py-2">{line.name}</td>
                         <td className="py-2 text-right">
                           <input
@@ -369,6 +412,14 @@ export function CreatePurchaseBillPage({ purchaseBillId }: { purchaseBillId?: st
                           </button>
                         </td>
                       </tr>
+                      {fieldErrorsFor(fieldErrors, `lineItems.${lineIndex}`).length ? (
+                        <tr>
+                          <td colSpan={99} className="pb-2 text-xs text-red-600">
+                            {fieldErrorsFor(fieldErrors, `lineItems.${lineIndex}`).join(" · ")}
+                          </td>
+                        </tr>
+                      ) : null}
+                      </Fragment>
                     ))}
                   </tbody>
                 </table>
@@ -426,7 +477,14 @@ export function CreatePurchaseBillPage({ purchaseBillId }: { purchaseBillId?: st
             </>
             ) : null}
             <p className="mt-4 text-lg font-bold text-brand-primary">{formatInr(total)}</p>
+            <PurchaseTdsFields value={tdsForm} onChange={setTdsForm} total={total} taxable={taxableTotal} />
             {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+            <OtherFieldErrors
+              errors={fieldErrors.filter(
+                (issue) => !/^(billDate|billPrefix|billNumber|lineItems\.\d+)(\.|$)/.test(issue.path),
+              )}
+              label={(path) => purchaseFieldLabel(path, t)}
+            />
             <button
               type="button"
               disabled={saving}

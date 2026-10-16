@@ -7,11 +7,12 @@ const NAV_ITEM_DESCRIPTION_KEYS: Record<string, TranslationKey> = {
 const NAV_ITEM_KEYS: Record<string, TranslationKey> = {
   home: "dashboard.nav.home",
   "ai-chat": "dashboard.nav.aiChat",
-  "whatsapp-integration": "dashboard.nav.whatsappIntegration",
   pos: "dashboard.nav.pos",
   "sales-invoice": "dashboard.nav.salesInvoice",
   invoices: "dashboard.nav.invoices",
   quotations: "dashboard.nav.quotations",
+  "proforma-invoices": "dashboard.proformas.navLabel",
+  "audit-log": "dashboard.auditLog.title",
   "delivery-challan": "dashboard.nav.deliveryChallan",
   "credit-notes": "dashboard.nav.creditNotes",
   "sales-returns": "dashboard.nav.salesReturns",

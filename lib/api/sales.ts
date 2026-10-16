@@ -1,3 +1,5 @@
+import { normalizePaymentHistory } from "@/lib/api/payment-history";
+import { INVOICE_CANCEL_BLOCKERS, type InvoiceCancelBlocker } from "@/lib/types/sales-api";
 import { extractBackendError } from "@/lib/api/inventory";
 import { inferSalesTaxMode, normalizeSalesTaxMode } from "@/lib/sales/invoice-tax";
 import { normalizeDiscountTiming } from "@/lib/sales/invoice-totals";
@@ -83,7 +85,11 @@ export function normalizeSalesInvoiceSummary(raw: unknown): SalesInvoiceSummary 
     status,
     isCashSale: Boolean(row.isCashSale),
     invoiceType:
-      pickString(row.invoiceType) === "gst_invoice" ? "gst_invoice" : "cash_memo",
+      pickString(row.invoiceType) === "gst_invoice"
+        ? "gst_invoice"
+        : pickString(row.invoiceType) === "bill_of_supply"
+          ? "bill_of_supply"
+          : "cash_memo",
     ...(pickString(row.partyId) && { partyId: pickString(row.partyId) }),
     ...(pickString(row.dueDate) && { dueDate: pickString(row.dueDate) }),
     ...(pickString(row.partyGstin) && { partyGstin: pickString(row.partyGstin) }),
@@ -259,6 +265,15 @@ export function normalizeSalesInvoiceDetail(raw: unknown): SalesInvoiceDetail | 
     ...(pickString(row.eInvoiceMode) && { eInvoiceMode: pickString(row.eInvoiceMode) as SalesInvoiceDetail["eInvoiceMode"] }),
     ...(pickString(row.eInvoiceCancelledAt) && { eInvoiceCancelledAt: pickString(row.eInvoiceCancelledAt) }),
     ...(pickString(row.eInvoiceCancelReason) && { eInvoiceCancelReason: pickString(row.eInvoiceCancelReason) }),
+    ...(pickString(row.cancelledAt) && { cancelledAt: pickString(row.cancelledAt) }),
+    ...(pickString(row.cancelReason) && { cancelReason: pickString(row.cancelReason) }),
+    ...(typeof row.cancellable === "boolean" && { cancellable: row.cancellable }),
+    ...(Array.isArray(row.cancelBlockers) && {
+      cancelBlockers: row.cancelBlockers.filter((b): b is InvoiceCancelBlocker =>
+        (INVOICE_CANCEL_BLOCKERS as readonly unknown[]).includes(b),
+      ),
+    }),
+    ...(normalizePaymentHistory(row.paymentHistory) && { paymentHistory: normalizePaymentHistory(row.paymentHistory) }),
     ...(pickString(row.ewayBillNo) && { ewayBillNo: pickString(row.ewayBillNo) }),
     ...(pickString(row.ewayBillDate) && { ewayBillDate: pickString(row.ewayBillDate) }),
     ...(pickString(row.ewayValidUpto) && { ewayValidUpto: pickString(row.ewayValidUpto) }),

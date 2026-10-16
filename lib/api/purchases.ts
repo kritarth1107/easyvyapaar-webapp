@@ -1,3 +1,4 @@
+import { normalizePaymentHistory } from "@/lib/api/payment-history";
 import { extractBackendError } from "@/lib/api/inventory";
 import type {
   NextPurchaseNumber,
@@ -249,6 +250,20 @@ export function normalizePurchaseBillDetail(raw: unknown): PurchaseBillDetail | 
     discountTiming: row.discountTiming === "before_tax" ? "before_tax" : "after_tax",
     autoRoundOff: row.autoRoundOff === true,
     roundOffAmount: pickNumber(row.roundOffAmount) ?? 0,
+    additionalChargesTotal: pickNumber(row.additionalChargesTotal) ?? 0,
+    additionalChargesTax: pickNumber(row.additionalChargesTax) ?? 0,
+    discountAmount: pickNumber(row.discountAmount) ?? 0,
+    ...(pickNumber(row.totalBeforeRound) !== undefined && {
+      totalBeforeRound: pickNumber(row.totalBeforeRound),
+    }),
+    ...(pickString(row.tdsSection) && { tdsSection: pickString(row.tdsSection) }),
+    tdsRate: pickNumber(row.tdsRate) ?? 0,
+    tdsBaseAmount: pickNumber(row.tdsBaseAmount) ?? 0,
+    tdsBaseOverridden: row.tdsBaseOverridden === true,
+    tdsAmount: pickNumber(row.tdsAmount) ?? 0,
+    netPayable: pickNumber(row.netPayable) ?? summary.totalAmount,
+    ...(pickNumber(row.returnedAmount) !== undefined && { returnedAmount: pickNumber(row.returnedAmount) }),
+    ...(normalizePaymentHistory(row.paymentHistory) && { paymentHistory: normalizePaymentHistory(row.paymentHistory) }),
     createdByUserId,
     createdAt,
     updatedAt,
@@ -435,6 +450,8 @@ export function normalizePurchaseReturnSummary(raw: unknown): PurchaseReturnSumm
     partyName,
     returnDate,
     totalAmount,
+    tdsReversed: pickNumber(row.tdsReversed) ?? 0,
+    netReturnAmount: pickNumber(row.netReturnAmount) ?? totalAmount,
     status,
   };
 }

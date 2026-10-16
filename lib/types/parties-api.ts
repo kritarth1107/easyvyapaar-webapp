@@ -186,7 +186,9 @@ export type PartyLedgerEntryType =
   | "purchase_return"
   | "purchase_payment"
   | "purchase_payment_reversal"
-  | "expense";
+  | "expense"
+  | "tds_deducted"
+  | "tds_reversal";
 
 export type PartyLedgerEntry = {
   ledgerEntryId: string;
@@ -203,8 +205,17 @@ export type PartyLedgerEntry = {
 };
 
 export type PartyLedgerStatement = {
+  /** Period echoed back by the backend (absent when unbounded). */
+  from?: string;
+  to?: string;
+  /** Balance as of `from`. */
   openingBalance: number;
+  /** Balance as of `to` (period-end, not the live balance). */
   closingBalance: number;
+  /** Live party balance today. */
+  currentBalance: number;
+  totalDebit: number;
+  totalCredit: number;
   totalSales: number;
   totalReceived: number;
   totalReturns: number;

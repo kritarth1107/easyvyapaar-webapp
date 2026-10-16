@@ -1,10 +1,12 @@
 import type { LiveInvoicePreviewModel } from "@/lib/sales/invoice-preview-document-types";
+import type { InvoiceSummaryRowKey } from "@/lib/sales/invoice-preview-document-types";
 import QRCode from "qrcode";
 import { escapeHtml, openPrintWindow, printHtmlDocument, type PrintWindowHandle } from "@/lib/print/print-html";
 
 export type ThermalRollWidth = 58 | 80;
 
 export type ThermalReceiptLabels = {
+  ackNo: string;
   taxInvoice: string;
   invoiceNo: string;
   date: string;
@@ -37,7 +39,8 @@ export type ThermalIrnInfo = {
 };
 
 /** Rows the receipt prints itself (grand total / received / balance) — dropped from summaryRows to avoid duplicates. */
-const RECEIPT_OWNED_SUMMARY_LABELS = new Set(["Total Amount", "Received Amount", "Balance Amount"]);
+/** Rows the receipt renders itself (by key, so translated labels still dedupe). */
+const RECEIPT_OWNED_SUMMARY_KEYS = new Set<InvoiceSummaryRowKey>(["totalAmount", "receivedAmount", "balanceAmount"]);
 
 export async function renderSignedQrDataUrl(signedQr: string | undefined | null): Promise<string | undefined> {
   if (!signedQr?.trim()) return undefined;
@@ -99,7 +102,7 @@ export function buildThermalReceiptHtml(
     : "";
 
   const summary = model.summaryRows
-    .filter((row) => !RECEIPT_OWNED_SUMMARY_LABELS.has(row.label))
+    .filter((row) => !(row.key && RECEIPT_OWNED_SUMMARY_KEYS.has(row.key)))
     .map(
       (row) =>
         `<div class="row${row.bold ? " b" : ""}"><span>${e(row.label)}</span><span>${e(row.value)}</span></div>`,
@@ -113,7 +116,7 @@ export function buildThermalReceiptHtml(
     irnInfo.qrDataUrl ? `<img src="${e(irnInfo.qrDataUrl)}" alt="e-Invoice QR" />` : e(labels.qrPlaceholder)
   }</div>
   <div class="irn">IRN: ${e(irnInfo.irn)}</div>
-  ${irnInfo.ackNo ? `<div class="irn">Ack No: ${e(irnInfo.ackNo)}${irnInfo.ackDate ? ` · ${e(irnInfo.ackDate)}` : ""}</div>` : ""}`
+  ${irnInfo.ackNo ? `<div class="irn">${e(labels.ackNo)}: ${e(irnInfo.ackNo)}${irnInfo.ackDate ? ` · ${e(irnInfo.ackDate)}` : ""}</div>` : ""}`
     : "";
 
   return `<!doctype html><html><head><meta charset="utf-8" /><title>${e(model.displayNumber)}</title>
