@@ -102,6 +102,13 @@ function normalizeLineItem(raw: unknown): PurchaseLineItem | null {
     taxable,
     tax,
     amount,
+    ...(Array.isArray(row.serialNumbers) && row.serialNumbers.length
+      ? {
+          serialNumbers: row.serialNumbers
+            .map((s) => (typeof s === "string" ? s.trim() : ""))
+            .filter(Boolean),
+        }
+      : {}),
   };
 }
 
@@ -201,9 +208,22 @@ export function normalizePurchaseBillDetail(raw: unknown): PurchaseBillDetail | 
         .filter((line): line is PurchaseLineItem => line !== null)
     : [];
 
+  const rawStatus = pickString(row.status);
+  const backendStatus: PurchaseBillDetail["backendStatus"] =
+    rawStatus === "draft" ||
+    rawStatus === "received" ||
+    rawStatus === "unpaid" ||
+    rawStatus === "partial" ||
+    rawStatus === "paid" ||
+    rawStatus === "cancelled"
+      ? rawStatus
+      : "unpaid";
+
   return {
     ...summary,
     organisationId,
+    backendStatus,
+    ...(pickString(row.dueDate) && { dueDate: pickString(row.dueDate) }),
     billPrefix,
     billNumber,
     lineItems,

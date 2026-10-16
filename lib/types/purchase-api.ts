@@ -19,6 +19,7 @@ export type PurchaseLineItem = {
   taxable: number;
   tax: number;
   amount: number;
+  serialNumbers?: string[];
 };
 
 export type PurchaseBillSummary = {
@@ -34,8 +35,19 @@ export type PurchaseBillSummary = {
   status: PurchaseBillStatus;
 };
 
+/** Raw backend bill status (draft | received | unpaid | partial | paid | cancelled). */
+export type PurchaseBillBackendStatus =
+  | "draft"
+  | "received"
+  | "unpaid"
+  | "partial"
+  | "paid"
+  | "cancelled";
+
 export type PurchaseBillDetail = PurchaseBillSummary & {
   organisationId: string;
+  backendStatus: PurchaseBillBackendStatus;
+  dueDate?: string;
   billPrefix: string;
   billNumber: string;
   notes?: string;
@@ -171,6 +183,7 @@ export type CreatePurchaseBillRequest = {
     discountType?: "percent" | "amount";
     gstPercent?: number;
     purchaseTaxMode?: "with_tax" | "without_tax";
+    serialNumbers?: string[];
   }>;
   paidAmount?: number;
   paymentMode?: PurchasePaymentMode;
@@ -226,4 +239,12 @@ export type ConvertPurchaseOrderRequest = {
 
 export type MarkPurchaseOrderReceivedRequest = {
   receivedItems?: Array<{ lineId: string; receivedQty: number }>;
+};
+
+export type UpdatePurchaseBillRequest = {
+  partyId?: string;
+  billDate?: string;
+  notes?: string | null;
+  status?: PurchaseBillBackendStatus;
+  lineItems?: CreatePurchaseBillRequest["lineItems"];
 };

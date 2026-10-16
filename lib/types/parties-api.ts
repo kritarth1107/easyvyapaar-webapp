@@ -181,7 +181,12 @@ export type PartyLedgerEntryType =
   | "debit_note"
   | "payment_in"
   | "payment_out"
-  | "quotation";
+  | "quotation"
+  | "purchase_bill"
+  | "purchase_return"
+  | "purchase_payment"
+  | "purchase_payment_reversal"
+  | "expense";
 
 export type PartyLedgerEntry = {
   ledgerEntryId: string;

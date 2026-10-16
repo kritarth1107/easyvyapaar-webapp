@@ -65,6 +65,7 @@ export function mapSummaryToTableItem(summary: InventoryItemSummary): InventoryI
     purchasePrice: summary.purchasePrice,
     gstPercent: summary.gstPercent,
     salesTaxMode: summary.salesTaxMode,
+    purchaseTaxMode: summary.purchaseTaxMode ?? "without_tax",
     serialised: summary.serialised,
     status: summary.status,
     ...(summary.lowStockWarning !== undefined && { lowStockWarning: summary.lowStockWarning }),
@@ -107,6 +108,8 @@ export function normalizeItemSummary(raw: unknown): InventoryItemSummary | null 
     gstPercent,
     salesTaxMode:
       pickString(row.salesTaxMode) === "without_tax" ? "without_tax" : "with_tax",
+    purchaseTaxMode:
+      pickString(row.purchaseTaxMode) === "with_tax" ? "with_tax" : "without_tax",
     serialised: Boolean(row.serialised),
     status,
     ...(row.lowStockWarning !== undefined && { lowStockWarning: Boolean(row.lowStockWarning) }),

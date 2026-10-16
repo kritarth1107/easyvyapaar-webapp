@@ -20,6 +20,11 @@ export function getLedgerEntryTypeLabel(type: PartyLedgerEntryType): Translation
     payment_in: "dashboard.partyDetail.ledgerTypePaymentIn",
     payment_out: "dashboard.partyDetail.ledgerTypePaymentOut",
     quotation: "dashboard.partyDetail.ledgerTypeQuotation",
+    purchase_bill: "dashboard.partyDetail.ledgerTypePurchaseBill",
+    purchase_return: "dashboard.partyDetail.ledgerTypePurchaseReturn",
+    purchase_payment: "dashboard.partyDetail.ledgerTypePurchasePayment",
+    purchase_payment_reversal: "dashboard.partyDetail.ledgerTypePurchasePaymentReversal",
+    expense: "dashboard.partyDetail.ledgerTypeExpense",
   };
   return map[type];
 }
@@ -40,6 +45,10 @@ export function getLedgerEntryHref(entry: PartyLedgerEntry): string | null {
       return `/dashboard/finance/payments/${encodeURIComponent(entry.referenceId)}`;
     case "quotation":
       return `/dashboard/sales/quotations/${encodeURIComponent(entry.referenceId)}`;
+    case "purchase_bill":
+    case "purchase_payment":
+    case "purchase_payment_reversal":
+      return `/dashboard/purchases/${encodeURIComponent(entry.referenceId)}`;
     default:
       return null;
   }

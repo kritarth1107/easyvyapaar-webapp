@@ -176,3 +176,36 @@ export async function PATCH(request: Request, context: RouteContext) {
     return NextResponse.json({ error: "Failed to update item" }, { status: 500 });
   }
 }
+
+export async function DELETE(request: Request, context: RouteContext) {
+  try {
+    const organisationId = requireOrganisationId(request);
+    if (!organisationId) {
+      return NextResponse.json({ error: "organisationId is required" }, { status: 400 });
+    }
+
+    const { itemId } = await context.params;
+    const trimmedItemId = itemId?.trim();
+    if (!trimmedItemId) {
+      return NextResponse.json({ error: "itemId is required" }, { status: 400 });
+    }
+
+    const { response, body } = await proxyInventoryBackend(
+      request,
+      `inventory/organisations/${encodeURIComponent(organisationId)}/items/${encodeURIComponent(trimmedItemId)}`,
+      { method: "DELETE" },
+    );
+
+    if (!response.ok) {
+      return NextResponse.json(
+        { error: extractBackendError(body) ?? "Failed to delete item" },
+        { status: response.status },
+      );
+    }
+
+    return NextResponse.json(body, { status: response.status });
+  } catch (error) {
+    console.error("Inventory item delete error:", error);
+    return NextResponse.json({ error: "Failed to delete item" }, { status: 500 });
+  }
+}

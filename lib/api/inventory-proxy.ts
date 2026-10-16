@@ -1,5 +1,5 @@
 import { getApiBaseUrl, parseBackendBody } from "@/lib/api/backend";
-import { getHeadersFromRequest } from "@/lib/header-utils";
+import { getBodylessHeadersFromRequest, getHeadersFromRequest } from "@/lib/header-utils";
 
 export async function proxyInventoryBackend(
   request: Request,
@@ -14,7 +14,10 @@ export async function proxyInventoryBackend(
     };
   }
 
-  const headers = getHeadersFromRequest(request);
+  // Bodyless calls (GET/DELETE/action POSTs) must not send Content-Type: application/json,
+  // otherwise Fastify rejects the empty body.
+  const headers =
+    init?.body == null ? getBodylessHeadersFromRequest(request) : getHeadersFromRequest(request);
   const backendUrl = new URL(path.replace(/^\//, ""), apiBaseUrl);
 
   try {

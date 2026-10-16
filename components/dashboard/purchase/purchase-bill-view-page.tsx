@@ -2,14 +2,17 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useUserMe } from "@/components/providers/user-me-provider";
 import { PurchaseBillPdfPreviewModal } from "@/components/dashboard/purchase/purchase-bill-pdf-preview-modal";
 import { ModernSelect } from "@/components/ui/modern-select";
 import { formatDate, formatInr, inputClass, StatCard } from "@/lib/dashboard/page-utils";
 import {
   buildPurchaseBillPdfUrl,
+  cancelPurchaseBill,
+  deletePurchaseBill,
   fetchPurchaseBillDetail,
+  markPurchaseBillUnpaid,
   recordPurchaseBillPayment,
 } from "@/lib/purchase/purchases-api-client";
 import type { PurchaseBillDetail, PurchasePaymentMode } from "@/lib/types/purchase-api";
@@ -18,6 +21,7 @@ import { useTranslation } from "@/lib/localization";
 export function PurchaseBillViewPage() {
   const { t } = useTranslation();
   const params = useParams<{ purchaseBillId: string }>();
+  const router = useRouter();
   const { activeOrganisationId } = useUserMe();
   const orgId = activeOrganisationId?.trim() ?? "";
   const billId = params.purchaseBillId;
@@ -32,6 +36,35 @@ export function PurchaseBillViewPage() {
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewUrl, setPreviewUrl] = useState("");
+  const [busyAction, setBusyAction] = useState<"cancel" | "unpaid" | "delete" | null>(null);
+
+  const runAction = async (
+    kind: "cancel" | "unpaid" | "delete",
+    confirmKey: Parameters<typeof t>[0],
+    errorKey: Parameters<typeof t>[0],
+  ) => {
+    if (!orgId || !billId) return;
+    if (!window.confirm(t(confirmKey))) return;
+    setBusyAction(kind);
+    setError(null);
+    try {
+      if (kind === "delete") {
+        await deletePurchaseBill(orgId, billId);
+        router.push("/dashboard/purchases");
+        return;
+      }
+      const updated =
+        kind === "cancel"
+          ? await cancelPurchaseBill(orgId, billId)
+          : await markPurchaseBillUnpaid(orgId, billId);
+      setBill(updated);
+      setPayAmount(String(updated.balanceAmount));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t(errorKey));
+    } finally {
+      setBusyAction(null);
+    }
+  };
 
   const load = useCallback(async () => {
     if (!orgId || !billId) return;
@@ -116,6 +149,12 @@ export function PurchaseBillViewPage() {
   }
 
   const attachedUrl = bill.billPdfUrl?.trim() || "";
+  const status = bill.backendStatus;
+  const hasPayments = bill.paidAmount > 0;
+  const canEdit =
+    status === "draft" || ((status === "unpaid" || status === "received") && !hasPayments);
+  const canCancel = status !== "cancelled" && !hasPayments;
+  const canMarkUnpaid = (status === "partial" || status === "paid") && hasPayments;
 
   return (
     <div className="p-4 lg:p-6">
@@ -130,6 +169,68 @@ export function PurchaseBillViewPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          {canEdit ? (
+            <Link
+              href={`/dashboard/purchases/${encodeURIComponent(bill.purchaseBillId)}/edit`}
+              className="inline-flex h-10 items-center justify-center rounded-md border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50"
+            >
+              {t("dashboard.purchases.view.edit")}
+            </Link>
+          ) : null}
+          {canMarkUnpaid ? (
+            <button
+              type="button"
+              disabled={busyAction !== null}
+              onClick={() =>
+                void runAction(
+                  "unpaid",
+                  "dashboard.purchases.view.markUnpaidConfirm",
+                  "dashboard.purchases.view.markUnpaidError",
+                )
+              }
+              className="inline-flex h-10 items-center justify-center rounded-md border border-amber-300 bg-amber-50 px-4 text-sm font-semibold text-amber-800 hover:bg-amber-100 disabled:opacity-60"
+            >
+              {busyAction === "unpaid"
+                ? t("dashboard.purchases.view.markingUnpaid")
+                : t("dashboard.purchases.view.markUnpaid")}
+            </button>
+          ) : null}
+          {canCancel ? (
+            <button
+              type="button"
+              disabled={busyAction !== null}
+              onClick={() =>
+                void runAction(
+                  "cancel",
+                  "dashboard.purchases.view.cancelConfirm",
+                  "dashboard.purchases.view.cancelError",
+                )
+              }
+              className="inline-flex h-10 items-center justify-center rounded-md border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50 disabled:opacity-60"
+            >
+              {busyAction === "cancel"
+                ? t("dashboard.purchases.view.cancelling")
+                : t("dashboard.purchases.view.cancelBill")}
+            </button>
+          ) : null}
+          <span title={hasPayments ? t("dashboard.purchases.view.deleteNeedsUnpaid") : undefined}>
+            <button
+              type="button"
+              disabled={busyAction !== null || hasPayments}
+              onClick={() =>
+                void runAction(
+                  "delete",
+                  "dashboard.purchases.view.deleteConfirm",
+                  "dashboard.purchases.view.deleteError",
+                )
+              }
+              className="inline-flex h-10 items-center justify-center rounded-md border border-red-300 bg-red-50 px-4 text-sm font-semibold text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {busyAction === "delete"
+                ? t("dashboard.purchases.view.deleting")
+                : t("dashboard.purchases.view.deleteBill")}
+            </button>
+          </span>
           <button
             type="button"
             onClick={() => {
@@ -186,6 +287,7 @@ export function PurchaseBillViewPage() {
               <th className="px-4 py-3 text-left">{t("dashboard.purchases.create.colItem")}</th>
               <th className="px-4 py-3 text-right">{t("dashboard.purchases.create.colQty")}</th>
               <th className="px-4 py-3 text-right">{t("dashboard.purchases.create.colRate")}</th>
+              <th className="px-4 py-3 text-right">{t("dashboard.purchases.view.colGst")}</th>
               <th className="px-4 py-3 text-right">{t("dashboard.purchases.create.colAmount")}</th>
             </tr>
           </thead>
@@ -195,6 +297,14 @@ export function PurchaseBillViewPage() {
                 <td className="px-4 py-3">{line.name}</td>
                 <td className="px-4 py-3 text-right tabular-nums">{line.qty}</td>
                 <td className="px-4 py-3 text-right tabular-nums">{formatInr(line.pricePerItem)}</td>
+                <td className="px-4 py-3 text-right tabular-nums">
+                  {line.gstPercent}%{" "}
+                  <span className="text-[11px] text-brand-primary-muted">
+                    ({line.purchaseTaxMode === "with_tax"
+                      ? t("dashboard.purchases.create.taxIncl")
+                      : t("dashboard.purchases.create.taxExcl")})
+                  </span>
+                </td>
                 <td className="px-4 py-3 text-right tabular-nums">{formatInr(line.amount)}</td>
               </tr>
             ))}
@@ -202,7 +312,7 @@ export function PurchaseBillViewPage() {
         </table>
       </div>
 
-      {bill.balanceAmount > 0 && (
+      {bill.balanceAmount > 0 && status !== "cancelled" && status !== "draft" && (
         <div className="mt-6 max-w-md rounded-sm border border-slate-200/90 bg-white p-4">
           <p className="text-sm font-semibold text-brand-primary">{t("dashboard.purchases.view.recordPayment")}</p>
           <div className="mt-3 space-y-3">

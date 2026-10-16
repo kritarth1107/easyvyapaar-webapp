@@ -16,6 +16,12 @@ import { useTranslation } from "@/lib/localization";
 
 type LineRow = CreatePurchaseOrderRequest["lineItems"][number] & { key: string };
 
+function lineGross(line: LineRow): number {
+  const base = line.qty * line.pricePerItem;
+  const gst = Number(line.gstPercent) || 0;
+  return line.purchaseTaxMode === "with_tax" ? base : base * (1 + gst / 100);
+}
+
 export function CreatePurchaseOrderPage() {
   const { t } = useTranslation();
   const router = useRouter();
@@ -37,11 +43,11 @@ export function CreatePurchaseOrderPage() {
     fetchNextPurchaseOrderNumber(orgId).then((d) => { setOrderPrefix(d.prefix); setOrderNumber(d.number); }).catch(() => {});
   }, [orgId]);
 
-  const total = lines.reduce((s, l) => s + l.qty * l.pricePerItem, 0);
+  const total = lines.reduce((s, l) => s + lineGross(l), 0);
 
   const handleAddItems = (picks: InventoryBillPick[]) => {
     setLines((prev) => [...prev, ...picks.map((pick) => ({
-      key: `${pick.item.id}-${Date.now()}`,
+      key: `${pick.item.id}-${Date.now()}-${Math.random()}`,
       itemId: pick.item.id,
       name: pick.item.name,
       qty: 1,
@@ -51,7 +57,7 @@ export function CreatePurchaseOrderPage() {
       gstPercent: pick.item.gstPercent ?? 0,
       discount: 0,
       discountType: "percent" as const,
-      purchaseTaxMode: "with_tax" as const,
+      purchaseTaxMode: pick.item.purchaseTaxMode ?? ("without_tax" as const),
     }))]);
   };
 
@@ -82,7 +88,7 @@ export function CreatePurchaseOrderPage() {
       </div>
       {lines.length > 0 && (
         <div className="mt-4 overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-sm">
-          <table className="w-full text-sm"><tbody>{lines.map((line) => (<tr key={line.key} className="border-b"><td className="px-4 py-2">{line.name}</td><td className="px-4 py-2 text-right">{formatInr(line.qty * line.pricePerItem)}</td></tr>))}</tbody></table>
+          <table className="w-full text-sm"><tbody>{lines.map((line) => (<tr key={line.key} className="border-b"><td className="px-4 py-2">{line.name}</td><td className="px-4 py-2 text-center"><button type="button" title={t("dashboard.purchases.create.taxToggleHint")} onClick={() => setLines((prev) => prev.map((row) => row.key === line.key ? { ...row, purchaseTaxMode: row.purchaseTaxMode === "with_tax" ? "without_tax" : "with_tax" } : row))} className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${line.purchaseTaxMode === "with_tax" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-slate-50 text-brand-primary"}`}>{line.purchaseTaxMode === "with_tax" ? t("dashboard.purchases.create.taxIncl") : t("dashboard.purchases.create.taxExcl")}</button></td><td className="px-4 py-2 text-right tabular-nums">{Number(line.gstPercent) || 0}% GST</td><td className="px-4 py-2 text-right">{formatInr(lineGross(line))}</td></tr>))}</tbody></table>
           <p className="px-4 py-3 text-right font-bold">{formatInr(total)}</p>
         </div>
       )}

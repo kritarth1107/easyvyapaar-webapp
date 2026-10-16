@@ -397,6 +397,10 @@ export type MessageTree = {
       serialTracking: string;
       hsn: string;
       itemDetail: {
+        deleteItem: string;
+        deleting: string;
+        deleteConfirm: string;
+        deleteError: string;
         backToItems: string;
         editItem: string;
         loadError: string;
@@ -912,6 +916,11 @@ export type MessageTree = {
       ledgerTypeDebitNote: string;
       ledgerTypePaymentIn: string;
       ledgerTypePaymentOut: string;
+      ledgerTypePurchaseBill: string;
+      ledgerTypePurchaseReturn: string;
+      ledgerTypePurchasePayment: string;
+      ledgerTypePurchasePaymentReversal: string;
+      ledgerTypeExpense: string;
       ledgerTypeQuotation: string;
       colDescription: string;
       memoEntry: string;
@@ -1730,6 +1739,14 @@ export type MessageTree = {
         validation: string;
         saveError: string;
         reason: string;
+        colGst: string;
+        colTaxMode: string;
+        taxIncl: string;
+        taxExcl: string;
+        taxToggleHint: string;
+        editTitle: string;
+        updateBill: string;
+        loadingBill: string;
       };
       view: {
         loadError: string;
@@ -1750,6 +1767,21 @@ export type MessageTree = {
         openInNewTab: string;
         attachedBill: string;
         openAttachedBill: string;
+        edit: string;
+        cancelBill: string;
+        cancelConfirm: string;
+        cancelling: string;
+        cancelError: string;
+        markUnpaid: string;
+        markUnpaidConfirm: string;
+        markingUnpaid: string;
+        markUnpaidError: string;
+        deleteBill: string;
+        deleteConfirm: string;
+        deleting: string;
+        deleteError: string;
+        deleteNeedsUnpaid: string;
+        colGst: string;
       };
     };
     expenses: {

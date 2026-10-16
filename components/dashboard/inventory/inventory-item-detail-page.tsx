@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { AdjustSerialStockModal } from "@/components/dashboard/inventory/adjust-serial-stock-modal";
 import { CreateItemModal } from "@/components/dashboard/inventory/create-item-modal";
 import { AdjustStockModal } from "@/components/dashboard/inventory/adjust-stock-modal";
 import { useUserMe } from "@/components/providers/user-me-provider";
 import type { InventoryItemStatus } from "@/lib/types/inventory-ui";
 import {
+  deleteInventoryItem,
   fetchInventoryItemDetail,
   fetchStockAdjustments,
 } from "@/lib/inventory/inventory-api-client";
@@ -136,6 +138,25 @@ export function InventoryItemDetailPage({ itemId }: InventoryItemDetailPageProps
   const [error, setError] = useState<string | null>(null);
   const [adjustOpen, setAdjustOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const router = useRouter();
+
+  const handleDelete = async () => {
+    const orgId = activeOrganisationId?.trim();
+    if (!orgId) return;
+    if (!window.confirm(t("dashboard.inventory.itemDetail.deleteConfirm"))) return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await deleteInventoryItem(orgId, itemId);
+      router.push("/dashboard/inventory/items");
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : t("dashboard.inventory.itemDetail.deleteError"));
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const loadItem = useCallback(async () => {
     const orgId = activeOrganisationId?.trim();
@@ -228,6 +249,11 @@ export function InventoryItemDetailPage({ itemId }: InventoryItemDetailPageProps
         </div>
       ) : item ? (
         <>
+          {deleteError ? (
+            <p className="mb-4 rounded-md border border-red-200/80 bg-red-50/60 px-4 py-3 text-sm text-red-800">
+              {deleteError}
+            </p>
+          ) : null}
           <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <div className="flex flex-wrap items-center gap-2">
@@ -253,6 +279,18 @@ export function InventoryItemDetailPage({ itemId }: InventoryItemDetailPageProps
               >
                 {t("dashboard.inventory.itemDetail.editItem")}
               </button>
+              {item.status !== "ARCHIVED" ? (
+                <button
+                  type="button"
+                  disabled={deleting}
+                  onClick={() => void handleDelete()}
+                  className="inline-flex h-10 items-center gap-2 rounded-md border border-red-300 bg-red-50 px-4 text-sm font-semibold text-red-700 hover:bg-red-100 disabled:opacity-60"
+                >
+                  {deleting
+                    ? t("dashboard.inventory.itemDetail.deleting")
+                    : t("dashboard.inventory.itemDetail.deleteItem")}
+                </button>
+              ) : null}
               <button
                 type="button"
                 onClick={() => setAdjustOpen(true)}

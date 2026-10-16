@@ -285,3 +285,14 @@ export async function uploadInventoryItemImage(
   }
   return detail;
 }
+
+export async function deleteInventoryItem(organisationId: string, itemId: string): Promise<void> {
+  const res = await fetch(
+    `/api/inventory/items/${encodeURIComponent(itemId)}?organisationId=${encodeURIComponent(organisationId)}`,
+    { method: "DELETE" },
+  );
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(extractBackendError(body) ?? "Failed to delete item");
+  }
+}

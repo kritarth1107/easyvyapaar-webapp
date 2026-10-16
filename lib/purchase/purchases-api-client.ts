@@ -25,6 +25,7 @@ import type {
   PurchaseReturnListParams,
   PurchaseReturnListResponse,
   RecordPurchaseBillPaymentRequest,
+  UpdatePurchaseBillRequest,
 } from "@/lib/types/purchase-api";
 
 async function parseJsonResponse(res: Response): Promise<unknown> {
@@ -159,6 +160,62 @@ export async function recordPurchaseBillPayment(
   const bill = normalizePurchaseBillDetailResponse(body);
   if (!bill) throw new Error("Failed to record payment");
   return bill;
+}
+
+async function postBillAction(
+  organisationId: string,
+  purchaseBillId: string,
+  action: "cancel" | "mark-unpaid",
+  fallbackError: string,
+): Promise<PurchaseBillDetail> {
+  const res = await fetch(
+    `/api/purchase/bills/${encodeURIComponent(purchaseBillId)}/${action}?organisationId=${encodeURIComponent(organisationId)}`,
+    { method: "POST" },
+  );
+  const body = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(extractBackendError(body) ?? fallbackError);
+  const bill = normalizePurchaseBillDetailResponse(body);
+  if (!bill) throw new Error(fallbackError);
+  return bill;
+}
+
+export async function updatePurchaseBill(
+  organisationId: string,
+  purchaseBillId: string,
+  payload: UpdatePurchaseBillRequest,
+): Promise<PurchaseBillDetail> {
+  const res = await fetch(
+    `/api/purchase/bills/${encodeURIComponent(purchaseBillId)}?organisationId=${encodeURIComponent(organisationId)}`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    },
+  );
+  const body = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(extractBackendError(body) ?? "Failed to update purchase bill");
+  const bill = normalizePurchaseBillDetailResponse(body);
+  if (!bill) throw new Error("Failed to update purchase bill");
+  return bill;
+}
+
+export function cancelPurchaseBill(organisationId: string, purchaseBillId: string) {
+  return postBillAction(organisationId, purchaseBillId, "cancel", "Failed to cancel purchase bill");
+}
+
+export function markPurchaseBillUnpaid(organisationId: string, purchaseBillId: string) {
+  return postBillAction(organisationId, purchaseBillId, "mark-unpaid", "Failed to mark bill as unpaid");
+}
+
+export async function deletePurchaseBill(organisationId: string, purchaseBillId: string): Promise<void> {
+  const res = await fetch(
+    `/api/purchase/bills/${encodeURIComponent(purchaseBillId)}?organisationId=${encodeURIComponent(organisationId)}`,
+    { method: "DELETE" },
+  );
+  if (!res.ok) {
+    const body = await parseJsonResponse(res);
+    throw new Error(extractBackendError(body) ?? "Failed to delete purchase bill");
+  }
 }
 
 // Orders

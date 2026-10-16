@@ -11,6 +11,8 @@ import { inputClass, inputSmClass, formatInr } from "@/lib/dashboard/page-utils"
 import {
   createPurchaseBill,
   fetchNextPurchaseBillNumber,
+  fetchPurchaseBillDetail,
+  updatePurchaseBill,
 } from "@/lib/purchase/purchases-api-client";
 import { fetchParties } from "@/lib/parties/parties-api-client";
 import type { PartySummary } from "@/lib/types/parties-api";
@@ -19,7 +21,15 @@ import { useTranslation } from "@/lib/localization";
 
 type LineRow = CreatePurchaseBillRequest["lineItems"][number] & { key: string };
 
-export function CreatePurchaseBillPage() {
+/** Line total as stored by the API: inclusive rate already contains GST, exclusive adds it. */
+function lineGross(line: LineRow): number {
+  const base = line.qty * line.pricePerItem;
+  const gst = Number(line.gstPercent) || 0;
+  return line.purchaseTaxMode === "with_tax" ? base : base * (1 + gst / 100);
+}
+
+export function CreatePurchaseBillPage({ purchaseBillId }: { purchaseBillId?: string } = {}) {
+  const isEdit = Boolean(purchaseBillId);
   const { t } = useTranslation();
   const router = useRouter();
   const { activeOrganisationId } = useUserMe();
@@ -39,22 +49,56 @@ export function CreatePurchaseBillPage() {
   const [addItemsOpen, setAddItemsOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loadingBill, setLoadingBill] = useState(isEdit);
+
+  useEffect(() => {
+    if (!orgId || !purchaseBillId) return;
+    fetchPurchaseBillDetail(orgId, purchaseBillId)
+      .then((bill) => {
+        setPartyId(bill.partyId);
+        setBillPrefix(bill.billPrefix);
+        setBillNumber(bill.billNumber);
+        setBillDate(bill.billDate.slice(0, 10));
+        setNotes(bill.notes ?? "");
+        setLines(
+          bill.lineItems.map((line) => ({
+            key: `${line.lineId}-${Math.random()}`,
+            itemId: line.itemId,
+            name: line.name,
+            qty: line.qty,
+            pricePerItem: line.pricePerItem,
+            unit: line.unit,
+            hsn: line.hsn,
+            gstPercent: line.gstPercent,
+            discount: line.discount,
+            discountType: line.discountType,
+            purchaseTaxMode: line.purchaseTaxMode,
+            ...(line.serialNumbers?.length ? { serialNumbers: line.serialNumbers } : {}),
+          })),
+        );
+      })
+      .catch((err) =>
+        setError(err instanceof Error ? err.message : t("dashboard.purchases.view.loadError")),
+      )
+      .finally(() => setLoadingBill(false));
+  }, [orgId, purchaseBillId, t]);
 
   useEffect(() => {
     if (!orgId) return;
     fetchParties(orgId, { view: "suppliers", limit: 100, page: 1 })
       .then((data) => setSuppliers(data.items))
       .catch(() => setSuppliers([]));
+    if (isEdit) return;
     fetchNextPurchaseBillNumber(orgId)
       .then((data) => {
         setBillPrefix(data.prefix);
         setBillNumber(data.number);
       })
       .catch(() => {});
-  }, [orgId]);
+  }, [orgId, isEdit]);
 
   const total = useMemo(
-    () => lines.reduce((sum, line) => sum + line.qty * line.pricePerItem, 0),
+    () => lines.reduce((sum, line) => sum + lineGross(line), 0),
     [lines],
   );
 
@@ -72,7 +116,8 @@ export function CreatePurchaseBillPage() {
         gstPercent: pick.item.gstPercent ?? 0,
         discount: 0,
         discountType: "percent" as const,
-        purchaseTaxMode: "with_tax" as const,
+        purchaseTaxMode: pick.item.purchaseTaxMode ?? ("without_tax" as const),
+        ...(pick.serialNumbers?.length ? { serialNumbers: pick.serialNumbers } : {}),
       })),
     ]);
   };
@@ -85,6 +130,16 @@ export function CreatePurchaseBillPage() {
     setSaving(true);
     setError(null);
     try {
+      if (isEdit && purchaseBillId) {
+        const updated = await updatePurchaseBill(orgId, purchaseBillId, {
+          partyId,
+          billDate,
+          notes: notes.trim() || null,
+          lineItems: lines.map(({ key: _key, ...line }) => line),
+        });
+        router.push(`/dashboard/purchases/${updated.purchaseBillId}`);
+        return;
+      }
       const payload: CreatePurchaseBillRequest = {
         partyId,
         billPrefix,
@@ -107,13 +162,17 @@ export function CreatePurchaseBillPage() {
     }
   };
 
+  if (loadingBill) {
+    return <div className="p-6 text-brand-primary-muted">{t("dashboard.purchases.create.loadingBill")}</div>;
+  }
+
   return (
     <div className="p-4 lg:p-6">
       <div className="mb-6">
-        <Link href="/dashboard/purchases" className="text-sm font-semibold text-brand-orange-2 hover:underline">
+        <Link href={isEdit && purchaseBillId ? `/dashboard/purchases/${purchaseBillId}` : "/dashboard/purchases"} className="text-sm font-semibold text-brand-orange-2 hover:underline">
           ← {t("dashboard.purchases.backToList")}
         </Link>
-        <h2 className="mt-2 text-xl font-bold text-brand-primary lg:text-2xl">{t("dashboard.purchases.createTitle")}</h2>
+        <h2 className="mt-2 text-xl font-bold text-brand-primary lg:text-2xl">{isEdit ? t("dashboard.purchases.create.editTitle") : t("dashboard.purchases.createTitle")}</h2>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
@@ -143,10 +202,11 @@ export function CreatePurchaseBillPage() {
                 {t("dashboard.purchases.create.billNumber")}
               </label>
               <div className="flex gap-2">
-                <input value={billPrefix} onChange={(e) => setBillPrefix(e.target.value)} className={`${inputSmClass} w-20`} />
-                <input value={billNumber} onChange={(e) => setBillNumber(e.target.value)} className={inputSmClass} />
+                <input value={billPrefix} disabled={isEdit} onChange={(e) => setBillPrefix(e.target.value)} className={`${inputSmClass} w-20`} />
+                <input value={billNumber} disabled={isEdit} onChange={(e) => setBillNumber(e.target.value)} className={inputSmClass} />
               </div>
             </div>
+            {!isEdit ? (
             <div>
               <label className="mb-1 block text-xs font-semibold uppercase text-brand-primary-muted">
                 {t("dashboard.purchases.create.attachment")}
@@ -170,6 +230,7 @@ export function CreatePurchaseBillPage() {
                 </div>
               ) : null}
             </div>
+            ) : null}
           </div>
 
           <div>
@@ -195,6 +256,8 @@ export function CreatePurchaseBillPage() {
                       <th className="py-2 text-left">{t("dashboard.purchases.create.colItem")}</th>
                       <th className="py-2 text-right">{t("dashboard.purchases.create.colQty")}</th>
                       <th className="py-2 text-right">{t("dashboard.purchases.create.colRate")}</th>
+                      <th className="py-2 text-center">{t("dashboard.purchases.create.colTaxMode")}</th>
+                      <th className="py-2 text-right">{t("dashboard.purchases.create.colGst")}</th>
                       <th className="py-2 text-right">{t("dashboard.purchases.create.colAmount")}</th>
                       <th className="py-2" />
                     </tr>
@@ -233,7 +296,36 @@ export function CreatePurchaseBillPage() {
                             className={`${inputSmClass} w-24 text-right`}
                           />
                         </td>
-                        <td className="py-2 text-right tabular-nums">{formatInr(line.qty * line.pricePerItem)}</td>
+                        <td className="py-2 text-center">
+                          <button
+                            type="button"
+                            title={t("dashboard.purchases.create.taxToggleHint")}
+                            onClick={() =>
+                              setLines((prev) =>
+                                prev.map((row) =>
+                                  row.key === line.key
+                                    ? {
+                                        ...row,
+                                        purchaseTaxMode:
+                                          row.purchaseTaxMode === "with_tax" ? "without_tax" : "with_tax",
+                                      }
+                                    : row,
+                                ),
+                              )
+                            }
+                            className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
+                              line.purchaseTaxMode === "with_tax"
+                                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                : "border-slate-200 bg-slate-50 text-brand-primary"
+                            }`}
+                          >
+                            {line.purchaseTaxMode === "with_tax"
+                              ? t("dashboard.purchases.create.taxIncl")
+                              : t("dashboard.purchases.create.taxExcl")}
+                          </button>
+                        </td>
+                        <td className="py-2 text-right tabular-nums">{Number(line.gstPercent) || 0}%</td>
+                        <td className="py-2 text-right tabular-nums">{formatInr(lineGross(line))}</td>
                         <td className="py-2 text-right">
                           <button
                             type="button"
@@ -259,6 +351,8 @@ export function CreatePurchaseBillPage() {
 
         <div className="space-y-4">
           <div className="rounded-sm border border-slate-200/90 bg-white p-4">
+            {!isEdit ? (
+            <>
             <p className="text-sm font-semibold text-brand-primary">{t("dashboard.purchases.create.payment")}</p>
             <div className="mt-3 space-y-3">
               <ModernSelect
@@ -296,6 +390,8 @@ export function CreatePurchaseBillPage() {
                 </>
               )}
             </div>
+            </>
+            ) : null}
             <p className="mt-4 text-lg font-bold text-brand-primary">{formatInr(total)}</p>
             {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
             <button
@@ -304,7 +400,11 @@ export function CreatePurchaseBillPage() {
               onClick={() => void handleSave()}
               className="mt-4 w-full rounded-md bg-brand-primary py-2.5 text-sm font-semibold text-white hover:brightness-110 disabled:opacity-60"
             >
-              {saving ? t("dashboard.purchases.create.saving") : t("dashboard.purchases.create.saveBill")}
+              {saving
+                ? t("dashboard.purchases.create.saving")
+                : isEdit
+                  ? t("dashboard.purchases.create.updateBill")
+                  : t("dashboard.purchases.create.saveBill")}
             </button>
           </div>
         </div>

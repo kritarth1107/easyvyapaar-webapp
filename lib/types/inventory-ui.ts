@@ -15,6 +15,8 @@ export type InventoryItem = {
   purchasePrice: number;
   gstPercent: number;
   salesTaxMode: "with_tax" | "without_tax";
+  /** Purchase price tax mode; missing on the item => without_tax (exclusive). */
+  purchaseTaxMode?: "with_tax" | "without_tax";
   serialised: boolean;
   status: InventoryItemStatus;
   lowStockWarning?: boolean;
