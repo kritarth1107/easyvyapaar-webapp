@@ -11,7 +11,10 @@ import { SalesInvoicePreviewModal } from "@/components/dashboard/sales/sales-inv
 import { ModernSelect } from "@/components/ui/modern-select";
 import { fetchInventoryCategories, fetchInventoryItems } from "@/lib/inventory/inventory-api-client";
 import { fetchBusinessProfile } from "@/lib/business/business-profile-api-client";
-import { buildLiveInvoicePreviewModel } from "@/lib/sales/build-live-invoice-preview";
+import {
+  buildLiveInvoicePreviewFromDetail,
+  buildLiveInvoicePreviewModel,
+} from "@/lib/sales/build-live-invoice-preview";
 import {
   organisationProfileToSnapshot,
   type InvoiceOrganisationSnapshot,
@@ -30,7 +33,14 @@ import {
   DEFAULT_STORED_SALES_INVOICE_SETTINGS,
   type StoredSalesInvoiceSettings,
 } from "@/lib/sales/invoice-settings-config";
-import { posPrinterToTheme } from "@/lib/pos/pos-settings";
+import { posPrinterToTheme, posThermalWidth } from "@/lib/pos/pos-settings";
+import {
+  openPrintWindow,
+  printThermalReceipt,
+  renderSignedQrDataUrl,
+} from "@/lib/sales/print-thermal";
+import type { PrintWindowHandle } from "@/lib/print/print-html";
+import { useThermalReceiptLabels } from "@/lib/sales/use-thermal-receipt-labels";
 import {
   applyPosSettingsToBill,
   createPosBill,
@@ -79,6 +89,7 @@ function EmptyItemsIcon() {
 
 export function PosBillingPage() {
   const { t } = useTranslation();
+  const thermalLabels = useThermalReceiptLabels();
   const router = useRouter();
   const { activeOrganisationId, activeOrganisation } = useUserMe();
 
@@ -360,6 +371,13 @@ export function PosBillingPage() {
         return;
       }
 
+      // Thermal: open the print window now, inside the click/keypress gesture, so popup
+      // blockers allow it; it is filled after the save resolves and closed on failure.
+      const thermalWidth = withPrint ? posThermalWidth(posSettings.printerType) : null;
+      let printWindow: PrintWindowHandle | null = thermalWidth
+        ? openPrintWindow(t("dashboard.pos.printPreview"))
+        : null;
+
       setSaving(true);
       setError(null);
       setSuccess(null);
@@ -387,6 +405,26 @@ export function PosBillingPage() {
           } catch {
             // Preview still works with minimal header data.
           }
+          if (thermalWidth && printWindow) {
+            // Receipt is built from the saved invoice (server totals, number, IRN), not the cart.
+            const savedModel = buildLiveInvoicePreviewFromDetail(
+              invoice,
+              activeOrganisation?.name ?? "",
+              orgSnapshot,
+              activeBill.party,
+            );
+            const qrDataUrl = await renderSignedQrDataUrl(invoice.signedQr);
+            printThermalReceipt(
+              savedModel,
+              thermalWidth,
+              thermalLabels,
+              invoice.irn
+                ? { irn: invoice.irn, ackNo: invoice.ackNo, ackDate: invoice.ackDate, qrDataUrl }
+                : null,
+              printWindow,
+            );
+            printWindow = null;
+          } else {
           const model = buildLiveInvoicePreviewModel({
             form: activeBill.form,
             party: activeBill.party,
@@ -401,6 +439,7 @@ export function PosBillingPage() {
           setPreviewModel(model);
           setPreviewOrganisation(orgSnapshot);
           setPreviewOpen(true);
+          }
         }
 
         setSuccess(t("dashboard.pos.savedSuccess"));
@@ -417,6 +456,7 @@ export function PosBillingPage() {
           router.push(`/dashboard/sales/invoices/${encodeURIComponent(invoice.invoiceId)}`);
         }
       } catch (err) {
+        printWindow?.close();
         setError(err instanceof Error ? err.message : t("dashboard.salesInvoices.create.saveError"));
       } finally {
         setSaving(false);
@@ -432,6 +472,7 @@ export function PosBillingPage() {
       router,
       storedInvoiceSettings,
       t,
+      thermalLabels,
     ],
   );
 

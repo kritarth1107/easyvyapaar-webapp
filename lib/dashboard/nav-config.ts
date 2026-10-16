@@ -63,6 +63,7 @@ export const DASHBOARD_NAV_GROUPS: NavGroupConfig[] = [
       { id: "stock", href: "/dashboard/inventory/stock-summary", icon: "warehouse" },
       { id: "low-stock", href: "/dashboard/inventory/low-stock", icon: "inventory" },
       { id: "serial-tracking", href: "/dashboard/inventory/serial-tracking", icon: "inventory" },
+      { id: "barcode-labels", href: "/dashboard/inventory/barcode-labels", icon: "inventory" },
       // godowns deferred - hidden until real feature
     ],
   },

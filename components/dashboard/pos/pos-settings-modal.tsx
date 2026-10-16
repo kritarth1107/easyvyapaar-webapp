@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { ModernSelect } from "@/components/ui/modern-select";
 import type { PosSettings } from "@/lib/pos/pos-settings";
+import { normalisePosPrinterType } from "@/lib/pos/pos-settings";
 import { useTranslation } from "@/lib/localization";
 import { PosModalShell } from "./pos-modal-shell";
 import { ShortcutBadge } from "./shortcut-badge";
@@ -124,12 +125,13 @@ export function PosSettingsModal({ open, settings, onClose, onSave }: PosSetting
             onChange={(printerType) =>
               setDraft((s) => ({
                 ...s,
-                printerType: printerType === "thermal" ? "thermal" : "a4",
+                printerType: normalisePosPrinterType(printerType),
               }))
             }
             options={[
               { value: "a4", label: t("dashboard.pos.printerA4") },
-              { value: "thermal", label: t("dashboard.pos.printerThermal") },
+              { value: "thermal58", label: t("dashboard.pos.printerThermal58") },
+              { value: "thermal80", label: t("dashboard.pos.printerThermal80") },
             ]}
           />
         </div>

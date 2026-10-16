@@ -183,6 +183,18 @@ export function InventoryPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [categoryOptions, setCategoryOptions] = useState<string[]>([]);
   const [stockStats, setStockStats] = useState<InventoryStockStats | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+  const toggleSelected = (id: string) =>
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  const barcodeHref =
+    selectedIds.size > 0
+      ? `/dashboard/inventory/barcode-labels?ids=${encodeURIComponent([...selectedIds].join(","))}`
+      : "/dashboard/inventory/barcode-labels";
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedQuery(query), 300);
@@ -235,6 +247,14 @@ export function InventoryPage() {
             {t("dashboard.nav.items")}
           </h2>
         </div>
+        <div className="flex flex-wrap gap-2">
+        <Link
+          href={barcodeHref}
+          className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50"
+        >
+          {t("dashboard.barcodeLabels.printLabels")}
+          {selectedIds.size > 0 ? ` (${selectedIds.size})` : ""}
+        </Link>
         <button
           type="button"
           onClick={() => setCreateOpen(true)}
@@ -246,6 +266,7 @@ export function InventoryPage() {
           </span>
           {t("dashboard.inventory.addItem")}
         </button>
+        </div>
       </div>
 
       {showNoOrganisation && (
@@ -313,6 +334,9 @@ export function InventoryPage() {
           <table className="w-full min-w-[720px] text-left text-sm">
             <thead>
               <tr className="border-b border-slate-100 bg-brand-surface/50 text-[11px] font-bold uppercase tracking-wide text-brand-primary-muted">
+                <th className="w-10 px-4 py-3">
+                  <span className="sr-only">{t("dashboard.barcodeLabels.selectForLabels")}</span>
+                </th>
                 <th className="px-4 py-3">{t("dashboard.inventory.colItem")}</th>
                 <th className="px-4 py-3">{t("dashboard.inventory.colSku")}</th>
                 <th className="px-4 py-3">{t("dashboard.inventory.colCategory")}</th>
@@ -325,18 +349,25 @@ export function InventoryPage() {
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-sm text-slate-500">
+                  <td colSpan={8} className="px-4 py-12 text-center text-sm text-slate-500">
                     {t("dashboard.inventory.loading")}
                   </td>
                 </tr>
               ) : items.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-sm text-slate-500">
+                  <td colSpan={8} className="px-4 py-12 text-center text-sm text-slate-500">
                     {t("dashboard.inventory.empty")}
                   </td>
                 </tr>
               ) : (
-                items.map((item) => <InventoryRow key={item.id} item={item} />)
+                items.map((item) => (
+                  <InventoryRow
+                    key={item.id}
+                    item={item}
+                    selected={selectedIds.has(item.id)}
+                    onToggleSelected={() => toggleSelected(item.id)}
+                  />
+                ))
               )}
             </tbody>
           </table>
@@ -379,7 +410,15 @@ export function InventoryPage() {
   );
 }
 
-function InventoryRow({ item }: { item: InventoryItem }) {
+function InventoryRow({
+  item,
+  selected,
+  onToggleSelected,
+}: {
+  item: InventoryItem;
+  selected: boolean;
+  onToggleSelected: () => void;
+}) {
   const { t } = useTranslation();
   const router = useRouter();
   const itemHref = `/dashboard/inventory/items/${encodeURIComponent(item.id)}`;
@@ -402,6 +441,14 @@ function InventoryRow({ item }: { item: InventoryItem }) {
       role="link"
       aria-label={item.name}
     >
+      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+        <input
+          type="checkbox"
+          checked={selected}
+          onChange={onToggleSelected}
+          aria-label={`${t("dashboard.barcodeLabels.selectForLabels")}: ${item.name}`}
+        />
+      </td>
       <td className="px-4 py-3">
         <div className="flex flex-col items-start gap-0.5">
           <p className="font-semibold text-brand-primary">{item.name}</p>

@@ -279,6 +279,12 @@ export function InventoryItemDetailPage({ itemId }: InventoryItemDetailPageProps
               >
                 {t("dashboard.inventory.itemDetail.editItem")}
               </button>
+              <Link
+                href={`/dashboard/inventory/barcode-labels?ids=${encodeURIComponent(itemId)}`}
+                className="inline-flex h-10 items-center gap-2 rounded-md border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50"
+              >
+                {t("dashboard.barcodeLabels.printLabel")}
+              </Link>
               {item.status !== "ARCHIVED" ? (
                 <button
                   type="button"

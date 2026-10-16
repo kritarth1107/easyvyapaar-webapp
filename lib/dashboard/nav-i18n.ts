@@ -22,6 +22,7 @@ const NAV_ITEM_KEYS: Record<string, TranslationKey> = {
   items: "dashboard.nav.items",
   stock: "dashboard.nav.stock",
   "serial-tracking": "dashboard.nav.serialTracking",
+  "barcode-labels": "dashboard.barcodeLabels.title",
   godowns: "dashboard.nav.godowns",
   "low-stock": "dashboard.nav.lowStockNav",
   purchases: "dashboard.nav.purchases",

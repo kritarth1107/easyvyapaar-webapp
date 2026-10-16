@@ -32,6 +32,13 @@ import {
   type StoredSalesInvoiceSettings,
 } from "@/lib/sales/invoice-settings-config";
 import { printInvoiceElement, triggerInvoiceSavePdf } from "@/lib/sales/print-invoice";
+import {
+  openPrintWindow,
+  printThermalReceipt,
+  renderSignedQrDataUrl,
+  type ThermalRollWidth,
+} from "@/lib/sales/print-thermal";
+import { useThermalReceiptLabels } from "@/lib/sales/use-thermal-receipt-labels";
 import { fetchSalesInvoiceSettings } from "@/lib/sales/sales-invoice-settings-api-client";
 import { sharePaymentReminderWhatsApp } from "@/lib/sales/share-payment-reminder";
 import {
@@ -123,6 +130,7 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
     !permissionsLoading && isInvoiceWhatsAppStarterLocked(planFeatures);
   const businessName = activeOrganisation?.name ?? "Your Business";
   const printAreaRef = useRef<HTMLDivElement>(null);
+  const thermalLabels = useThermalReceiptLabels();
 
   const [invoice, setInvoice] = useState<SalesInvoiceDetail | null>(null);
   const [party, setParty] = useState<SelectedInvoiceParty | null>(null);
@@ -412,6 +420,31 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
     pageSize: resolveInvoicePageSizeFromTheme(storedSettings.themeId),
   };
 
+  const printThermal = (width: ThermalRollWidth) => {
+    if (!previewModel || !invoice) return;
+    const printWindow = openPrintWindow(printTitle); // synchronous, inside the click
+    const irn = eInvoiceMeta?.status === "cancelled" ? undefined : (eInvoiceMeta?.irn ?? invoice.irn);
+    const signedQr = eInvoiceMeta?.signedQr ?? invoice.signedQr;
+    void renderSignedQrDataUrl(irn ? signedQr : undefined)
+      .then((qrDataUrl) =>
+        printThermalReceipt(
+          previewModel,
+          width,
+          thermalLabels,
+          irn
+            ? {
+                irn,
+                ackNo: eInvoiceMeta?.ackNo ?? invoice.ackNo,
+                ackDate: eInvoiceMeta?.ackDate ?? invoice.ackDate,
+                qrDataUrl,
+              }
+            : null,
+          printWindow,
+        ),
+      )
+      .catch(() => printWindow.close());
+  };
+
   const canGenerateIrn =
     enableEInvoicing &&
     invoice != null &&
@@ -609,6 +642,24 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
               className="inline-flex h-10 items-center rounded-sm border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50"
             >
               {t("dashboard.salesInvoices.create.saveAsPdf")}
+            </button>
+            <button
+              type="button"
+              disabled={!previewModel}
+              onClick={() => printThermal(80)}
+              title={t("dashboard.thermalPrint.printThermalHint")}
+              className="inline-flex h-10 items-center rounded-sm border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50 disabled:opacity-60"
+            >
+              {t("dashboard.thermalPrint.print80")}
+            </button>
+            <button
+              type="button"
+              disabled={!previewModel}
+              onClick={() => printThermal(58)}
+              title={t("dashboard.thermalPrint.printThermalHint")}
+              className="inline-flex h-10 items-center rounded-sm border border-slate-200/90 bg-white px-4 text-sm font-semibold text-brand-primary hover:bg-slate-50 disabled:opacity-60"
+            >
+              {t("dashboard.thermalPrint.print58")}
             </button>
           </div>
         </div>

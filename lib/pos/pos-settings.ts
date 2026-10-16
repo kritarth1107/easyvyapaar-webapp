@@ -1,6 +1,19 @@
 import type { InvoiceThemeId } from "@/lib/sales/invoice-settings-config";
 
-export type PosPrinterType = "a4" | "thermal";
+export type PosPrinterType = "a4" | "thermal58" | "thermal80";
+
+export function normalisePosPrinterType(value: unknown): PosPrinterType {
+  if (value === "thermal58") return "thermal58";
+  // Legacy "thermal" value (pre 58/80 split) maps to the common 80mm roll.
+  if (value === "thermal80" || value === "thermal") return "thermal80";
+  return "a4";
+}
+
+export function posThermalWidth(printerType: PosPrinterType): 58 | 80 | null {
+  if (printerType === "thermal58") return 58;
+  if (printerType === "thermal80") return 80;
+  return null;
+}
 
 export type PosSettings = {
   hideCustomer: boolean;
@@ -31,7 +44,7 @@ export function loadPosSettings(): PosSettings {
       fullyPaid: parsed.fullyPaid !== false,
       roundOff: parsed.roundOff !== false,
       hideMrp: Boolean(parsed.hideMrp),
-      printerType: parsed.printerType === "thermal" ? "thermal" : "a4",
+      printerType: normalisePosPrinterType(parsed.printerType),
     };
   } catch {
     return DEFAULT_POS_SETTINGS;
@@ -44,5 +57,5 @@ export function savePosSettings(settings: PosSettings): void {
 }
 
 export function posPrinterToTheme(printerType: PosPrinterType): InvoiceThemeId {
-  return printerType === "thermal" ? "billbook-a5" : "gst-advance-a4";
+  return printerType === "a4" ? "gst-advance-a4" : "billbook-a5";
 }
