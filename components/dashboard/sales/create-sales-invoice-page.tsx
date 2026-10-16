@@ -26,6 +26,7 @@ import { isValidGstin, normalizeGstin } from "@/lib/validators/gstin";
 import { stateCodeToLabel } from "@/lib/constants/indian-state-codes";
 import { maskBankAccountNumber } from "@/lib/parties/party-detail-utils";
 import type { OrganisationBankAccount } from "@/lib/types/organisation-bank-api";
+import { LineDiscountField } from "@/components/dashboard/shared/line-discount-field";
 import {
   clampLineDiscount,
   getInvoiceLineDisplay,
@@ -1297,37 +1298,14 @@ export function CreateSalesInvoicePage({ editInvoiceId }: { editInvoiceId?: stri
                           />
                         </td>
                         <td className="align-top px-3 py-2">
-                          <div className={`${inputGroupClass} w-[168px]`}>
-                            <div className="h-full w-[52px] shrink-0">
-                              <ModernSelect
-                                value={line.discountType}
-                                onChange={(v) =>
-                                  updateLine(line.id, { discountType: v as "percent" | "amount" })
-                                }
-                                options={[
-                                  { value: "percent", label: "%" },
-                                  { value: "amount", label: "₹" },
-                                ]}
-                                variant="compact"
-                                compactAttached
-                                aria-label={t("dashboard.salesInvoices.create.colDiscount")}
-                                className="h-full w-full"
-                              />
-                            </div>
-                            <input
-                              type="number"
-                              min={0}
-                              max={line.discountType === "percent" ? 100 : undefined}
-                              step="0.01"
-                              value={line.discount}
-                              onChange={(e) =>
-                                updateLine(line.id, {
-                                  discount: Number(e.target.value) || 0,
-                                })
-                              }
-                              className={`${inputGroupInnerClass} border-l border-slate-200/90`}
-                            />
-                          </div>
+                          <LineDiscountField
+                            discount={line.discount}
+                            discountType={line.discountType}
+                            qty={line.qty}
+                            pricePerItem={line.pricePerItem}
+                            ariaLabel={t("dashboard.salesInvoices.create.colDiscount")}
+                            onChange={(next) => updateLine(line.id, next)}
+                          />
                         </td>
                         {isBillOfSupply ? null : (
                           <td className="align-top px-3 py-2 pt-[10px] text-right tabular-nums text-brand-primary-muted">

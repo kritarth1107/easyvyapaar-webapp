@@ -1,5 +1,5 @@
 import type { CreateInvoiceFormState } from "@/lib/sales/create-invoice-form";
-import { normalizeSalesTaxMode } from "@/lib/sales/invoice-tax";
+import { clampLineDiscount, lineGrossAmount, normalizeSalesTaxMode } from "@/lib/sales/invoice-tax";
 import type { StoredSalesInvoiceSettings } from "@/lib/sales/invoice-settings-config";
 import type {
   CreateQuotationRequest,
@@ -34,7 +34,11 @@ export function mapCreateQuotationFormToRequest(
       qty: line.qty,
       unit: line.unit,
       pricePerItem: line.pricePerItem,
-      discount: line.discount,
+      discount: clampLineDiscount(
+        line.discount,
+        line.discountType,
+        lineGrossAmount(line.qty, line.pricePerItem),
+      ),
       discountType: line.discountType,
       gstPercent: line.gstPercent,
       salesTaxMode: normalizeSalesTaxMode(line.salesTaxMode),
@@ -63,7 +67,10 @@ export function mapCreateQuotationFormToRequest(
       amount: row.amount,
       taxPercent: row.taxPercent,
     })),
-    discountAfterTax: form.discountAfterTax,
+    discountAfterTax:
+      form.discountType === "percent"
+        ? Math.min(Math.max(0, form.discountAfterTax), 100)
+        : Math.max(0, form.discountAfterTax),
     discountType: form.discountType,
     discountTiming: form.discountTiming,
     autoRoundOff: form.autoRoundOff,

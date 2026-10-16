@@ -1,11 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
+import { MarketingFooter } from "@/components/marketing/marketing-footer";
 import { BRAND_LOGO } from "@/lib/brand/assets";
 import { LEGAL_ENTITY } from "@/legal/company";
 
 export default function LegalLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-full bg-white text-brand-primary">
+    <div className="flex min-h-full flex-col bg-white text-brand-primary">
       <header className="border-b border-slate-200/90 bg-brand-surface/30">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-6 py-4">
           <Link href="/" className="inline-flex shrink-0 items-center hover:opacity-80">
@@ -34,7 +35,8 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
           </nav>
         </div>
       </header>
-      <main>{children}</main>
+      <main className="flex-1">{children}</main>
+      <MarketingFooter />
     </div>
   );
 }

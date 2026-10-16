@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { LEGAL_ENTITY } from "@/legal/company";
-import { CONTACT_EMAIL } from "@/lib/marketing/site-content";
 import { FOOTER_COLUMNS } from "@/lib/marketing/navigation";
 
 export function MarketingFooter() {
@@ -16,8 +15,8 @@ export function MarketingFooter() {
             </p>
             <div className="mt-5 space-y-2 text-sm text-white/75">
               <p>
-                <a href={`mailto:${CONTACT_EMAIL}`} className="hover:text-white">
-                  {CONTACT_EMAIL}
+                <a href={`mailto:${LEGAL_ENTITY.contactEmail}`} className="hover:text-white">
+                  {LEGAL_ENTITY.contactEmail}
                 </a>
               </p>
               <p>mahajaan.com · mahajaan.in</p>

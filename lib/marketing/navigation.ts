@@ -63,11 +63,6 @@ export const FOOTER_COLUMNS = [
   },
   {
     title: "Company",
-    links: [
-      { label: "Contact us", href: "/contact" },
-      { label: "Privacy policy", href: "/legal/privacy-policy" },
-      { label: "Terms of service", href: "/legal/terms-of-service" },
-      { label: "Data deletion", href: "/legal/data-deletion-instructions" },
-    ],
+    links: [{ label: "Contact us", href: "/contact" }],
   },
 ] as const;

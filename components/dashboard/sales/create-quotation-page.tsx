@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { LineDiscountField } from "@/components/dashboard/shared/line-discount-field";
 import { AddItemsToBillModal } from "@/components/dashboard/sales/add-items-to-bill-modal";
 import { InvoiceSettingsModal } from "@/components/dashboard/sales/invoice-settings-modal";
 import { SalesInvoicePreviewModal } from "@/components/dashboard/sales/sales-invoice-preview-modal";
@@ -13,10 +14,13 @@ import {
 import type { InventoryBillPick } from "@/lib/types/inventory-ui";
 import { fetchBusinessProfile } from "@/lib/business/business-profile-api-client";
 import { fetchPartyDetail } from "@/lib/parties/parties-api-client";
+import { ModernSelect } from "@/components/ui/modern-select";
 import {
+  clampLineDiscount,
   getInvoiceLineDisplay,
   invoiceLinePriceFromInput,
   invoiceLinePriceInputValue,
+  lineGrossAmount,
   normalizeSalesTaxMode,
 } from "@/lib/sales/invoice-tax";
 import {
@@ -388,6 +392,24 @@ export function CreateQuotationPage({
     });
   };
 
+  const clampInvoiceDiscountValue = (
+    value: number,
+    discountType: CreateInvoiceFormState["discountType"],
+  ) => {
+    if (!Number.isFinite(value) || value <= 0) return 0;
+    if (discountType === "percent") return Math.min(value, 100);
+    return value;
+  };
+
+  const withClampedLineDiscount = (line: InvoiceLineItem): InvoiceLineItem => {
+    const discount = clampLineDiscount(
+      line.discount,
+      line.discountType,
+      lineGrossAmount(line.qty, line.pricePerItem),
+    );
+    return discount === line.discount ? line : { ...line, discount };
+  };
+
   const updateLine = (id: string, partial: Partial<InvoiceLineItem>) => {
     setForm((prev) => ({
       ...prev,
@@ -397,7 +419,7 @@ export function CreateQuotationPage({
         if ("qty" in partial && !line.serialised) {
           next.qty = clampInvoiceLineQty(line, Number(partial.qty) || 1, prev.lineItems);
         }
-        return next;
+        return withClampedLineDiscount(next);
       }),
     }));
   };
@@ -407,10 +429,10 @@ export function CreateQuotationPage({
       ...prev,
       lineItems: prev.lineItems.map((line) => {
         if (line.id !== id || line.serialised) return line;
-        return {
+        return withClampedLineDiscount({
           ...line,
           qty: clampInvoiceLineQty(line, line.qty + delta, prev.lineItems),
-        };
+        });
       }),
     }));
   };
@@ -715,7 +737,7 @@ export function CreateQuotationPage({
             </button>
           </div>
           <div className="overflow-x-auto scrollbar-brand">
-            <table className="w-full min-w-[900px] text-left text-sm">
+            <table className="w-full min-w-[1080px] text-left text-sm">
               <thead>
                 <tr className="border-b border-slate-100 bg-brand-surface/50 text-[10px] font-bold uppercase tracking-wide text-brand-primary-muted">
                   <th className="w-10 px-3 py-2">{t("dashboard.salesInvoices.create.colNo")}</th>
@@ -723,6 +745,7 @@ export function CreateQuotationPage({
                   <th className="w-24 px-3 py-2">{t("dashboard.salesInvoices.create.colHsn")}</th>
                   <th className="w-28 px-3 py-2">{t("dashboard.salesInvoices.create.colQty")}</th>
                   <th className="w-28 px-3 py-2">{t("dashboard.salesInvoices.create.colPrice")}</th>
+                  <th className="w-40 px-3 py-2">{t("dashboard.salesInvoices.create.colDiscount")}</th>
                   <th className="w-20 px-3 py-2">{t("dashboard.salesInvoices.create.colTax")}</th>
                   <th className="w-28 px-3 py-2 text-right">{t("dashboard.salesInvoices.create.colAmount")}</th>
                   <th className="w-10 px-2" />
@@ -731,7 +754,7 @@ export function CreateQuotationPage({
               <tbody>
                 {form.lineItems.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="p-0">
+                    <td colSpan={9} className="p-0">
                       <button
                         type="button"
                         onClick={() => setAddItemsOpen(true)}
@@ -816,6 +839,16 @@ export function CreateQuotationPage({
                             className={`${inputSmClass} tabular-nums`}
                           />
                         </td>
+                        <td className="align-top px-3 py-2">
+                          <LineDiscountField
+                            discount={line.discount}
+                            discountType={line.discountType}
+                            qty={line.qty}
+                            pricePerItem={line.pricePerItem}
+                            ariaLabel={t("dashboard.salesInvoices.create.colDiscount")}
+                            onChange={(next) => updateLine(line.id, next)}
+                          />
+                        </td>
                         <td className="align-top px-3 py-2 pt-[10px] text-right tabular-nums text-brand-primary-muted">
                           <p>{formatInr(lineDisplay.tax)}</p>
                           <p className="text-[10px]">({line.gstPercent}%)</p>
@@ -889,8 +922,88 @@ export function CreateQuotationPage({
             <div className="divide-y divide-slate-100 px-4">
               <TotalsRow
                 label={t("dashboard.salesInvoices.create.taxableAmount")}
-                value={formatInr(totals.taxableAmount)}
+                value={formatInr(
+                  form.discountTiming === "before_tax" && totals.discountAmount > 0
+                    ? totals.subtotal + totals.additionalChargesTotal
+                    : totals.taxableAmount,
+                )}
               />
+              <div className="grid grid-cols-[1fr_auto] items-center gap-4 py-2.5">
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                  <span className="shrink-0 text-sm font-medium text-brand-primary">
+                    + {t("dashboard.salesInvoices.create.addDiscount")}
+                  </span>
+                  <div className="h-9 w-[128px] shrink-0">
+                    <ModernSelect
+                      value={form.discountTiming}
+                      onChange={(v) =>
+                        patch({ discountTiming: v as "after_tax" | "before_tax" })
+                      }
+                      options={[
+                        {
+                          value: "after_tax",
+                          label: t("dashboard.salesInvoices.create.discountAfterTax"),
+                        },
+                        {
+                          value: "before_tax",
+                          label: t("dashboard.salesInvoices.create.discountBeforeTax"),
+                        },
+                      ]}
+                      variant="compact"
+                      className="h-full w-full"
+                    />
+                  </div>
+                  <div className={`${inputGroupClass} w-[148px] shrink-0`}>
+                    <div className="h-full w-[52px] shrink-0">
+                      <ModernSelect
+                        value={form.discountType}
+                        onChange={(v) => {
+                          const discountType = v as "percent" | "amount";
+                          patch({
+                            discountType,
+                            discountAfterTax: clampInvoiceDiscountValue(
+                              form.discountAfterTax,
+                              discountType,
+                            ),
+                          });
+                        }}
+                        options={[
+                          { value: "percent", label: "%" },
+                          { value: "amount", label: "₹" },
+                        ]}
+                        variant="compact"
+                        compactAttached
+                        className="h-full w-full"
+                      />
+                    </div>
+                    <input
+                      type="number"
+                      min={0}
+                      max={form.discountType === "percent" ? 100 : undefined}
+                      step="0.01"
+                      value={form.discountAfterTax}
+                      onChange={(e) =>
+                        patch({
+                          discountAfterTax: clampInvoiceDiscountValue(
+                            Number(e.target.value) || 0,
+                            form.discountType,
+                          ),
+                        })
+                      }
+                      className={`${inputGroupInnerClass} border-l border-slate-200/90`}
+                    />
+                  </div>
+                </div>
+                <span className="shrink-0 text-sm font-semibold tabular-nums text-red-600">
+                  {totals.discountAmount > 0 ? `- ${formatInr(totals.discountAmount)}` : formatInr(0)}
+                </span>
+              </div>
+              {form.discountTiming === "before_tax" && totals.discountAmount > 0 ? (
+                <TotalsRow
+                  label={t("dashboard.salesInvoices.create.netTaxable")}
+                  value={formatInr(totals.taxableAmount)}
+                />
+              ) : null}
               {totals.gstSplit.map((row) => (
                 <div key={`gst-${row.gstPercent}`}>
                   <TotalsRow

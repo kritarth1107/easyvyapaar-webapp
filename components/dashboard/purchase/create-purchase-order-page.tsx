@@ -4,8 +4,10 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUserMe } from "@/components/providers/user-me-provider";
+import { LineDiscountField } from "@/components/dashboard/shared/line-discount-field";
 import { AddItemsToBillModal } from "@/components/dashboard/sales/add-items-to-bill-modal";
 import { ModernSelect } from "@/components/ui/modern-select";
+import { clampLineDiscount, lineGrossAmount } from "@/lib/sales/invoice-tax";
 import type { InventoryBillPick } from "@/lib/types/inventory-ui";
 import { inputClass, inputSmClass, formatInr } from "@/lib/dashboard/page-utils";
 import { createPurchaseOrder, fetchNextPurchaseOrderNumber } from "@/lib/purchase/purchases-api-client";
@@ -16,10 +18,34 @@ import { useTranslation } from "@/lib/localization";
 
 type LineRow = CreatePurchaseOrderRequest["lineItems"][number] & { key: string };
 
+function lineDiscountType(line: Pick<LineRow, "discountType">): "percent" | "amount" {
+  return line.discountType === "amount" ? "amount" : "percent";
+}
+
+function withClampedLineDiscount(line: LineRow): LineRow {
+  const type = lineDiscountType(line);
+  const discount = clampLineDiscount(
+    line.discount ?? 0,
+    type,
+    lineGrossAmount(line.qty, line.pricePerItem),
+  );
+  if (discount === (line.discount ?? 0) && type === line.discountType) return line;
+  return { ...line, discount, discountType: type };
+}
+
+function toPayloadLine(line: LineRow) {
+  const { key: _key, ...rest } = withClampedLineDiscount(line);
+  return rest;
+}
+
 function lineGross(line: LineRow): number {
-  const base = line.qty * line.pricePerItem;
+  const base = lineGrossAmount(line.qty, line.pricePerItem);
+  const type = lineDiscountType(line);
+  const discount = clampLineDiscount(line.discount ?? 0, type, base);
+  const discountAmt = type === "percent" ? base * (discount / 100) : discount;
+  const net = Math.max(0, Math.round((base - discountAmt) * 100) / 100);
   const gst = Number(line.gstPercent) || 0;
-  return line.purchaseTaxMode === "with_tax" ? base : base * (1 + gst / 100);
+  return line.purchaseTaxMode === "with_tax" ? net : net * (1 + gst / 100);
 }
 
 export function CreatePurchaseOrderPage() {
@@ -67,7 +93,7 @@ export function CreatePurchaseOrderPage() {
     try {
       const order = await createPurchaseOrder(orgId, {
         partyId, orderPrefix, orderNumber, orderDate,
-        lineItems: lines.map(({ key: _k, ...line }) => line),
+        lineItems: lines.map(toPayloadLine),
       });
       router.push(`/dashboard/purchases/purchase-orders/${order.purchaseOrderId}`);
     } catch (err) {
@@ -88,7 +114,70 @@ export function CreatePurchaseOrderPage() {
       </div>
       {lines.length > 0 && (
         <div className="mt-4 overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-sm">
-          <table className="w-full text-sm"><tbody>{lines.map((line) => (<tr key={line.key} className="border-b"><td className="px-4 py-2">{line.name}</td><td className="px-4 py-2 text-center"><button type="button" title={t("dashboard.purchases.create.taxToggleHint")} onClick={() => setLines((prev) => prev.map((row) => row.key === line.key ? { ...row, purchaseTaxMode: row.purchaseTaxMode === "with_tax" ? "without_tax" : "with_tax" } : row))} className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${line.purchaseTaxMode === "with_tax" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-slate-50 text-brand-primary"}`}>{line.purchaseTaxMode === "with_tax" ? t("dashboard.purchases.create.taxIncl") : t("dashboard.purchases.create.taxExcl")}</button></td><td className="px-4 py-2 text-right tabular-nums">{Number(line.gstPercent) || 0}% GST</td><td className="px-4 py-2 text-right">{formatInr(lineGross(line))}</td></tr>))}</tbody></table>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b text-[11px] uppercase text-brand-primary-muted">
+                <th className="px-4 py-2 text-left">{t("dashboard.purchases.create.colItem")}</th>
+                <th className="px-4 py-2 text-left">{t("dashboard.salesInvoices.create.colDiscount")}</th>
+                <th className="px-4 py-2 text-center">{t("dashboard.purchases.create.colTaxMode")}</th>
+                <th className="px-4 py-2 text-right">{t("dashboard.purchases.create.colGst")}</th>
+                <th className="px-4 py-2 text-right">{t("dashboard.purchases.create.colAmount")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {lines.map((line) => (
+                <tr key={line.key} className="border-b">
+                  <td className="px-4 py-2">{line.name}</td>
+                  <td className="px-4 py-2">
+                    <LineDiscountField
+                      discount={line.discount ?? 0}
+                      discountType={lineDiscountType(line)}
+                      qty={line.qty}
+                      pricePerItem={line.pricePerItem}
+                      ariaLabel={t("dashboard.salesInvoices.create.colDiscount")}
+                      onChange={(next) =>
+                        setLines((prev) =>
+                          prev.map((row) =>
+                            row.key === line.key ? withClampedLineDiscount({ ...row, ...next }) : row,
+                          ),
+                        )
+                      }
+                    />
+                  </td>
+                  <td className="px-4 py-2 text-center">
+                    <button
+                      type="button"
+                      title={t("dashboard.purchases.create.taxToggleHint")}
+                      onClick={() =>
+                        setLines((prev) =>
+                          prev.map((row) =>
+                            row.key === line.key
+                              ? {
+                                  ...row,
+                                  purchaseTaxMode:
+                                    row.purchaseTaxMode === "with_tax" ? "without_tax" : "with_tax",
+                                }
+                              : row,
+                          ),
+                        )
+                      }
+                      className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
+                        line.purchaseTaxMode === "with_tax"
+                          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                          : "border-slate-200 bg-slate-50 text-brand-primary"
+                      }`}
+                    >
+                      {line.purchaseTaxMode === "with_tax"
+                        ? t("dashboard.purchases.create.taxIncl")
+                        : t("dashboard.purchases.create.taxExcl")}
+                    </button>
+                  </td>
+                  <td className="px-4 py-2 text-right tabular-nums">{Number(line.gstPercent) || 0}% GST</td>
+                  <td className="px-4 py-2 text-right">{formatInr(lineGross(line))}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
           <p className="px-4 py-3 text-right font-bold">{formatInr(total)}</p>
         </div>
       )}

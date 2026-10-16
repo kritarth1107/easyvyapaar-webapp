@@ -11,8 +11,10 @@ import {
 } from "@/components/dashboard/purchase/purchase-field-errors";
 import { useRouter } from "next/navigation";
 import { useUserMe } from "@/components/providers/user-me-provider";
+import { LineDiscountField } from "@/components/dashboard/shared/line-discount-field";
 import { AddItemsToBillModal } from "@/components/dashboard/sales/add-items-to-bill-modal";
 import { ModernSelect } from "@/components/ui/modern-select";
+import { clampLineDiscount, lineGrossAmount } from "@/lib/sales/invoice-tax";
 import type { InventoryBillPick } from "@/lib/types/inventory-ui";
 import { inputClass, inputSmClass, formatInr } from "@/lib/dashboard/page-utils";
 import {
@@ -40,18 +42,46 @@ import {
 
 type LineRow = CreatePurchaseBillRequest["lineItems"][number] & { key: string };
 
+function lineDiscountType(line: Pick<LineRow, "discountType">): "percent" | "amount" {
+  return line.discountType === "amount" ? "amount" : "percent";
+}
+
+function lineNetBase(line: Pick<LineRow, "qty" | "pricePerItem" | "discount" | "discountType">): number {
+  const base = lineGrossAmount(line.qty, line.pricePerItem);
+  const type = lineDiscountType(line);
+  const discount = clampLineDiscount(line.discount ?? 0, type, base);
+  const discountAmt = type === "percent" ? base * (discount / 100) : discount;
+  return Math.max(0, Math.round((base - discountAmt) * 100) / 100);
+}
+
+function withClampedLineDiscount(line: LineRow): LineRow {
+  const type = lineDiscountType(line);
+  const discount = clampLineDiscount(
+    line.discount ?? 0,
+    type,
+    lineGrossAmount(line.qty, line.pricePerItem),
+  );
+  if (discount === (line.discount ?? 0) && type === line.discountType) return line;
+  return { ...line, discount, discountType: type };
+}
+
+function toPayloadLine(line: LineRow) {
+  const { key: _key, ...rest } = withClampedLineDiscount(line);
+  return rest;
+}
+
 /** Line total as stored by the API: inclusive rate already contains GST, exclusive adds it. */
 /** Taxable value of a line (GST excluded), the default TDS base. */
 function lineTaxable(line: LineRow): number {
-  const base = line.qty * line.pricePerItem;
+  const net = lineNetBase(line);
   const gst = Number(line.gstPercent) || 0;
-  return line.purchaseTaxMode === "with_tax" ? base / (1 + gst / 100) : base;
+  return line.purchaseTaxMode === "with_tax" ? net / (1 + gst / 100) : net;
 }
 
 function lineGross(line: LineRow): number {
-  const base = line.qty * line.pricePerItem;
+  const net = lineNetBase(line);
   const gst = Number(line.gstPercent) || 0;
-  return line.purchaseTaxMode === "with_tax" ? base : base * (1 + gst / 100);
+  return line.purchaseTaxMode === "with_tax" ? net : net * (1 + gst / 100);
 }
 
 export function CreatePurchaseBillPage({ purchaseBillId }: { purchaseBillId?: string } = {}) {
@@ -185,7 +215,7 @@ export function CreatePurchaseBillPage({ purchaseBillId }: { purchaseBillId?: st
           partyId,
           billDate,
           notes: notes.trim() || null,
-          lineItems: lines.map(({ key: _key, ...line }) => line),
+          lineItems: lines.map(toPayloadLine),
           // null removes TDS; omitted keeps it (only send null when the bill had TDS).
           ...(tdsInput ? { tds: tdsInput } : hadTds ? { tds: null } : {}),
           ...(billAdjustments
@@ -213,7 +243,7 @@ export function CreatePurchaseBillPage({ purchaseBillId }: { purchaseBillId?: st
         billNumber,
         billDate,
         notes: notes.trim() || undefined,
-        lineItems: lines.map(({ key: _key, ...line }) => line),
+        lineItems: lines.map(toPayloadLine),
         ...(tdsInput ? { tds: tdsInput } : {}),
         ...(paymentType === "paid"
           ? { paidAmount: liveTds.netPayable, paymentMode }
@@ -331,6 +361,7 @@ export function CreatePurchaseBillPage({ purchaseBillId }: { purchaseBillId?: st
                       <th className="py-2 text-left">{t("dashboard.purchases.create.colItem")}</th>
                       <th className="py-2 text-right">{t("dashboard.purchases.create.colQty")}</th>
                       <th className="py-2 text-right">{t("dashboard.purchases.create.colRate")}</th>
+                      <th className="py-2 text-left">{t("dashboard.salesInvoices.create.colDiscount")}</th>
                       <th className="py-2 text-center">{t("dashboard.purchases.create.colTaxMode")}</th>
                       <th className="py-2 text-right">{t("dashboard.purchases.create.colGst")}</th>
                       <th className="py-2 text-right">{t("dashboard.purchases.create.colAmount")}</th>
@@ -350,7 +381,9 @@ export function CreatePurchaseBillPage({ purchaseBillId }: { purchaseBillId?: st
                             onChange={(e) =>
                               setLines((prev) =>
                                 prev.map((row) =>
-                                  row.key === line.key ? { ...row, qty: Number(e.target.value) || 0 } : row,
+                                  row.key === line.key
+                                    ? withClampedLineDiscount({ ...row, qty: Number(e.target.value) || 0 })
+                                    : row,
                                 ),
                               )
                             }
@@ -365,11 +398,32 @@ export function CreatePurchaseBillPage({ purchaseBillId }: { purchaseBillId?: st
                             onChange={(e) =>
                               setLines((prev) =>
                                 prev.map((row) =>
-                                  row.key === line.key ? { ...row, pricePerItem: Number(e.target.value) || 0 } : row,
+                                  row.key === line.key
+                                    ? withClampedLineDiscount({
+                                        ...row,
+                                        pricePerItem: Number(e.target.value) || 0,
+                                      })
+                                    : row,
                                 ),
                               )
                             }
                             className={`${inputSmClass} w-24 text-right`}
+                          />
+                        </td>
+                        <td className="py-2">
+                          <LineDiscountField
+                            discount={line.discount ?? 0}
+                            discountType={lineDiscountType(line)}
+                            qty={line.qty}
+                            pricePerItem={line.pricePerItem}
+                            ariaLabel={t("dashboard.salesInvoices.create.colDiscount")}
+                            onChange={(next) =>
+                              setLines((prev) =>
+                                prev.map((row) =>
+                                  row.key === line.key ? withClampedLineDiscount({ ...row, ...next }) : row,
+                                ),
+                              )
+                            }
                           />
                         </td>
                         <td className="py-2 text-center">
