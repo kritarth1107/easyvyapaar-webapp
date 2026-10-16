@@ -32,6 +32,26 @@ function roundMoney(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
+/** Line value before discount: qty × stored price (tax-inclusive when with_tax). */
+export function lineGrossAmount(qty: number, pricePerItem: number): number {
+  if (!Number.isFinite(qty) || !Number.isFinite(pricePerItem)) return 0;
+  return roundMoney(Math.max(0, qty * pricePerItem));
+}
+
+/**
+ * Percent 0–100; flat amount 0–line gross so the discounted line never goes below zero.
+ * Matches Flutter `validateLineDiscount`.
+ */
+export function clampLineDiscount(
+  value: number,
+  type: "percent" | "amount",
+  lineGross: number,
+): number {
+  if (!Number.isFinite(value) || value <= 0) return 0;
+  if (type === "percent") return Math.min(value, 100);
+  return Math.min(value, Math.max(0, lineGross));
+}
+
 export function normalizeSalesTaxMode(
   mode?: SalesTaxMode | string | null,
 ): SalesTaxMode {
@@ -81,9 +101,10 @@ export function invoiceLinePriceFromInput(
  * without_tax: price excludes GST → tax added on top, amount = taxable + tax.
  */
 export function calcLineTaxAmounts(input: LineTaxInput): LineTaxResult {
-  const base = roundMoney(input.qty * input.pricePerItem);
+  const base = lineGrossAmount(input.qty, input.pricePerItem);
+  const discount = clampLineDiscount(input.discount, input.discountType, base);
   const discountAmt = roundMoney(
-    input.discountType === "percent" ? base * (input.discount / 100) : input.discount,
+    input.discountType === "percent" ? base * (discount / 100) : discount,
   );
   const net = Math.max(0, roundMoney(base - discountAmt));
   const rate = input.gstPercent / 100;

@@ -383,8 +383,10 @@ function SidebarPanel({
 
   return (
     <aside
-      className={`dashboard-sidebar relative flex h-full min-h-0 shrink-0 flex-col overflow-hidden border-r border-slate-200/90 bg-white transition-[width] duration-200 ease-out ${
-        collapsed ? "w-[72px]" : "w-[268px]"
+      className={`dashboard-sidebar relative isolate grid h-full max-h-full min-h-0 shrink-0 overflow-hidden border-r border-slate-200/90 bg-white transition-[width] duration-200 ease-out ${
+        collapsed
+          ? "w-[72px] grid-rows-[auto_minmax(0,1fr)]"
+          : "w-[268px] grid-rows-[auto_minmax(0,1fr)_auto]"
       }`}
     >
       {/* Business switcher */}
@@ -398,7 +400,10 @@ function SidebarPanel({
         />
       </div>
 
-      <nav className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto overflow-x-hidden py-3" aria-label="Main navigation">
+      <nav
+        className="scrollbar-hidden min-h-0 overflow-y-auto overflow-x-hidden overscroll-y-contain py-3"
+        aria-label="Main navigation"
+      >
         <div className={collapsed ? "mb-2 space-y-1" : "mb-2"}>
           {top.map((item) => (
             <div key={item.id} className={!collapsed && item.accent === "ai" ? "mt-3" : undefined}>
@@ -469,7 +474,7 @@ function SidebarPanel({
       </nav>
 
       {!collapsed && (
-        <div className="shrink-0 border-t border-slate-100 bg-white px-4 py-3">
+        <div className="relative z-20 shrink-0 border-t border-slate-100 bg-white px-4 py-3">
           <p className="text-center text-[10px] font-medium text-brand-primary-muted">
             {t("dashboard.sidebarTagline")}
           </p>
@@ -489,7 +494,7 @@ export function DashboardSidebar({
 
   return (
     <>
-      <div className="hidden h-full min-h-0 lg:flex lg:flex-col">
+      <div className="hidden h-full max-h-full min-h-0 shrink-0 self-stretch lg:flex lg:flex-col">
         <SidebarPanel collapsed={collapsed} onOpenBusinessSwitch={onOpenBusinessSwitch} />
       </div>
 

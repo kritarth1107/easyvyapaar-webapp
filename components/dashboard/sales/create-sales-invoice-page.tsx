@@ -27,9 +27,11 @@ import { stateCodeToLabel } from "@/lib/constants/indian-state-codes";
 import { maskBankAccountNumber } from "@/lib/parties/party-detail-utils";
 import type { OrganisationBankAccount } from "@/lib/types/organisation-bank-api";
 import {
+  clampLineDiscount,
   getInvoiceLineDisplay,
   invoiceLinePriceFromInput,
   invoiceLinePriceInputValue,
+  lineGrossAmount,
   normalizeSalesTaxMode,
 } from "@/lib/sales/invoice-tax";
 import {
@@ -524,6 +526,24 @@ export function CreateSalesInvoicePage({ editInvoiceId }: { editInvoiceId?: stri
     });
   };
 
+  const clampInvoiceDiscountValue = (
+    value: number,
+    discountType: CreateInvoiceFormState["discountType"],
+  ) => {
+    if (!Number.isFinite(value) || value <= 0) return 0;
+    if (discountType === "percent") return Math.min(value, 100);
+    return value;
+  };
+
+  const withClampedLineDiscount = (line: InvoiceLineItem): InvoiceLineItem => {
+    const discount = clampLineDiscount(
+      line.discount,
+      line.discountType,
+      lineGrossAmount(line.qty, line.pricePerItem),
+    );
+    return discount === line.discount ? line : { ...line, discount };
+  };
+
   const updateLine = (id: string, partial: Partial<InvoiceLineItem>) => {
     setForm((prev) => ({
       ...prev,
@@ -533,7 +553,7 @@ export function CreateSalesInvoicePage({ editInvoiceId }: { editInvoiceId?: stri
         if ("qty" in partial && !line.serialised) {
           next.qty = clampInvoiceLineQty(line, Number(partial.qty) || 1, prev.lineItems);
         }
-        return next;
+        return withClampedLineDiscount(next);
       }),
     }));
   };
@@ -543,10 +563,10 @@ export function CreateSalesInvoicePage({ editInvoiceId }: { editInvoiceId?: stri
       ...prev,
       lineItems: prev.lineItems.map((line) => {
         if (line.id !== id || line.serialised) return line;
-        return {
+        return withClampedLineDiscount({
           ...line,
           qty: clampInvoiceLineQty(line, line.qty + delta, prev.lineItems),
-        };
+        });
       }),
     }));
   };
@@ -1144,7 +1164,7 @@ export function CreateSalesInvoicePage({ editInvoiceId }: { editInvoiceId?: stri
             </button>
           </div>
           <div className="overflow-x-auto scrollbar-brand">
-            <table className="w-full min-w-[900px] text-left text-sm">
+            <table className="w-full min-w-[1080px] text-left text-sm">
               <thead>
                 <tr className="border-b border-slate-100 bg-brand-surface/50 text-[10px] font-bold uppercase tracking-wide text-brand-primary-muted">
                   <th className="w-10 px-3 py-2">{t("dashboard.salesInvoices.create.colNo")}</th>
@@ -1152,6 +1172,7 @@ export function CreateSalesInvoicePage({ editInvoiceId }: { editInvoiceId?: stri
                   <th className="w-24 px-3 py-2">{t("dashboard.salesInvoices.create.colHsn")}</th>
                   <th className="w-28 px-3 py-2">{t("dashboard.salesInvoices.create.colQty")}</th>
                   <th className="w-28 px-3 py-2">{t("dashboard.salesInvoices.create.colPrice")}</th>
+                  <th className="w-40 px-3 py-2">{t("dashboard.salesInvoices.create.colDiscount")}</th>
                   {isBillOfSupply ? null : (
                     <th className="w-20 px-3 py-2">{t("dashboard.salesInvoices.create.colTax")}</th>
                   )}
@@ -1162,7 +1183,7 @@ export function CreateSalesInvoicePage({ editInvoiceId }: { editInvoiceId?: stri
               <tbody>
                 {form.lineItems.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="p-0">
+                    <td colSpan={isBillOfSupply ? 8 : 9} className="p-0">
                       <div className="flex min-h-[140px] items-center justify-center gap-4 p-4">
                         <button
                           type="button"
@@ -1275,6 +1296,39 @@ export function CreateSalesInvoicePage({ editInvoiceId }: { editInvoiceId?: stri
                             className={`${inputSmClass} tabular-nums`}
                           />
                         </td>
+                        <td className="align-top px-3 py-2">
+                          <div className={`${inputGroupClass} w-[168px]`}>
+                            <div className="h-full w-[52px] shrink-0">
+                              <ModernSelect
+                                value={line.discountType}
+                                onChange={(v) =>
+                                  updateLine(line.id, { discountType: v as "percent" | "amount" })
+                                }
+                                options={[
+                                  { value: "percent", label: "%" },
+                                  { value: "amount", label: "₹" },
+                                ]}
+                                variant="compact"
+                                compactAttached
+                                aria-label={t("dashboard.salesInvoices.create.colDiscount")}
+                                className="h-full w-full"
+                              />
+                            </div>
+                            <input
+                              type="number"
+                              min={0}
+                              max={line.discountType === "percent" ? 100 : undefined}
+                              step="0.01"
+                              value={line.discount}
+                              onChange={(e) =>
+                                updateLine(line.id, {
+                                  discount: Number(e.target.value) || 0,
+                                })
+                              }
+                              className={`${inputGroupInnerClass} border-l border-slate-200/90`}
+                            />
+                          </div>
+                        </td>
                         {isBillOfSupply ? null : (
                           <td className="align-top px-3 py-2 pt-[10px] text-right tabular-nums text-brand-primary-muted">
                             <p>{formatInr(lineDisplay.tax)}</p>
@@ -1301,7 +1355,10 @@ export function CreateSalesInvoicePage({ editInvoiceId }: { editInvoiceId?: stri
               </tbody>
               <tfoot>
                 <tr className="border-t border-slate-200 bg-slate-50/50">
-                  <td colSpan={6} className="px-3 py-2 text-xs font-bold uppercase text-brand-primary-muted">
+                  <td
+                    colSpan={isBillOfSupply ? 6 : 7}
+                    className="px-3 py-2 text-xs font-bold uppercase text-brand-primary-muted"
+                  >
                     {t("dashboard.salesInvoices.create.subtotal")}
                   </td>
                   <td className="px-3 py-2 text-right font-bold tabular-nums text-brand-primary">
@@ -1516,7 +1573,16 @@ export function CreateSalesInvoicePage({ editInvoiceId }: { editInvoiceId?: stri
                       <div className="h-full w-[52px] shrink-0">
                         <ModernSelect
                           value={form.discountType}
-                          onChange={(v) => patch({ discountType: v as "percent" | "amount" })}
+                          onChange={(v) => {
+                            const discountType = v as "percent" | "amount";
+                            patch({
+                              discountType,
+                              discountAfterTax: clampInvoiceDiscountValue(
+                                form.discountAfterTax,
+                                discountType,
+                              ),
+                            });
+                          }}
                           options={[
                             { value: "percent", label: "%" },
                             { value: "amount", label: "₹" },
@@ -1529,9 +1595,16 @@ export function CreateSalesInvoicePage({ editInvoiceId }: { editInvoiceId?: stri
                       <input
                         type="number"
                         min={0}
+                        max={form.discountType === "percent" ? 100 : undefined}
+                        step="0.01"
                         value={form.discountAfterTax}
                         onChange={(e) =>
-                          patch({ discountAfterTax: Number(e.target.value) || 0 })
+                          patch({
+                            discountAfterTax: clampInvoiceDiscountValue(
+                              Number(e.target.value) || 0,
+                              form.discountType,
+                            ),
+                          })
                         }
                         className={`${inputGroupInnerClass} border-l border-slate-200/90`}
                       />
