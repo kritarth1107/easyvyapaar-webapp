@@ -12,6 +12,7 @@ import {
 import { useUserMe } from "@/components/providers/user-me-provider";
 import type { DashboardNavIconId } from "@/lib/dashboard/navigation-types";
 import type { DashboardSlice } from "@/lib/dashboard/shop-workspace";
+import { formatDateEnIn } from "@/lib/dashboard/date-format";
 import { formatInrBrief } from "@/lib/dashboard/stock-summary-analytics";
 import type { NamedSlice } from "@/lib/dashboard/stock-summary-analytics";
 import { DashboardTodayAttendancePanel } from "@/components/dashboard/staff/dashboard-today-attendance-panel";
@@ -28,10 +29,11 @@ function formatInr(amount: number): string {
 }
 
 function formatDate(iso: string): string {
-  return new Date(iso + "T12:00:00").toLocaleDateString("en-IN", {
-    day: "numeric",
-    month: "short",
-  });
+  return formatDateEnIn(iso);
+}
+
+function greetingFirstName(name: string | undefined): string {
+  return name?.trim().split(/\s+/)[0] || "there";
 }
 
 function toChartSlices(slices: DashboardSlice[]): NamedSlice[] {
@@ -164,7 +166,7 @@ export function DashboardOverview() {
     color: CHART_COLORS[index % CHART_COLORS.length],
   }));
   const trendPoints = shopStats.monthlyTrend.map((row) => ({
-    day: row.monthLabel,
+    day: formatDateEnIn(row.monthLabel),
     units: row.purchases,
     value: row.sales,
   }));
@@ -183,7 +185,7 @@ export function DashboardOverview() {
           <div>
             <p className="text-sm font-medium text-white/70">{t("dashboard.greeting")}</p>
             <h2 className="mt-1 text-2xl font-bold tracking-tight lg:text-3xl">
-              {user?.name?.split(" ")[0] ?? "there"},{" "}
+              {greetingFirstName(user?.name)},{" "}
               <span className="text-brand-orange-3">{activeOrganisation?.name}</span>
             </h2>
             <p className="mt-2 max-w-xl text-sm text-white/65">{t("dashboard.greetingHint")}</p>
