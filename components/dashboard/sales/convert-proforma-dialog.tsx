@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { PosModalShell } from "@/components/dashboard/pos/pos-modal-shell";
+import { useUserMe } from "@/components/providers/user-me-provider";
+import { isShopGstRegistered } from "@/lib/dashboard/shop-gst";
 import { PAYMENT_MODES } from "@/lib/sales/create-invoice-form";
 import { convertProforma, type ConvertProformaRequest } from "@/lib/sales/proformas-api-client";
 import type { QuotationDetail } from "@/lib/types/quotations-api";
@@ -25,8 +27,12 @@ export function ConvertProformaDialog({
   onConverted: (result: { proforma: QuotationDetail; invoice: SalesInvoiceDetail | null }) => void;
 }) {
   const { t } = useTranslation();
+  const { activeOrganisation } = useUserMe();
+  const shopGstRegistered = isShopGstRegistered(activeOrganisation?.gstNumber);
   const today = new Date().toISOString().slice(0, 10);
-  const [invoiceType, setInvoiceType] = useState<SalesInvoiceType>("gst_invoice");
+  const [invoiceType, setInvoiceType] = useState<SalesInvoiceType>(
+    shopGstRegistered ? "gst_invoice" : "cash_memo",
+  );
   const [invoiceDate, setInvoiceDate] = useState(today);
   const [paymentTermsDays, setPaymentTermsDays] = useState("");
   const [partyGstin, setPartyGstin] = useState("");
@@ -96,7 +102,9 @@ export function ConvertProformaDialog({
             value={invoiceType}
             onChange={(e) => setInvoiceType(e.target.value as SalesInvoiceType)}
           >
-            <option value="gst_invoice">{t("dashboard.salesInvoices.create.invoiceTypeGstInvoice")}</option>
+            {shopGstRegistered ? (
+              <option value="gst_invoice">{t("dashboard.salesInvoices.create.invoiceTypeGstInvoice")}</option>
+            ) : null}
             <option value="cash_memo">{t("dashboard.salesInvoices.create.invoiceTypeCashMemo")}</option>
             <option value="bill_of_supply">{t("dashboard.billOfSupply.label")}</option>
           </select>

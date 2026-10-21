@@ -1,3 +1,4 @@
+import { WALK_IN_PARTY_ID } from "@/lib/parties/constants";
 import type { InventoryBillPick, InventoryItem } from "@/lib/types/inventory-ui";
 import {
   calcInvoiceLevelTotals,
@@ -97,9 +98,7 @@ export type InvoiceSettings = {
 
 export type SalesInvoiceDocumentType = "gst_invoice" | "cash_memo" | "bill_of_supply";
 
-/** Bill of Supply carries no tax (backend forces 0%): zero GST on every line and charge. */
-export function enforceInvoiceTypeRules(form: CreateInvoiceFormState): CreateInvoiceFormState {
-  if (form.invoiceType !== "bill_of_supply") return form;
+function zeroBillGst(form: CreateInvoiceFormState): CreateInvoiceFormState {
   const linesTaxed = form.lineItems.some((line) => line.gstPercent !== 0);
   const chargesTaxed = form.additionalCharges.some((row) => row.taxPercent !== 0);
   if (!linesTaxed && !chargesTaxed) return form;
@@ -107,6 +106,54 @@ export function enforceInvoiceTypeRules(form: CreateInvoiceFormState): CreateInv
     ...form,
     lineItems: form.lineItems.map((line) => (line.gstPercent === 0 ? line : { ...line, gstPercent: 0 })),
     additionalCharges: form.additionalCharges.map((row) => (row.taxPercent === 0 ? row : { ...row, taxPercent: 0 })),
+  };
+}
+
+/** Bill of Supply carries no tax (backend forces 0%): zero GST on every line and charge. */
+export function enforceInvoiceTypeRules(form: CreateInvoiceFormState): CreateInvoiceFormState {
+  if (form.invoiceType !== "bill_of_supply") return form;
+  return zeroBillGst(form);
+}
+
+/** Non-GST shop: Cash Memo / Bill of Supply only, and do not apply item GST% on the bill. */
+export function enforceShopGstRules(
+  form: CreateInvoiceFormState,
+  shopGstRegistered: boolean,
+): CreateInvoiceFormState {
+  let next = enforceInvoiceTypeRules(form);
+  if (shopGstRegistered) return next;
+  if (next.invoiceType === "gst_invoice") {
+    next = { ...next, invoiceType: "cash_memo" };
+  }
+  return zeroBillGst(next);
+}
+
+export function isCounterSale(
+  partyId: string | null | undefined,
+  cashSaleDefault: boolean,
+  isCashSale?: boolean,
+): boolean {
+  return cashSaleDefault || isCashSale === true || !partyId || partyId === WALK_IN_PARTY_ID;
+}
+
+export function counterSalePaymentPatch(totalAmount: number): Partial<CreateInvoiceFormState> {
+  return {
+    paymentMode: "cash",
+    fullyPaid: true,
+    amountReceived: totalAmount,
+    showPaymentTerms: false,
+  };
+}
+
+export function namedPartyCreditPatch(
+  invoiceDate: string,
+  paymentTermsDays: number,
+): Partial<CreateInvoiceFormState> {
+  return {
+    showPaymentTerms: true,
+    dueDate: addDays(invoiceDate, paymentTermsDays),
+    fullyPaid: false,
+    amountReceived: 0,
   };
 }
 
@@ -205,11 +252,20 @@ type LineSupplierMeta = {
   supplierName?: string;
 };
 
+export type InvoiceLineGstOptions = {
+  applyItemGst?: boolean;
+};
+
+function lineGstPercent(item: InventoryItem, options?: InvoiceLineGstOptions): number {
+  return options?.applyItemGst === false ? 0 : item.gstPercent;
+}
+
 export function lineItemFromSerial(
   item: InventoryItem,
   lineItems: InvoiceLineItem[],
   serialNumber: string,
   supplier?: LineSupplierMeta,
+  options?: InvoiceLineGstOptions,
 ): InvoiceLineItem | null {
   const serial = serialNumber.trim();
   if (!serial) return null;
@@ -230,7 +286,7 @@ export function lineItemFromSerial(
     pricePerItem: item.salePrice,
     discount: 0,
     discountType: "percent",
-    gstPercent: item.gstPercent,
+    gstPercent: lineGstPercent(item, options),
     salesTaxMode: normalizeSalesTaxMode(item.salesTaxMode),
     availableStock: item.stock,
     serialised: true,
@@ -245,6 +301,7 @@ export function lineItemFromInventory(
   item: InventoryItem,
   lineItems: InvoiceLineItem[] = [],
   supplier?: LineSupplierMeta,
+  options?: InvoiceLineGstOptions,
 ): InvoiceLineItem | null {
   if (item.serialised) return null;
 
@@ -262,7 +319,7 @@ export function lineItemFromInventory(
     pricePerItem: item.salePrice,
     discount: 0,
     discountType: "percent",
-    gstPercent: item.gstPercent,
+    gstPercent: lineGstPercent(item, options),
     salesTaxMode: normalizeSalesTaxMode(item.salesTaxMode),
     availableStock: item.stock,
     serialised: false,
@@ -276,6 +333,7 @@ export function lineItemFromInventory(
 export function mergeInventoryPickIntoLines(
   lineItems: InvoiceLineItem[],
   pick: InventoryBillPick,
+  options?: InvoiceLineGstOptions,
 ): InvoiceLineItem[] {
   const supplier =
     pick.supplierId
@@ -285,13 +343,13 @@ export function mergeInventoryPickIntoLines(
   if (pick.item.serialised) {
     let nextLines = lineItems;
     for (const serialNumber of pick.serialNumbers ?? []) {
-      const line = lineItemFromSerial(pick.item, nextLines, serialNumber, supplier);
+      const line = lineItemFromSerial(pick.item, nextLines, serialNumber, supplier, options);
       if (line) nextLines = [...nextLines, line];
     }
     return nextLines;
   }
 
-  const line = lineItemFromInventory(pick.item, lineItems, supplier);
+  const line = lineItemFromInventory(pick.item, lineItems, supplier, options);
   if (!line) return lineItems;
   return [...lineItems, line];
 }
@@ -299,15 +357,15 @@ export function mergeInventoryPickIntoLines(
 export function createInitialInvoiceForm(): CreateInvoiceFormState {
   const invoiceDate = todayIso();
   return {
-    partyId: null,
+    partyId: WALK_IN_PARTY_ID,
     invoiceType: "cash_memo",
-    cashSaleDefault: false,
+    cashSaleDefault: true,
     invoicePrefix: "ME/2025-26/",
     invoiceNumber: "1490",
     invoiceDate,
     paymentTermsDays: 30,
     dueDate: addDays(invoiceDate, 30),
-    showPaymentTerms: true,
+    showPaymentTerms: false,
     lineItems: [],
     notes: "",
     terms: "",
@@ -323,7 +381,7 @@ export function createInitialInvoiceForm(): CreateInvoiceFormState {
     roundOffAmount: 0,
     amountReceived: 0,
     paymentMode: "cash",
-    fullyPaid: false,
+    fullyPaid: true,
     settings: {
       showPrefixSequence: true,
       showPurchasePrice: true,

@@ -2,7 +2,7 @@
 
 import { saveErrorMessage } from "@/lib/api/conflict";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AddItemsToBillModal } from "@/components/dashboard/sales/add-items-to-bill-modal";
 import { BankAccountModal } from "@/components/dashboard/sales/bank-account-modal";
@@ -37,7 +37,11 @@ import {
 } from "@/lib/sales/invoice-tax";
 import {
   calcInvoiceTotals,
+  counterSalePaymentPatch,
   enforceInvoiceTypeRules,
+  enforceShopGstRules,
+  isCounterSale,
+  namedPartyCreditPatch,
   type SalesInvoiceDocumentType,
   clampInvoiceLineQty,
   createInitialInvoiceForm,
@@ -48,6 +52,7 @@ import {
   type CreateInvoiceFormState,
   type InvoiceLineItem,
 } from "@/lib/sales/create-invoice-form";
+import { isShopGstRegistered } from "@/lib/dashboard/shop-gst";
 import {
   mapCreateInvoiceFormToRequest,
   mapInvoiceFormToUpdateRequest,
@@ -57,7 +62,6 @@ import {
   mapSalesInvoiceDetailToFormState,
 } from "@/lib/sales/map-sales-invoice-detail-to-form";
 import { fetchInventoryItemDetail } from "@/lib/inventory/inventory-api-client";
-import { useRef } from "react";
 import {
   mergeInvoiceSettingsIntoStored,
   storedSettingsToInvoiceSettings,
@@ -204,15 +208,29 @@ export function CreateSalesInvoicePage({ editInvoiceId }: { editInvoiceId?: stri
   const router = useRouter();
   const { activeOrganisation, activeOrganisationId } = useUserMe();
   const businessName = activeOrganisation?.name ?? "Your Business";
+  const shopGstRegistered = isShopGstRegistered(activeOrganisation?.gstNumber);
 
   const [form, setFormRaw] = useState<CreateInvoiceFormState>(createInitialInvoiceForm);
-  // Every update passes through the invoice-type rules (Bill of Supply → 0% GST everywhere).
+  // Bill of Supply and new bills on a non-GST shop zero GST. Edits keep stored tax.
   const setForm = useCallback(
     (update: CreateInvoiceFormState | ((prev: CreateInvoiceFormState) => CreateInvoiceFormState)) =>
-      setFormRaw((prev) => enforceInvoiceTypeRules(typeof update === "function" ? update(prev) : update)),
-    [],
+      setFormRaw((prev) => {
+        const next = typeof update === "function" ? update(prev) : update;
+        if (isEdit) return enforceInvoiceTypeRules(next);
+        return enforceShopGstRules(next, shopGstRegistered);
+      }),
+    [isEdit, shopGstRegistered],
   );
-  const [selectedParty, setSelectedParty] = useState<SelectedInvoiceParty | null>(null);
+  const [selectedParty, setSelectedParty] = useState<SelectedInvoiceParty | null>(() =>
+    editInvoiceId
+      ? null
+      : {
+          partyId: WALK_IN_PARTY_ID,
+          name: t("dashboard.salesInvoices.create.cashWalkIn"),
+          balance: 0,
+          isCashSale: true,
+        },
+  );
   const [partyModalOpen, setPartyModalOpen] = useState(false);
   const [addItemsOpen, setAddItemsOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -269,6 +287,39 @@ export function CreateSalesInvoicePage({ editInvoiceId }: { editInvoiceId?: stri
   }, [setForm]);
 
   const totals = useMemo(() => calcInvoiceTotals(form), [form]);
+  const isWalkInBill = isCounterSale(
+    form.partyId,
+    form.cashSaleDefault,
+    selectedParty?.isCashSale,
+  );
+
+  useEffect(() => {
+    if (isEdit) return;
+    setFormRaw((prev) => enforceShopGstRules(prev, shopGstRegistered));
+  }, [isEdit, shopGstRegistered]);
+
+  useEffect(() => {
+    if (isEdit || !isWalkInBill) return;
+    const next = counterSalePaymentPatch(totals.totalAmount);
+    if (
+      form.showPaymentTerms === false &&
+      form.fullyPaid === true &&
+      form.amountReceived === next.amountReceived &&
+      form.paymentMode === "cash"
+    ) {
+      return;
+    }
+    patch(next);
+  }, [
+    form.amountReceived,
+    form.fullyPaid,
+    form.paymentMode,
+    form.showPaymentTerms,
+    isEdit,
+    isWalkInBill,
+    patch,
+    totals.totalAmount,
+  ]);
 
   const isGstInvoice = form.invoiceType === "gst_invoice";
   const isBillOfSupply = form.invoiceType === "bill_of_supply";
@@ -520,7 +571,9 @@ export function CreateSalesInvoicePage({ editInvoiceId }: { editInvoiceId?: stri
     setForm((prev) => {
       let lineItems = prev.lineItems;
       for (const pick of picks) {
-        lineItems = mergeInventoryPickIntoLines(lineItems, pick);
+        lineItems = mergeInventoryPickIntoLines(lineItems, pick, {
+          applyItemGst: shopGstRegistered,
+        });
       }
       if (lineItems === prev.lineItems) return prev;
       return { ...prev, lineItems };
@@ -603,12 +656,18 @@ export function CreateSalesInvoicePage({ editInvoiceId }: { editInvoiceId?: stri
         selectedParty?.isCashSale || selectedParty?.partyId === WALK_IN_PARTY_ID;
       if (walkInSelected) {
         setSelectedParty(null);
-        patch({ invoiceType, cashSaleDefault: false, partyId: null });
+        patch({
+          invoiceType,
+          cashSaleDefault: false,
+          partyId: null,
+          ...namedPartyCreditPatch(form.invoiceDate, form.paymentTermsDays),
+        });
       } else {
         patch({
           invoiceType,
           cashSaleDefault: false,
           partyId: selectedParty?.partyId ?? null,
+          ...namedPartyCreditPatch(form.invoiceDate, form.paymentTermsDays),
         });
       }
       setPartyGstinInput("");
@@ -665,7 +724,11 @@ export function CreateSalesInvoicePage({ editInvoiceId }: { editInvoiceId?: stri
         isCashSale: true,
       };
       setSelectedParty(walkIn);
-      patch({ partyId: WALK_IN_PARTY_ID, cashSaleDefault: true });
+      patch({
+        partyId: WALK_IN_PARTY_ID,
+        cashSaleDefault: true,
+        ...counterSalePaymentPatch(totals.totalAmount),
+      });
       return;
     }
 
@@ -681,9 +744,13 @@ export function CreateSalesInvoicePage({ editInvoiceId }: { editInvoiceId?: stri
     setSelectedParty(party);
     setPartyGstinInput("");
     setPartyGstVerified(false);
+    const walkIn = Boolean(party.isCashSale) || party.partyId === WALK_IN_PARTY_ID;
     patch({
       partyId: party.partyId,
-      cashSaleDefault: isGstInvoice ? false : Boolean(party.isCashSale),
+      cashSaleDefault: isGstInvoice ? false : walkIn,
+      ...(isGstInvoice || !walkIn
+        ? namedPartyCreditPatch(form.invoiceDate, form.paymentTermsDays)
+        : counterSalePaymentPatch(totals.totalAmount)),
     });
 
     const orgId = activeOrganisationId?.trim();
@@ -899,6 +966,7 @@ export function CreateSalesInvoicePage({ editInvoiceId }: { editInvoiceId?: stri
             >
               {t("dashboard.salesInvoices.create.invoiceTypeCashMemo")}
             </button>
+            {shopGstRegistered || form.invoiceType === "gst_invoice" ? (
             <button
               type="button"
               onClick={() => handleInvoiceTypeChange("gst_invoice")}
@@ -911,6 +979,7 @@ export function CreateSalesInvoicePage({ editInvoiceId }: { editInvoiceId?: stri
             >
               {t("dashboard.salesInvoices.create.invoiceTypeGstInvoice")}
             </button>
+            ) : null}
             <button
               type="button"
               onClick={() => handleInvoiceTypeChange("bill_of_supply")}

@@ -31,6 +31,7 @@ import {
   lineItemFromSerial,
   PAYMENT_MODES,
 } from "@/lib/sales/create-invoice-form";
+import { isShopGstRegistered } from "@/lib/dashboard/shop-gst";
 import { mapCreateInvoiceFormToRequest } from "@/lib/sales/map-create-invoice-request";
 import {
   DEFAULT_STORED_SALES_INVOICE_SETTINGS,
@@ -96,6 +97,7 @@ export function PosBillingPage() {
   const summaryLabels = useInvoiceSummaryLabels();
   const router = useRouter();
   const { activeOrganisationId, activeOrganisation } = useUserMe();
+  const shopGstRegistered = isShopGstRegistered(activeOrganisation?.gstNumber);
 
   const [posSettings, setPosSettings] = useState<PosSettings>(DEFAULT_POS_SETTINGS);
   const [bills, setBills] = useState<PosBillTab[]>([]);
@@ -252,8 +254,9 @@ export function PosBillingPage() {
       let nextLines = lineItems;
       let newLineId: string | null = null;
 
+      const gstOptions = { applyItemGst: shopGstRegistered };
       if (row.type === "serial") {
-        const line = lineItemFromSerial(item, lineItems, row.serialNumber);
+        const line = lineItemFromSerial(item, lineItems, row.serialNumber, undefined, gstOptions);
         if (!line) return;
         nextLines = [...lineItems, line];
         newLineId = line.id;
@@ -264,7 +267,7 @@ export function PosBillingPage() {
           nextLines = lineItems.map((l) => (l.id === existing.id ? { ...l, qty } : l));
           newLineId = existing.id;
         } else {
-          const line = lineItemFromInventory(item, lineItems);
+          const line = lineItemFromInventory(item, lineItems, undefined, gstOptions);
           if (!line) return;
           nextLines = [...lineItems, line];
           newLineId = line.id;
@@ -282,7 +285,7 @@ export function PosBillingPage() {
       setSearchHighlight(0);
       searchRef.current?.focus();
     },
-    [activeBill, updateActiveBill],
+    [activeBill, shopGstRegistered, updateActiveBill],
   );
 
   const handleSearchEnter = useCallback(() => {

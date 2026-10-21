@@ -55,10 +55,25 @@ export const REPORT_SLUG_PLAN_REQUIREMENTS: Partial<
   "party-report-by-item": "parties",
 };
 
+export const GST_REPORT_SLUGS: ReadonlySet<ReportSlug> = new Set([
+  "gstr1",
+  "gstr2",
+  "gstr3b",
+  "gst-sales-hsn",
+  "gst-purchase-hsn",
+  "hsn-wise-sales",
+]);
+
+export type ReportAccessOptions = {
+  shopGstRegistered?: boolean;
+};
+
 export function canAccessReportSlug(
   slug: ReportSlug,
   planFeatures: OrganisationPlanFeatures | null,
+  options?: ReportAccessOptions,
 ): boolean {
+  if (GST_REPORT_SLUGS.has(slug) && options?.shopGstRegistered === false) return false;
   const featureKey = REPORT_SLUG_PLAN_REQUIREMENTS[slug];
   if (!featureKey) return true;
   if (!planFeatures) return true;
@@ -68,8 +83,9 @@ export function canAccessReportSlug(
 export function filterReportLinks(
   links: ReportLink[],
   planFeatures: OrganisationPlanFeatures | null,
+  options?: ReportAccessOptions,
 ): ReportLink[] {
-  return links.filter((link) => canAccessReportSlug(link.slug, planFeatures));
+  return links.filter((link) => canAccessReportSlug(link.slug, planFeatures, options));
 }
 
 export const REPORT_LINKS: ReportLink[] = [
@@ -103,6 +119,7 @@ export const REPORT_LINKS: ReportLink[] = [
 export function getReportsByCategory(
   category: ReportLink["category"],
   planFeatures?: OrganisationPlanFeatures | null,
+  options?: ReportAccessOptions,
 ): ReportLink[] {
   const seen = new Set<ReportSlug>();
   const rows = REPORT_LINKS.filter((link) => {
@@ -111,7 +128,9 @@ export function getReportsByCategory(
     seen.add(link.slug);
     return true;
   });
-  return planFeatures !== undefined ? filterReportLinks(rows, planFeatures) : rows;
+  return planFeatures !== undefined || options
+    ? filterReportLinks(rows, planFeatures ?? null, options)
+    : rows;
 }
 
 export function getReportTitleKey(slug: ReportSlug): `dashboard.reports.slugs.${ReportSlug}` {

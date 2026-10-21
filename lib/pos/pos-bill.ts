@@ -33,9 +33,7 @@ export function createPosBill(index: number, settings: PosSettings): PosBillTab 
       }
     : null;
 
-  if (party) {
-    form.partyId = party.partyId;
-  }
+  form.partyId = party?.partyId ?? null;
 
   return {
     id: `pos-bill-${Date.now()}-${index}`,

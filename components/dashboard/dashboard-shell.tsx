@@ -102,7 +102,7 @@ export function DashboardShell({ children, hasSession = false }: DashboardShellP
           open={businessSwitchOpen}
           onClose={() => setBusinessSwitchOpen(false)}
         />
-        <div className="flex h-screen min-h-screen overflow-hidden bg-brand-surface">
+        <div className="flex h-svh min-h-0 overflow-hidden bg-brand-surface">
           <DashboardSidebar
             collapsed={sidebarCollapsed}
             mobileOpen={mobileNavOpen}

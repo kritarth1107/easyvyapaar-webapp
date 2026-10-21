@@ -11,38 +11,8 @@ export type DashboardNotification = {
   href?: string;
 };
 
-/** Static activity feed until a notifications API is available. */
-export const DASHBOARD_NOTIFICATIONS: DashboardNotification[] = [
-  {
-    id: "low-stock",
-    type: "warning",
-    titleKey: "dashboard.notificationFeed.lowStockTitle",
-    messageKey: "dashboard.notificationFeed.lowStockMessage",
-    timeKey: "dashboard.notificationFeed.lowStockTime",
-    href: "/dashboard/inventory/low-stock",
-  },
-  {
-    id: "overdue",
-    type: "warning",
-    titleKey: "dashboard.notificationFeed.overdueTitle",
-    messageKey: "dashboard.notificationFeed.overdueMessage",
-    timeKey: "dashboard.notificationFeed.overdueTime",
-    href: "/dashboard/parties/outstanding",
-  },
-  {
-    id: "gst",
-    type: "info",
-    titleKey: "dashboard.notificationFeed.gstTitle",
-    messageKey: "dashboard.notificationFeed.gstMessage",
-    timeKey: "dashboard.notificationFeed.gstTime",
-    href: "/dashboard/reports/gst-reports",
-  },
-  {
-    id: "payment",
-    type: "success",
-    titleKey: "dashboard.notificationFeed.paymentTitle",
-    messageKey: "dashboard.notificationFeed.paymentMessage",
-    timeKey: "dashboard.notificationFeed.paymentTime",
-    href: "/dashboard/finance/payments",
-  },
-];
+/**
+ * Live shop feed only. Demo rows (5 low-stock, GSTR-1 due, ₹8,000 Rahul Traders)
+ * are omitted until a notifications API exists.
+ */
+export const DASHBOARD_NOTIFICATIONS: DashboardNotification[] = [];

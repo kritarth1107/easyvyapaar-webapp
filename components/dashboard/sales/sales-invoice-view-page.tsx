@@ -41,6 +41,7 @@ import {
   type ThermalRollWidth,
 } from "@/lib/sales/print-thermal";
 import { useThermalReceiptLabels } from "@/lib/sales/use-thermal-receipt-labels";
+import { isShopGstRegistered } from "@/lib/dashboard/shop-gst";
 import { useInvoiceSummaryLabels } from "@/lib/sales/use-invoice-summary-labels";
 import { formatAckDate } from "@/lib/sales/format-ack-date";
 import { localizeInvoiceSummaryRows } from "@/lib/sales/build-live-invoice-preview";
@@ -144,6 +145,7 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
   const showWhatsAppUpgrade =
     !permissionsLoading && isInvoiceWhatsAppStarterLocked(planFeatures);
   const businessName = activeOrganisation?.name ?? "Your Business";
+  const shopGstRegistered = isShopGstRegistered(activeOrganisation?.gstNumber);
   const printAreaRef = useRef<HTMLDivElement>(null);
   const thermalLabels = useThermalReceiptLabels();
   const summaryLabels = useInvoiceSummaryLabels();
@@ -847,6 +849,7 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
             ) : null}
           </div>
 
+          {(shopGstRegistered || Boolean(invoice.irn || eInvoiceMeta?.irn)) && (
           <div className="rounded-sm border border-slate-200/90 bg-white p-4 shadow-sm">
             <div className="flex items-center justify-between gap-2">
               <h2 className="text-sm font-bold text-brand-primary">
@@ -973,6 +976,8 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
               </p>
             )}
           </div>
+          )}
+          {(shopGstRegistered || Boolean(invoice.ewayBillNo)) && (
           <div className="rounded-sm border border-slate-200/90 bg-white p-4 shadow-sm">
             <div className="flex items-center justify-between gap-2">
               <h2 className="text-sm font-bold text-brand-primary">
@@ -1078,6 +1083,7 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
               </p>
             )}
           </div>
+          )}
 
 
           {canRecordPayment ? (

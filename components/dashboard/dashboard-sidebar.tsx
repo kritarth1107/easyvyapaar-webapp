@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useMemo, useRef, useState, type Ref } from "react";
+import { useEffect, useMemo, useRef, useState, type Ref, type RefObject } from "react";
 import {
   getGroupActive,
   useDashboardNav,
@@ -262,8 +262,32 @@ function NavGroupSection({
     );
   }
 
+  const localRef = useRef<HTMLDivElement>(null);
+  const wasOpenRef = useRef(open);
+
+  useEffect(() => {
+    const justOpened = open && !wasOpenRef.current;
+    wasOpenRef.current = open;
+    if (!justOpened || collapsed) return;
+    const node = localRef.current;
+    const run = () => node?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    const frame = requestAnimationFrame(run);
+    const timeout = window.setTimeout(run, 220);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.clearTimeout(timeout);
+    };
+  }, [collapsed, open]);
+
+  const setSectionRef = (el: HTMLDivElement | null) => {
+    localRef.current = el;
+    if (!sectionRef) return;
+    if (typeof sectionRef === "function") sectionRef(el);
+    else (sectionRef as RefObject<HTMLDivElement | null>).current = el;
+  };
+
   return (
-    <div ref={sectionRef} className="mb-1 scroll-mb-2">
+    <div ref={setSectionRef} className="mb-1 scroll-mb-14">
       <button
         type="button"
         onClick={onToggle}
@@ -383,10 +407,9 @@ function SidebarPanel({
 
   return (
     <aside
-      className={`dashboard-sidebar relative isolate grid h-full max-h-full min-h-0 shrink-0 overflow-hidden border-r border-slate-200/90 bg-white transition-[width] duration-200 ease-out ${
-        collapsed
-          ? "w-[72px] grid-rows-[auto_minmax(0,1fr)]"
-          : "w-[268px] grid-rows-[auto_minmax(0,1fr)_auto]"
+      data-collapsed={collapsed ? "true" : undefined}
+      className={`dashboard-sidebar relative isolate h-full max-h-svh min-h-0 shrink-0 overflow-hidden border-r border-slate-200/90 bg-white transition-[width] duration-200 ease-out ${
+        collapsed ? "w-[72px]" : "w-[268px]"
       }`}
     >
       {/* Business switcher */}
@@ -474,7 +497,7 @@ function SidebarPanel({
       </nav>
 
       {!collapsed && (
-        <div className="relative z-20 shrink-0 border-t border-slate-100 bg-white px-4 py-3">
+        <div className="dashboard-sidebar-footer border-t border-slate-100 bg-white px-4 py-3">
           <p className="text-center text-[10px] font-medium text-brand-primary-muted">
             {t("dashboard.sidebarTagline")}
           </p>
@@ -494,7 +517,7 @@ export function DashboardSidebar({
 
   return (
     <>
-      <div className="hidden h-full max-h-full min-h-0 shrink-0 self-stretch lg:flex lg:flex-col">
+      <div className="hidden h-svh max-h-svh min-h-0 shrink-0 self-stretch overflow-hidden lg:flex lg:flex-col">
         <SidebarPanel collapsed={collapsed} onOpenBusinessSwitch={onOpenBusinessSwitch} />
       </div>
 

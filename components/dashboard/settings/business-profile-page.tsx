@@ -628,23 +628,27 @@ export function BusinessProfilePage() {
                 </div>
               )}
 
-              <ToggleRow
-                checked={form.enableEInvoicing}
-                onChange={(v) => patch({ enableEInvoicing: v })}
-                label={t("dashboard.businessProfile.enableEInvoicing")}
-                badge={t("dashboard.businessProfile.newBadge")}
-              />
-              <p className="text-xs text-brand-primary-muted -mt-1 mb-2">
-                {t("dashboard.businessProfile.enableEInvoicingHint")}
-              </p>
-              <ToggleRow
-                checked={form.enableEWayBill}
-                onChange={(v) => patch({ enableEWayBill: v })}
-                label={t("dashboard.businessProfile.enableEWayBill")}
-              />
-              <p className="text-xs text-brand-primary-muted -mt-1 mb-2">
-                {t("dashboard.businessProfile.enableEWayBillHint")}
-              </p>
+              {form.gstRegistered ? (
+                <>
+                  <ToggleRow
+                    checked={form.enableEInvoicing}
+                    onChange={(v) => patch({ enableEInvoicing: v })}
+                    label={t("dashboard.businessProfile.enableEInvoicing")}
+                    badge={t("dashboard.businessProfile.newBadge")}
+                  />
+                  <p className="text-xs text-brand-primary-muted -mt-1 mb-2">
+                    {t("dashboard.businessProfile.enableEInvoicingHint")}
+                  </p>
+                  <ToggleRow
+                    checked={form.enableEWayBill}
+                    onChange={(v) => patch({ enableEWayBill: v })}
+                    label={t("dashboard.businessProfile.enableEWayBill")}
+                  />
+                  <p className="text-xs text-brand-primary-muted -mt-1 mb-2">
+                    {t("dashboard.businessProfile.enableEWayBillHint")}
+                  </p>
+                </>
+              ) : null}
 
               <div>
                 <FieldLabel verifiedTitle={gstVerifiedTitle}>

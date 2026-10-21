@@ -11,6 +11,7 @@ import { ProfitLossReportView } from "@/components/dashboard/reports/profit-loss
 import { ReportSectionView } from "@/components/dashboard/reports/report-primitives";
 import { formatDateIndian } from "@/lib/dashboard/date-format";
 import { AS_OF_DATE_REPORTS, getDefaultReportDateRange } from "@/lib/reports/report-backend-map";
+import { isShopGstRegistered } from "@/lib/dashboard/shop-gst";
 import { canAccessReportSlug } from "@/lib/reports/report-config";
 import { localizeReportData } from "@/lib/reports/report-labels-i18n";
 import { fetchReport, isReportSlug } from "@/lib/reports/reports-api-client";
@@ -35,7 +36,10 @@ export function ReportViewerPage() {
   const orgId = activeOrganisationId?.trim() ?? "";
   const slug = params.reportSlug;
   const validSlug = isReportSlug(slug) ? slug : null;
-  const planAllowed = validSlug ? canAccessReportSlug(validSlug, planFeatures) : false;
+  const shopGstRegistered = isShopGstRegistered(activeOrganisation?.gstNumber);
+  const planAllowed = validSlug
+    ? canAccessReportSlug(validSlug, planFeatures, { shopGstRegistered })
+    : false;
 
   const defaults = useMemo(() => getDefaultReportDateRange(), []);
   const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));

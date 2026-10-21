@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { NavIcon } from "@/components/dashboard/nav-icon";
 import { useOrganisationPermissions } from "@/components/providers/organisation-permissions-provider";
+import { useUserMe } from "@/components/providers/user-me-provider";
+import { isShopGstRegistered } from "@/lib/dashboard/shop-gst";
 import { useTranslation } from "@/lib/localization";
 import type { TranslationKey } from "@/lib/localization";
 import {
@@ -89,8 +91,11 @@ function CategoryQuickLink({
 export function ReportsHubPage() {
   const { t } = useTranslation();
   const { planFeatures } = useOrganisationPermissions();
+  const { activeOrganisation } = useUserMe();
+  const shopGstRegistered = isShopGstRegistered(activeOrganisation?.gstNumber);
+  const reportAccess = { shopGstRegistered };
 
-  const showGst = Boolean(planFeatures?.gstReports);
+  const showGst = Boolean(planFeatures?.gstReports) && shopGstRegistered;
   const showFinancial = Boolean(planFeatures?.financialReports);
   const showParty = Boolean(planFeatures?.parties);
 
@@ -137,24 +142,24 @@ export function ReportsHubPage() {
       <div className="space-y-8">
         <ReportSection
           title={t("dashboard.reports.sectionFavourite")}
-          links={getReportsByCategory("favourite", planFeatures)}
+          links={getReportsByCategory("favourite", planFeatures, reportAccess)}
         />
         {showGst ? (
-          <ReportSection title={t("dashboard.reports.sectionGst")} links={getReportsByCategory("gst", planFeatures)} />
+          <ReportSection title={t("dashboard.reports.sectionGst")} links={getReportsByCategory("gst", planFeatures, reportAccess)} />
         ) : null}
         {showFinancial ? (
           <ReportSection
             title={t("dashboard.reports.sectionFinancial")}
-            links={getReportsByCategory("financial", planFeatures)}
+            links={getReportsByCategory("financial", planFeatures, reportAccess)}
           />
         ) : null}
         <ReportSection
           title={t("dashboard.reports.sectionTransaction")}
-          links={getReportsByCategory("transaction", planFeatures)}
+          links={getReportsByCategory("transaction", planFeatures, reportAccess)}
         />
-        <ReportSection title={t("dashboard.reports.sectionItem")} links={getReportsByCategory("item", planFeatures)} />
+        <ReportSection title={t("dashboard.reports.sectionItem")} links={getReportsByCategory("item", planFeatures, reportAccess)} />
         {showParty ? (
-          <ReportSection title={t("dashboard.reports.sectionParty")} links={getReportsByCategory("party", planFeatures)} />
+          <ReportSection title={t("dashboard.reports.sectionParty")} links={getReportsByCategory("party", planFeatures, reportAccess)} />
         ) : null}
       </div>
     </div>
@@ -168,6 +173,8 @@ export function ReportCategoryPage({
 }) {
   const { t } = useTranslation();
   const { planFeatures } = useOrganisationPermissions();
+  const { activeOrganisation } = useUserMe();
+  const shopGstRegistered = isShopGstRegistered(activeOrganisation?.gstNumber);
   const links = getReportsByCategory(
     category === "financial"
       ? "financial"
@@ -175,6 +182,7 @@ export function ReportCategoryPage({
         ? "inventory"
         : category,
     planFeatures,
+    { shopGstRegistered },
   );
   const titleKey =
     category === "gst"

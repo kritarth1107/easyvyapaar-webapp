@@ -2,6 +2,8 @@
 
 import { useMemo } from "react";
 import { useOrganisationPermissions } from "@/components/providers/organisation-permissions-provider";
+import { useUserMe } from "@/components/providers/user-me-provider";
+import { isShopGstRegistered } from "@/lib/dashboard/shop-gst";
 import { useTranslation } from "@/lib/localization";
 import type { TranslationKey } from "@/lib/localization";
 import {
@@ -32,6 +34,8 @@ function withLabel<T extends { id: string; accent?: DashboardNavLink["accent"] }
 export function useDashboardNav() {
   const { t } = useTranslation();
   const { canNav } = useOrganisationPermissions();
+  const { activeOrganisation } = useUserMe();
+  const shopGstRegistered = isShopGstRegistered(activeOrganisation?.gstNumber);
 
   const nav = useMemo(() => {
     const top: DashboardNavLink[] = DASHBOARD_NAV_TOP.filter((item) => canNav(item.id)).map(
@@ -49,7 +53,10 @@ export function useDashboardNav() {
     const groups: DashboardNavGroup[] = DASHBOARD_NAV_GROUPS.reduce<DashboardNavGroup[]>(
       (acc, group) => {
         const items = group.items
-          .filter((item) => canNav(item.id))
+          .filter((item) => {
+            if (item.id === "gst-reports" && !shopGstRegistered) return false;
+            return canNav(item.id);
+          })
           .map((item) => withLabel(item, "item", t));
         if (items.length === 0) return acc;
         acc.push({
@@ -81,7 +88,7 @@ export function useDashboardNav() {
         : null;
 
     return { top, salesInvoice, pos, groups, bottom, settingsGroup };
-  }, [t, canNav]);
+  }, [t, canNav, shopGstRegistered]);
 
   const flattenLinks = useMemo(
     () => [

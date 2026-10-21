@@ -174,6 +174,8 @@ export function CreateQuotationPage({
     ...createInitialInvoiceForm(),
     showPaymentTerms: true,
     cashSaleDefault: false,
+    partyId: null,
+    fullyPaid: false,
   }));
   const [selectedParty, setSelectedParty] = useState<SelectedInvoiceParty | null>(null);
   const [partyModalOpen, setPartyModalOpen] = useState(false);

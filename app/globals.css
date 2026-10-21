@@ -286,6 +286,49 @@ body {
   -ms-overflow-style: none;
 }
 
+/*
+ * Sidebar layout (BUG-03): pin the tagline in its own grid row so it cannot
+ * paint over nav or steal clicks. minmax(0,1fr) is required so the nav
+ * shrinks and scrolls instead of overflowing under the footer.
+ */
+.dashboard-sidebar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.dashboard-sidebar[data-collapsed="true"] {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.dashboard-sidebar > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.dashboard-sidebar > nav {
+  min-height: 0;
+  min-width: 0;
+  width: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+}
+
+.dashboard-sidebar-footer {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  position: relative;
+  z-index: 1;
+}
+
 .scrollbar-hidden::-webkit-scrollbar {
   display: none;
   width: 0;
