@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUserMe } from "@/components/providers/user-me-provider";
 import type { SalesInvoiceStatus } from "@/lib/types/sales-api";
 import { ModernSelect } from "@/components/ui/modern-select";
-import { fetchSalesInvoices } from "@/lib/sales/sales-api-client";
+import { fetchSalesInvoiceDetail, fetchSalesInvoices } from "@/lib/sales/sales-api-client";
 import type { SalesInvoiceSummary } from "@/lib/types/sales-api";
 import { useTranslation } from "@/lib/localization";
 
@@ -24,6 +24,44 @@ function formatDate(iso: string): string {
     month: "short",
     year: "numeric",
   });
+}
+
+function formatGst(amount: number): string {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    minimumFractionDigits: amount % 1 === 0 ? 0 : 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
+}
+
+function invoiceItemsLabel(invoice: SalesInvoiceSummary): string {
+  const name = invoice.firstItemName?.trim();
+  if (!name) return "—";
+  if (invoice.lineCount && invoice.lineCount > 1) return `${name} +${invoice.lineCount - 1}`;
+  return name;
+}
+
+function invoiceGstLabel(invoice: SalesInvoiceSummary): string {
+  if (invoice.taxAmount !== undefined) {
+    if (invoice.taxAmount > 0) return formatGst(invoice.taxAmount);
+    return invoice.invoiceType === "gst_invoice" ? formatGst(0) : "N/A";
+  }
+  return invoice.invoiceType === "gst_invoice" ? "—" : "N/A";
+}
+
+async function mapPool<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
+  const out: R[] = new Array(items.length);
+  let next = 0;
+  async function worker() {
+    while (next < items.length) {
+      const idx = next++;
+      out[idx] = await fn(items[idx]);
+    }
+  }
+  const workers = Math.min(limit, items.length);
+  await Promise.all(Array.from({ length: workers }, () => worker()));
+  return out;
 }
 
 function StatCard({
@@ -95,6 +133,7 @@ export function SalesInvoicesPage() {
   const [invoices, setInvoices] = useState<SalesInvoiceSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const loadGeneration = useRef(0);
 
   const load = useCallback(async () => {
     const orgId = activeOrganisationId?.trim();
@@ -102,6 +141,7 @@ export function SalesInvoicesPage() {
       setInvoices([]);
       return;
     }
+    const generation = ++loadGeneration.current;
     setLoading(true);
     setLoadError(null);
     try {
@@ -111,11 +151,49 @@ export function SalesInvoicesPage() {
         limit: 100,
         page: 1,
       });
+      if (generation !== loadGeneration.current) return;
       setInvoices(data.items);
+      setLoading(false);
+      const missing = data.items.filter((inv) => !inv.firstItemName || inv.taxAmount === undefined);
+      if (missing.length === 0) return;
+      const extras = await mapPool(missing, 6, async (inv) => {
+        try {
+          const detail = await fetchSalesInvoiceDetail(orgId, inv.invoiceId);
+          const first = detail.lineItems[0]?.name?.trim();
+          return {
+            invoiceId: inv.invoiceId,
+            firstItemName: first || undefined,
+            lineCount: detail.lineItems.length,
+            taxAmount: detail.lineTax + detail.additionalChargesTax,
+            paymentMode: detail.paymentMode,
+          };
+        } catch {
+          return { invoiceId: inv.invoiceId };
+        }
+      });
+      if (generation !== loadGeneration.current) return;
+      const byId = new Map(extras.map((row) => [row.invoiceId, row]));
+      setInvoices((prev) =>
+        prev.map((inv) => {
+          const extra = byId.get(inv.invoiceId);
+          if (!extra) return inv;
+          return {
+            ...inv,
+            ...(extra.firstItemName && !inv.firstItemName ? { firstItemName: extra.firstItemName } : {}),
+            ...(extra.lineCount !== undefined && inv.lineCount === undefined
+              ? { lineCount: extra.lineCount }
+              : {}),
+            ...(extra.taxAmount !== undefined && inv.taxAmount === undefined
+              ? { taxAmount: extra.taxAmount }
+              : {}),
+            ...(extra.paymentMode && !inv.paymentMode ? { paymentMode: extra.paymentMode } : {}),
+          };
+        }),
+      );
     } catch (err) {
+      if (generation !== loadGeneration.current) return;
       setInvoices([]);
       setLoadError(err instanceof Error ? err.message : t("dashboard.salesInvoices.empty"));
-    } finally {
       setLoading(false);
     }
   }, [activeOrganisationId, query, status, t]);
@@ -326,7 +404,7 @@ function InvoiceRow({ invoice }: { invoice: SalesInvoiceSummary }) {
       <td className="px-4 py-3">
         <p className="font-medium text-brand-primary">{invoice.partyName}</p>
       </td>
-      <td className="px-4 py-3 text-right tabular-nums text-brand-primary">—</td>
+      <td className="px-4 py-3 text-right tabular-nums text-brand-primary">{invoiceItemsLabel(invoice)}</td>
       <td className="px-4 py-3 text-right">
         <p className="font-semibold tabular-nums text-brand-primary">{formatInr(invoice.totalAmount)}</p>
         {invoice.balanceAmount > 0 && invoice.status !== "cancelled" && (
@@ -335,7 +413,7 @@ function InvoiceRow({ invoice }: { invoice: SalesInvoiceSummary }) {
           </p>
         )}
       </td>
-      <td className="px-4 py-3 text-right tabular-nums text-brand-primary-muted">—</td>
+      <td className="px-4 py-3 text-right tabular-nums text-brand-primary-muted">{invoiceGstLabel(invoice)}</td>
       <td className="px-4 py-3 text-brand-primary-mid">—</td>
       <td className="px-4 py-3">
         <StatusBadge status={invoice.status} />

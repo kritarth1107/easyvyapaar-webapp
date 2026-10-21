@@ -94,6 +94,29 @@ export function normalizeSalesInvoiceSummary(raw: unknown): SalesInvoiceSummary 
     ...(pickString(row.dueDate) && { dueDate: pickString(row.dueDate) }),
     ...(pickString(row.partyGstin) && { partyGstin: pickString(row.partyGstin) }),
     ...(pickString(row.placeOfSupply) && { placeOfSupply: pickString(row.placeOfSupply) }),
+    ...invoiceListExtras(row),
+  };
+}
+
+function invoiceListExtras(row: Record<string, unknown>): Pick<
+  SalesInvoiceSummary,
+  "firstItemName" | "lineCount" | "taxAmount" | "paymentMode"
+> {
+  const lineItems = Array.isArray(row.lineItems) ? row.lineItems : [];
+  const firstLine = asRecord(lineItems[0]);
+  const firstItemName = pickString(row.firstItemName, row.itemName, firstLine?.name);
+  const lineCount = pickNumber(row.lineCount) ?? (lineItems.length > 0 ? lineItems.length : undefined);
+  const taxAmount =
+    pickNumber(row.taxAmount) ??
+    pickNumber(row.lineTax) ??
+    pickNumber(row.gstAmount) ??
+    pickNumber(row.totalTax);
+  const paymentMode = pickString(row.paymentMode);
+  return {
+    ...(firstItemName ? { firstItemName } : {}),
+    ...(lineCount !== undefined ? { lineCount } : {}),
+    ...(taxAmount !== undefined ? { taxAmount } : {}),
+    ...(paymentMode ? { paymentMode } : {}),
   };
 }
 

@@ -43,6 +43,10 @@ export type SalesInvoiceSummary = {
   invoiceType: SalesInvoiceType;
   partyGstin?: string;
   placeOfSupply?: string;
+  firstItemName?: string;
+  lineCount?: number;
+  taxAmount?: number;
+  paymentMode?: string;
 };
 
 export type SalesInvoiceLineItem = {
