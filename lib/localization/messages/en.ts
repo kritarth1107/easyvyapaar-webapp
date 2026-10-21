@@ -2981,7 +2981,7 @@ export const enMessages: MessageTree = {
       partyReports: "Party Reports",
       reportsHub: "All Reports",
       staff: "Staff & Payroll",
-      staffList: "Staffs",
+      staffList: "Staff",
       staffCreate: "Create New Staff",
       payroll: "Payroll",
       attendance: "Attendance",

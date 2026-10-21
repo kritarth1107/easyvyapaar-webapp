@@ -57,7 +57,6 @@ export function StaffListPage() {
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-sm text-brand-primary-muted">{t("dashboard.staff.subtitle")}</p>
-          <h2 className="text-xl font-bold text-brand-primary">{t("dashboard.staff.title")}</h2>
         </div>
         <Link
           href="/dashboard/staff-payroll/staffs/create-new"
