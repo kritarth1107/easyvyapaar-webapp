@@ -21,12 +21,15 @@ export function CashBankPage() {
   const { activeOrganisationId } = useUserMe();
   const [summary, setSummary] = useState<CashBankSummary | null>(null);
   const [transactions, setTransactions] = useState<CashBankTransaction[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const orgId = activeOrganisationId?.trim();
-    if (!orgId) return;
+    if (!orgId) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -37,8 +40,6 @@ export function CashBankPage() {
       setSummary(sum);
       setTransactions(txns.items);
     } catch (err) {
-      setSummary(null);
-      setTransactions([]);
       setError(err instanceof Error ? err.message : t("dashboard.cashBank.empty"));
     } finally {
       setLoading(false);
@@ -53,12 +54,20 @@ export function CashBankPage() {
         <p className="text-sm text-brand-primary-muted">{t("dashboard.cashBank.subtitle")}</p>
         <h2 className="text-xl font-bold text-brand-primary lg:text-2xl">{t("dashboard.nav.cashBank")}</h2>
       </div>
-      <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard label={t("dashboard.cashBank.totalBalance")} value={formatInr(summary?.totalBalance ?? 0)} accent="navy" />
-        <StatCard label={t("dashboard.cashBank.cashBalance")} value={formatInr(summary?.totalCash ?? 0)} accent="green" />
-        <StatCard label={t("dashboard.cashBank.bankBalance")} value={formatInr(summary?.totalBank ?? 0)} accent="blue" />
-        <StatCard label={t("dashboard.cashBank.accounts")} value={String(summary?.accounts.length ?? 0)} />
-      </div>
+      {summary ? (
+        <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <StatCard label={t("dashboard.cashBank.totalBalance")} value={formatInr(summary.totalBalance)} accent="navy" />
+          <StatCard label={t("dashboard.cashBank.cashBalance")} value={formatInr(summary.totalCash)} accent="green" />
+          <StatCard label={t("dashboard.cashBank.bankBalance")} value={formatInr(summary.totalBank)} accent="blue" />
+          <StatCard label={t("dashboard.cashBank.accounts")} value={String(summary.accounts.length)} />
+        </div>
+      ) : (
+        <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-20 animate-pulse rounded-md bg-slate-100" />
+          ))}
+        </div>
+      )}
       {summary && summary.accounts.length > 0 && (
         <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {summary.accounts.map((account) => (
@@ -83,10 +92,10 @@ export function CashBankPage() {
             </tr>
           </thead>
           <tbody>
-            {loading && <tr><td colSpan={5} className={`${tableBodyCellClass} text-center`}>{t("common.pleaseWait")}</td></tr>}
-            {!loading && error && <tr><td colSpan={5} className={`${tableBodyCellClass} text-center text-red-600`}>{error}</td></tr>}
-            {!loading && transactions.length === 0 && <tr><td colSpan={5} className={`${tableBodyCellClass} text-center text-brand-primary-muted`}>{t("dashboard.cashBank.noTransactions")}</td></tr>}
-            {!loading && transactions.map((txn) => (
+            {loading && transactions.length === 0 && <tr><td colSpan={5} className={`${tableBodyCellClass} text-center`}>{t("common.pleaseWait")}</td></tr>}
+            {!loading && error && transactions.length === 0 && <tr><td colSpan={5} className={`${tableBodyCellClass} text-center text-red-600`}>{error}</td></tr>}
+            {!loading && !error && transactions.length === 0 && <tr><td colSpan={5} className={`${tableBodyCellClass} text-center text-brand-primary-muted`}>{t("dashboard.cashBank.noTransactions")}</td></tr>}
+            {transactions.map((txn) => (
               <tr key={txn.transactionId} className={tableBodyRowClass}>
                 <td className={tableBodyCellClass}>{formatDate(txn.transactionDate)}</td>
                 <td className={tableBodyCellClass}>{txn.accountName}</td>
