@@ -91,6 +91,27 @@ const CHART_COLORS = [
   "#64748B",
 ];
 
+const BLANK_HSN = "—";
+
+function normalizeHsn(hsn?: string | null): string {
+  const value = hsn?.trim();
+  return value ? value : BLANK_HSN;
+}
+
+function categorySharePct(
+  row: CategoryRow,
+  costValue: number,
+  retailValue: number,
+  totalUnits: number,
+  itemCount: number,
+): number {
+  if (costValue > 0) return (row.costValue / costValue) * 100;
+  if (retailValue > 0) return (row.retailValue / retailValue) * 100;
+  if (totalUnits > 0) return (row.units / totalUnits) * 100;
+  if (itemCount > 0) return (row.items / itemCount) * 100;
+  return 0;
+}
+
 function itemCostValue(item: InventoryItem): number {
   return item.stock * item.purchasePrice;
 }
@@ -189,9 +210,9 @@ export function computeStockSummaryAnalytics(
   const categoryRows = Array.from(categoryMap.values())
     .map((r) => ({
       ...r,
-      sharePct: costValue > 0 ? (r.costValue / costValue) * 100 : 0,
+      sharePct: categorySharePct(r, costValue, retailValue, totalUnits, items.length),
     }))
-    .sort((a, b) => b.costValue - a.costValue);
+    .sort((a, b) => b.costValue - a.costValue || b.retailValue - a.retailValue);
 
   const gstMap = new Map<string, number>();
   const unitMap = new Map<string, number>();
@@ -203,11 +224,12 @@ export function computeStockSummaryAnalytics(
 
     unitMap.set(item.unit, (unitMap.get(item.unit) ?? 0) + item.stock);
 
-    const h = hsnMap.get(item.hsn) ?? { items: 0, units: 0, costValue: 0 };
+    const hsnKey = normalizeHsn(item.hsn);
+    const h = hsnMap.get(hsnKey) ?? { items: 0, units: 0, costValue: 0 };
     h.items += 1;
     h.units += item.stock;
     h.costValue += itemCostValue(item);
-    hsnMap.set(item.hsn, h);
+    hsnMap.set(hsnKey, h);
   }
 
   const topByCostValue = [...itemMetrics].sort((a, b) => b.costValue - a.costValue);
@@ -259,7 +281,7 @@ export function computeStockSummaryAnalytics(
       serializedSkus: items.filter((i) => i.serialised).length,
       serializedUnits: items.filter((i) => i.serialised).reduce((s, i) => s + i.stock, 0),
       categoryCount: categoryMap.size,
-      hsnCount: hsnMap.size,
+      hsnCount: Array.from(hsnMap.keys()).filter((key) => key !== BLANK_HSN).length,
       unitTypeCount: unitMap.size,
       zeroStockSkus: statusCounts.out_of_stock,
       lowStockSkus: statusCounts.low_stock,
@@ -274,7 +296,7 @@ export function computeStockSummaryAnalytics(
       categoryRows.map((r) => ({
         id: r.category,
         label: r.category,
-        value: r.costValue,
+        value: costValue > 0 ? r.costValue : r.retailValue,
         count: r.items,
       }))
     ),

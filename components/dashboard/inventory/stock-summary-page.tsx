@@ -387,7 +387,7 @@ export function StockSummaryPage() {
         </SectionCard>
         <SectionCard title={t("dashboard.stockSummary.statusDistribution")}>
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
-            <DonutChart slices={statusSlices} />
+            <DonutChart slices={statusSlices} totalFormatter={(n) => n.toLocaleString("en-IN")} />
             <ChartLegend slices={statusSlices} valueFormatter={(n) => `${n} SKUs`} />
           </div>
         </SectionCard>
@@ -399,7 +399,7 @@ export function StockSummaryPage() {
         </SectionCard>
         <SectionCard title={t("dashboard.stockSummary.unitsByType")}>
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
-            <DonutChart slices={analytics.unitSlices} />
+            <DonutChart slices={analytics.unitSlices} totalFormatter={(n) => n.toLocaleString("en-IN")} />
             <ChartLegend slices={analytics.unitSlices} valueFormatter={(n) => `${n} units`} />
           </div>
         </SectionCard>

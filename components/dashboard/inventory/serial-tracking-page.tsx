@@ -324,7 +324,7 @@ export function SerialTrackingPage() {
                   {t("dashboard.serialTrackingPage.statusChart")}
                 </h3>
                 <div className="mt-4 flex flex-col items-center gap-4 sm:flex-row sm:items-start">
-                  <DonutChart slices={statusSlices} size={132} />
+                  <DonutChart slices={statusSlices} size={132} totalFormatter={(n) => n.toLocaleString("en-IN")} />
                   <ChartLegend slices={statusSlices} valueFormatter={(n) => `${n}`} />
                 </div>
               </section>
@@ -355,7 +355,7 @@ export function SerialTrackingPage() {
                 <div className="mt-4 flex flex-col items-center gap-3 sm:flex-row">
                   {analytics.categorySlices.length > 0 ? (
                     <>
-                      <DonutChart slices={analytics.categorySlices} size={120} />
+                      <DonutChart slices={analytics.categorySlices} size={120} totalFormatter={(n) => n.toLocaleString("en-IN")} />
                       <ChartLegend slices={analytics.categorySlices} valueFormatter={(n) => `${n}`} />
                     </>
                   ) : (

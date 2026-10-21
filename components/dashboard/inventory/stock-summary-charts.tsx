@@ -7,10 +7,12 @@ export function DonutChart({
   slices,
   size = 168,
   holeRatio = 0.58,
+  totalFormatter = formatInrBrief,
 }: {
   slices: NamedSlice[];
   size?: number;
   holeRatio?: number;
+  totalFormatter?: (n: number) => string;
 }) {
   const total = slices.reduce((s, x) => s + x.value, 0);
   if (total <= 0) {
@@ -48,7 +50,7 @@ export function DonutChart({
           <p className="text-[10px] font-medium uppercase tracking-wide text-brand-primary-muted">
             Total
           </p>
-          <p className="text-sm font-bold text-brand-primary">{formatInrBrief(total)}</p>
+          <p className="text-sm font-bold text-brand-primary">{totalFormatter(total)}</p>
         </div>
       </div>
     </div>

@@ -366,7 +366,11 @@ export function LowStockPage() {
                   {t("dashboard.lowStockPage.byCategory")}
                 </h3>
                 <div className="mt-4 flex flex-col items-center gap-4 sm:flex-row sm:items-start">
-                  <DonutChart slices={analytics.categorySlices} size={140} />
+                  <DonutChart
+                    slices={analytics.categorySlices}
+                    size={140}
+                    totalFormatter={(n) => n.toLocaleString("en-IN")}
+                  />
                   <ChartLegend
                     slices={analytics.categorySlices}
                     valueFormatter={(n) => `${n} items`}
