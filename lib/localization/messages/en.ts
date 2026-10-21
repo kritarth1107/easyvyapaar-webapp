@@ -217,7 +217,7 @@ export const enMessages: MessageTree = {
       weeklySalesChart: "Daily sales (7 days)",
       paymentMix: "Collections by payment mode",
       stockByCategory: "Inventory value by category",
-      moneyFlow: "Where money went (this month)",
+      moneyFlow: "Sales by category (this month)",
       topSelling: "Top sellers (last 30 days)",
       lowStockList: "Reorder soon",
       quickLinks: "Quick links",
