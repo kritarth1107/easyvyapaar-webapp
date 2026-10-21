@@ -113,7 +113,7 @@ export function InvoicePreviewModern(props: InvoicePreviewProps) {
             <div className="mt-4 space-y-1 text-left">
               {metaRow("Invoice No.", content.invoiceNumber)}
               {metaRow("Invoice Date", content.invoiceDate)}
-              {metaRow("Due Date", content.dueDate)}
+              {content.dueDate?.trim() ? metaRow("Due Date", content.dueDate) : null}
             </div>
             <div className="mt-4 text-left text-slate-600">
               <InvoicePreviewShippingAddress content={content} fontSize={11} label="" />

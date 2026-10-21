@@ -105,7 +105,9 @@ export function InvoicePreviewGstAdvanceA5(props: InvoicePreviewProps) {
                 [
                   { label: "Invoice No.", value: content.invoiceNumber },
                   { label: "Invoice Date", value: content.invoiceDate },
-                  { label: content.dueDateLabel, value: content.dueDate },
+                  ...(content.dueDate?.trim()
+                    ? [{ label: content.dueDateLabel, value: content.dueDate }]
+                    : []),
                 ] as const
               ).map((field, i) => (
                 <div

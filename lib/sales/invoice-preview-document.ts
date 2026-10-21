@@ -196,7 +196,7 @@ export function resolveInvoicePreviewContent(props: InvoicePreviewProps): Resolv
       : (org?.businessPhone ?? SAMPLE.businessPhone),
     invoiceNumber: doc?.invoiceNumber ?? SAMPLE.invoiceNumber,
     invoiceDate,
-    dueDate: doc?.dueDate ?? SAMPLE.dueDate,
+    dueDate: doc?.dueDate?.trim() ? doc.dueDate : hasLive ? "" : SAMPLE.dueDate,
     partyName: doc?.partyName ?? SAMPLE.partyName,
     partyAddress: hasLive
       ? (doc?.partyAddress ?? "")

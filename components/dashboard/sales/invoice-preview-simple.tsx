@@ -102,7 +102,7 @@ export function InvoicePreviewSimple(props: InvoicePreviewProps) {
               <div className="space-y-1">
                 {metaRow("Invoice No.", content.invoiceNumber)}
                 {metaRow("Invoice Date", content.invoiceDate)}
-                {metaRow("Due Date", content.dueDate)}
+                {content.dueDate?.trim() ? metaRow("Due Date", content.dueDate) : null}
               </div>
             </div>
           </div>

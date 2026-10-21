@@ -70,7 +70,7 @@ import type { PartyDetail } from "@/lib/types/parties-api";
 import { useTranslation } from "@/lib/localization";
 import { DocumentHistoryPanel } from "@/components/dashboard/reports/audit-log-list";
 import { SignedQrImage } from "./signed-qr-image";
-import { CancelInvoiceDialog } from "./cancel-invoice-dialog";
+import { CancelInvoiceDialog, formatInvoiceCancelBlockedTitle } from "./cancel-invoice-dialog";
 import { isSalesInvoiceEditable } from "@/lib/sales/map-sales-invoice-detail-to-form";
 
 function WhatsAppIcon() {
@@ -685,7 +685,7 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
             {invoice.status !== "cancelled" ? (
               <button
                 type="button"
-                title={invoice.cancellable === false ? t("dashboard.invoiceCancel.blockedTitle") : undefined}
+                title={formatInvoiceCancelBlockedTitle(t, invoice)}
                 onClick={() => setInvoiceCancelOpen(true)}
                 className="inline-flex h-10 items-center rounded-sm border border-red-200 bg-white px-4 text-sm font-semibold text-red-700 hover:bg-red-50"
               >

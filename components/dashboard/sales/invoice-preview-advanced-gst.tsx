@@ -127,6 +127,7 @@ export function InvoicePreviewAdvancedGst(props: GstAdvancePreviewProps) {
                     </td>
                     <td className={`${FC} border-t-0 border-r-0`}>{content.invoiceDate}</td>
                   </tr>
+                  {content.dueDate?.trim() ? (
                   <tr>
                     <td
                       className={`${headerCell("border-b-0 border-l-0 border-t-0")}`}
@@ -136,6 +137,7 @@ export function InvoicePreviewAdvancedGst(props: GstAdvancePreviewProps) {
                     </td>
                     <td className={`${FC} border-b-0 border-r-0 border-t-0`}>{content.dueDate}</td>
                   </tr>
+                  ) : null}
                 </tbody>
               </table>
             </div>

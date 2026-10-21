@@ -7,7 +7,7 @@ import { cancelSalesInvoice } from "@/lib/sales/sales-api-client";
 import type { InvoiceCancelBlocker, SalesInvoiceDetail } from "@/lib/types/sales-api";
 import { useTranslation, type TranslationKey } from "@/lib/localization";
 
-const BLOCKER_KEYS: Record<InvoiceCancelBlocker, TranslationKey> = {
+export const INVOICE_CANCEL_BLOCKER_KEYS: Record<InvoiceCancelBlocker, TranslationKey> = {
   already_cancelled: "dashboard.invoiceCancel.blockerAlreadyCancelled",
   irn_active: "dashboard.invoiceCancel.blockerIrnActive",
   ewb_active: "dashboard.invoiceCancel.blockerEwbActive",
@@ -15,6 +15,17 @@ const BLOCKER_KEYS: Record<InvoiceCancelBlocker, TranslationKey> = {
   has_returns: "dashboard.invoiceCancel.blockerHasReturns",
   has_credit_notes: "dashboard.invoiceCancel.blockerHasCreditNotes",
 };
+
+export function formatInvoiceCancelBlockedTitle(
+  t: (key: TranslationKey) => string,
+  invoice: Pick<SalesInvoiceDetail, "cancellable" | "cancelBlockers">,
+): string | undefined {
+  const blockers = invoice.cancelBlockers ?? [];
+  if (invoice.cancellable !== false && blockers.length === 0) return undefined;
+  const reasons = blockers.map((blocker) => t(INVOICE_CANCEL_BLOCKER_KEYS[blocker]));
+  const title = t("dashboard.invoiceCancel.blockedTitle").replace(/:\s*$/, "");
+  return reasons.length > 0 ? `${title}: ${reasons.join(" ")}` : title;
+}
 
 /** Cancels the invoice itself (stock/ledger reversed by backend). 422 while an IRN is active. */
 export function CancelInvoiceDialog({
@@ -87,7 +98,7 @@ export function CancelInvoiceDialog({
             <ul className="mt-1 list-disc space-y-1 pl-5 text-xs">
               {blockers.map((blocker) => (
                 <li key={blocker}>
-                  {t(BLOCKER_KEYS[blocker])}
+                  {t(INVOICE_CANCEL_BLOCKER_KEYS[blocker])}
                   {blocker === "has_payments" && onMarkUnpaid ? (
                     <button
                       type="button"
