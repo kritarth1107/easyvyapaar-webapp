@@ -76,23 +76,6 @@ export function DashboardShell({ children, hasSession = false }: DashboardShellP
     return <MobileWebGate hasSession={hasSession} />;
   }
 
-  if (isPosFullscreen) {
-    return (
-      <UserMeProvider>
-        <OrganisationPermissionsProvider>
-          <PlanWorkspaceRefreshListener />
-          <AutoOpenOrganisationPicker onOpen={openBusinessSwitch} />
-          <BusinessSwitchModal
-            open={businessSwitchOpen}
-            onClose={() => setBusinessSwitchOpen(false)}
-          />
-          <ShopSwitchOverlay />
-          <div className="h-screen overflow-hidden">{children}</div>
-        </OrganisationPermissionsProvider>
-      </UserMeProvider>
-    );
-  }
-
   return (
     <UserMeProvider>
       <OrganisationPermissionsProvider>
@@ -102,36 +85,43 @@ export function DashboardShell({ children, hasSession = false }: DashboardShellP
           open={businessSwitchOpen}
           onClose={() => setBusinessSwitchOpen(false)}
         />
-        <div className="flex h-svh min-h-0 overflow-hidden bg-brand-surface">
-          <DashboardSidebar
-            collapsed={sidebarCollapsed}
-            mobileOpen={mobileNavOpen}
-            onClose={() => setMobileNavOpen(false)}
-            onOpenBusinessSwitch={openBusinessSwitch}
-          />
-
-          <div className="relative flex min-w-0 flex-1 flex-col">
+        {isPosFullscreen ? (
+          <>
             <ShopSwitchOverlay />
-            <DashboardTopbar
-              onMenuClick={() => setMobileNavOpen(true)}
+            <div className="h-screen overflow-hidden">{children}</div>
+          </>
+        ) : (
+          <div className="flex h-svh min-h-0 overflow-hidden bg-brand-surface">
+            <DashboardSidebar
+              collapsed={sidebarCollapsed}
+              mobileOpen={mobileNavOpen}
+              onClose={() => setMobileNavOpen(false)}
               onOpenBusinessSwitch={openBusinessSwitch}
-              sidebarCollapsed={sidebarCollapsed}
-              onToggleSidebar={toggleSidebarCollapsed}
             />
-            <main
-              ref={mainScrollRef}
-              className={`dashboard-content text-brand-primary ${
-                isAiChatFullscreen
-                  ? "flex min-h-0 flex-1 flex-col overflow-hidden"
-                  : "scrollbar-brand flex-1 overflow-y-auto"
-              }`}
-            >
-              <PendingInvitesBanner />
-              <PlanRenewalBanner />
-              {children}
-            </main>
+
+            <div className="relative flex min-w-0 flex-1 flex-col">
+              <ShopSwitchOverlay />
+              <DashboardTopbar
+                onMenuClick={() => setMobileNavOpen(true)}
+                onOpenBusinessSwitch={openBusinessSwitch}
+                sidebarCollapsed={sidebarCollapsed}
+                onToggleSidebar={toggleSidebarCollapsed}
+              />
+              <main
+                ref={mainScrollRef}
+                className={`dashboard-content text-brand-primary ${
+                  isAiChatFullscreen
+                    ? "flex min-h-0 flex-1 flex-col overflow-hidden"
+                    : "scrollbar-brand flex-1 overflow-y-auto"
+                }`}
+              >
+                <PendingInvitesBanner />
+                <PlanRenewalBanner />
+                {children}
+              </main>
+            </div>
           </div>
-        </div>
+        )}
       </OrganisationPermissionsProvider>
     </UserMeProvider>
   );

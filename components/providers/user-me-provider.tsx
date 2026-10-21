@@ -249,7 +249,7 @@ export function UserMeProvider({ children }: { children: React.ReactNode }) {
   return (
     <UserMeContext.Provider value={value}>
       {children}
-      <UserMeLoadingOverlay open={isLoading} />
+      <UserMeLoadingOverlay open={isLoading && !user} />
     </UserMeContext.Provider>
   );
 }
