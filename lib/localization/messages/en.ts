@@ -2397,7 +2397,7 @@ export const enMessages: MessageTree = {
       personalInfoHint: "Update your name, email, and preferred language",
       name: "Full name",
       email: "Email address",
-      emailPlaceholder: "you@example.com",
+      emailPlaceholder: "",
       mobile: "Mobile number",
       changeMobile: "Change",
       changeMobileTitle: "Verify new mobile number",

@@ -272,7 +272,7 @@ export function AccountSettingsPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder={t("dashboard.userSettings.emailPlaceholder")}
+              placeholder=""
               className={inputClass}
             />
           </div>
