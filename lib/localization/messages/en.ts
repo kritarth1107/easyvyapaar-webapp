@@ -2146,7 +2146,7 @@ export const enMessages: MessageTree = {
       sectionFinancial: "Financial & audit",
       categoryGstDesc: "GST returns, HSN summaries, and tax filing reports for your CA.",
       categoryFinancialDesc: "Profit, balance sheet, and bill-wise margin for management review.",
-      categoryInventoryDesc: "Stock levels, valuation, and low-stock alerts across godowns.",
+      categoryInventoryDesc: "Stock levels, valuation, and low-stock alerts.",
       categoryPartyDesc: "Outstanding balances, ageing, and party-wise receivable/payable.",
       exportPortalJson: "Download GST portal JSON",
       exportTallyXml: "Download Tally XML",
