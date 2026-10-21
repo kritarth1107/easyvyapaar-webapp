@@ -1076,7 +1076,7 @@ export function PosBillingPage() {
               type="button"
               disabled={saving || activeBill.form.lineItems.length === 0}
               onClick={() => void handleSaveBill(false)}
-              className="flex h-11 w-full items-center justify-center rounded-sm bg-brand-orange-1 text-sm font-bold text-white hover:bg-brand-orange-1/90 disabled:opacity-40"
+              className="flex h-11 w-full items-center justify-center rounded-sm bg-brand-orange-1 text-sm font-bold text-white hover:bg-brand-orange-1/90 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500 disabled:hover:bg-slate-200"
             >
               {saving ? t("common.pleaseWait") : t("dashboard.pos.saveBill")}
               <ShortcutBadge keys="F7" />
