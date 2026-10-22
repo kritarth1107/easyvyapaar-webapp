@@ -1,7 +1,46 @@
 import { extractBackendError } from "@/lib/api/inventory";
-import type { DaybookEntry, DaybookListResponse } from "@/lib/types/daybook-api";
+import type { DaybookEntry, DaybookEntryType, DaybookListResponse } from "@/lib/types/daybook-api";
 
 export { extractBackendError };
+
+const API_DAYBOOK_TYPES = new Set<DaybookEntryType>([
+  "sales_invoice",
+  "finance_payment",
+  "invoice_payment",
+  "purchase_payment",
+  "expense",
+  "sales_return_refund",
+  "credit_note_refund",
+]);
+
+/** UI labels that predated the API enum. */
+const LEGACY_ENTRY_TYPE: Record<string, DaybookEntryType> = {
+  sale: "sales_invoice",
+  purchase: "purchase_payment",
+  payment_in: "invoice_payment",
+  payment_out: "finance_payment",
+};
+
+const CASH_DAYBOOK_TYPES = new Set<DaybookEntryType>([
+  "finance_payment",
+  "invoice_payment",
+  "purchase_payment",
+  "expense",
+  "sales_return_refund",
+  "credit_note_refund",
+]);
+
+export function normalizeDaybookEntryType(raw: string | undefined): DaybookEntryType | undefined {
+  if (!raw) return undefined;
+  const mapped = LEGACY_ENTRY_TYPE[raw] ?? raw;
+  if (API_DAYBOOK_TYPES.has(mapped as DaybookEntryType)) return mapped as DaybookEntryType;
+  return "other";
+}
+
+/** Cash & Bank lists cash movements only; sales invoice rows do not move cash. */
+export function isCashDaybookEntry(entryType: DaybookEntryType): boolean {
+  return CASH_DAYBOOK_TYPES.has(entryType);
+}
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   return typeof value === "object" && value !== null ? (value as Record<string, unknown>) : null;
@@ -48,7 +87,7 @@ export function normalizeDaybookEntry(raw: unknown): DaybookEntry | null {
 
   const entryId = pickString(row.entryId, row.id);
   const entryDate = pickString(row.entryDate, row.date);
-  const entryType = pickString(row.entryType, row.type) as DaybookEntry["entryType"] | undefined;
+  const entryType = normalizeDaybookEntryType(pickString(row.entryType, row.type));
   const referenceNumber = pickString(row.referenceNumber, row.reference);
   const debit = pickNumber(row.debit);
   const credit = pickNumber(row.credit);

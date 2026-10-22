@@ -1,4 +1,13 @@
-export type DaybookEntryType = "sale" | "purchase" | "payment_in" | "payment_out" | "expense" | "other";
+/** Matches API `daybookQuerySchema` entryType (plus `other` for unknown rows). */
+export type DaybookEntryType =
+  | "sales_invoice"
+  | "finance_payment"
+  | "invoice_payment"
+  | "purchase_payment"
+  | "expense"
+  | "sales_return_refund"
+  | "credit_note_refund"
+  | "other";
 
 export type DaybookEntry = {
   entryId: string;

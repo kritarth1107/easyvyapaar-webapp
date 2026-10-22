@@ -1849,7 +1849,10 @@ export type MessageTree = {
       typePaymentIn: string;
       typePaymentOut: string;
       typeExpense: string;
+      typeSalesReturn: string;
+      typeCreditNote: string;
       colDate: string;
+      colType: string;
       colReference: string;
       colParty: string;
       colDebit: string;
@@ -2125,6 +2128,8 @@ export type MessageTree = {
       hubTitle: string;
       backToHub: string;
       planUpgradeRequired: string;
+      gstNotRegistered: string;
+      addGstCta: string;
       upgradePlanCta: string;
       availableReports: string;
       sectionFavourite: string;

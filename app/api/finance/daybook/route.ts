@@ -1,12 +1,18 @@
 import { NextResponse } from "next/server";
-import { extractBackendError, normalizeDaybookListResponse } from "@/lib/api/daybook";
+import { extractBackendError, normalizeDaybookEntryType, normalizeDaybookListResponse } from "@/lib/api/daybook";
 import { proxyFinanceBackend, requireOrganisationId } from "@/lib/api/finance-proxy";
 
 function buildBackendListQuery(searchParams: URLSearchParams): string {
   const params = new URLSearchParams();
   for (const key of ["fromDate", "toDate", "entryType", "search", "page", "limit"] as const) {
     const value = searchParams.get(key)?.trim();
-    if (value) params.set(key, value);
+    if (!value) continue;
+    if (key === "entryType") {
+      const mapped = normalizeDaybookEntryType(value);
+      if (mapped && mapped !== "other") params.set(key, mapped);
+      continue;
+    }
+    params.set(key, value);
   }
   const qs = params.toString();
   return qs ? `?${qs}` : "";

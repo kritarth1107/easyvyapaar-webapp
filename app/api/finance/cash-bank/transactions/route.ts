@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { normalizeDaybookListResponse } from "@/lib/api/daybook";
+import { isCashDaybookEntry, normalizeDaybookListResponse } from "@/lib/api/daybook";
 import { extractBackendError } from "@/lib/api/expenses";
 import { proxyFinanceBackend, requireOrganisationId } from "@/lib/api/finance-proxy";
 
@@ -37,8 +37,9 @@ export async function GET(request: Request) {
     }
 
     const daybook = normalizeDaybookListResponse(body);
+    const cashItems = daybook.items.filter((row) => isCashDaybookEntry(row.entryType));
     const data = {
-      items: daybook.items.map((row) => ({
+      items: cashItems.map((row) => ({
         transactionId: row.entryId,
         transactionDate: row.entryDate,
         accountId: "cash",
