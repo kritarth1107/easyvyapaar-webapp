@@ -287,7 +287,7 @@ function NavGroupSection({
   };
 
   return (
-    <div ref={setSectionRef} className="mb-1 scroll-mb-14">
+    <div ref={setSectionRef} className="mb-0.5 scroll-mb-14">
       <button
         type="button"
         onClick={onToggle}
@@ -424,12 +424,15 @@ function SidebarPanel({
       </div>
 
       <nav
-        className="scrollbar-hidden min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain py-3"
+        className="scrollbar-hidden min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain"
         aria-label="Main navigation"
       >
-        <div className={collapsed ? "mb-2 space-y-1" : "mb-2"}>
+        {/* Padding lives on the inner stack, not the scrollport: py on the nav
+            let Purchase paint 19px into the footer at 1410×900 / scrollTop=0. */}
+        <div className="box-border flex min-h-0 min-w-0 flex-col pt-1 pb-4">
+        <div className={collapsed ? "mb-1 space-y-1" : "mb-1"}>
           {top.map((item) => (
-            <div key={item.id} className={!collapsed && item.accent === "ai" ? "mt-3" : undefined}>
+            <div key={item.id} className={!collapsed && item.accent === "ai" ? "mt-1" : undefined}>
               <NavItemLink
                 item={item}
                 activeHref={activeHref}
@@ -444,7 +447,7 @@ function SidebarPanel({
         </div>
 
         {!collapsed && (
-          <p className="mx-4 mb-2 mt-1 text-[10px] font-bold uppercase tracking-[0.16em] text-brand-primary-muted/80">
+          <p className="mx-4 mb-1 mt-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-brand-primary-muted/80">
             {t("dashboard.modulesLabel")}
           </p>
         )}
@@ -494,6 +497,7 @@ function SidebarPanel({
             sectionRef={settingsSectionRef}
           />
         ) : null}
+        </div>
       </nav>
 
       {!collapsed && (

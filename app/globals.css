@@ -290,7 +290,8 @@ body {
  * Sidebar layout (BUG-03): three stacked flex items. Grid 1fr + min-width:0
  * still let the tagline paint over Purchase on Azure at 1425×900 with Sales
  * + Inventory expanded. flex:1 1 0% on nav is the scrollport; footer cannot
- * leave its shrink-0 slot or cover nav hits.
+ * leave its shrink-0 slot. Padding belongs on the inner stack — py on nav
+ * left Purchase 19px under the tagline at 1410×900 / scrollTop=0 (Pass 6).
  */
 .dashboard-sidebar {
   display: flex;
@@ -312,17 +313,22 @@ body {
   min-height: 0;
   min-width: 0;
   width: 100%;
+  padding: 0;
   overflow-x: hidden;
   overflow-y: auto;
+  overflow-clip-margin: 0;
   overscroll-behavior-y: contain;
+  scroll-padding-bottom: 0.5rem;
 }
 
 .dashboard-sidebar-footer {
   box-sizing: border-box;
   flex: 0 0 auto;
+  flex-shrink: 0;
   width: 100%;
   min-width: 0;
   max-width: 100%;
+  min-height: 2.5rem;
   position: relative;
   z-index: 1;
 }
