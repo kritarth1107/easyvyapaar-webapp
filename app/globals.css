@@ -287,23 +287,19 @@ body {
 }
 
 /*
- * Sidebar layout (BUG-03): pin the tagline in its own grid row so it cannot
- * paint over nav or steal clicks. minmax(0,1fr) is required so the nav
- * shrinks and scrolls instead of overflowing under the footer.
+ * Sidebar layout (BUG-03): three stacked flex items. Grid 1fr + min-width:0
+ * still let the tagline paint over Purchase on Azure at 1425×900 with Sales
+ * + Inventory expanded. flex:1 1 0% on nav is the scrollport; footer cannot
+ * leave its shrink-0 slot or cover nav hits.
  */
 .dashboard-sidebar {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  display: flex;
+  flex-direction: column;
   height: 100%;
   max-height: 100%;
   min-height: 0;
   min-width: 0;
   overflow: hidden;
-}
-
-.dashboard-sidebar[data-collapsed="true"] {
-  grid-template-rows: auto minmax(0, 1fr);
 }
 
 .dashboard-sidebar > * {
@@ -312,6 +308,7 @@ body {
 }
 
 .dashboard-sidebar > nav {
+  flex: 1 1 0%;
   min-height: 0;
   min-width: 0;
   width: 100%;
@@ -322,6 +319,7 @@ body {
 
 .dashboard-sidebar-footer {
   box-sizing: border-box;
+  flex: 0 0 auto;
   width: 100%;
   min-width: 0;
   max-width: 100%;

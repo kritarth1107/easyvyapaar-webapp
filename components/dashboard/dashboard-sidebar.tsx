@@ -408,7 +408,7 @@ function SidebarPanel({
   return (
     <aside
       data-collapsed={collapsed ? "true" : undefined}
-      className={`dashboard-sidebar relative isolate h-full max-h-svh min-h-0 shrink-0 overflow-hidden border-r border-slate-200/90 bg-white transition-[width] duration-200 ease-out ${
+      className={`dashboard-sidebar relative isolate flex h-full max-h-full min-h-0 shrink-0 flex-col overflow-hidden border-r border-slate-200/90 bg-white transition-[width] duration-200 ease-out ${
         collapsed ? "w-[72px]" : "w-[268px]"
       }`}
     >
@@ -424,7 +424,7 @@ function SidebarPanel({
       </div>
 
       <nav
-        className="scrollbar-hidden min-h-0 overflow-y-auto overflow-x-hidden overscroll-y-contain py-3"
+        className="scrollbar-hidden min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain py-3"
         aria-label="Main navigation"
       >
         <div className={collapsed ? "mb-2 space-y-1" : "mb-2"}>
@@ -497,7 +497,7 @@ function SidebarPanel({
       </nav>
 
       {!collapsed && (
-        <div className="dashboard-sidebar-footer border-t border-slate-100 bg-white px-4 py-3">
+        <div className="dashboard-sidebar-footer shrink-0 border-t border-slate-100 bg-white px-4 py-3">
           <p className="text-center text-[10px] font-medium text-brand-primary-muted">
             {t("dashboard.sidebarTagline")}
           </p>
