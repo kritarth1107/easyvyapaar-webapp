@@ -12,7 +12,7 @@ import { ReportSectionView } from "@/components/dashboard/reports/report-primiti
 import { formatDateIndian } from "@/lib/dashboard/date-format";
 import { AS_OF_DATE_REPORTS, getDefaultReportDateRange } from "@/lib/reports/report-backend-map";
 import { isShopGstRegistered } from "@/lib/dashboard/shop-gst";
-import { canAccessReportSlug } from "@/lib/reports/report-config";
+import { canAccessReportSlug, GST_REPORT_SLUGS } from "@/lib/reports/report-config";
 import { localizeReportData } from "@/lib/reports/report-labels-i18n";
 import { fetchReport, isReportSlug } from "@/lib/reports/reports-api-client";
 import { downloadGstr1PortalJson, downloadTallyXml } from "@/lib/reports/gstr-portal-export-client";
@@ -40,6 +40,8 @@ export function ReportViewerPage() {
   const planAllowed = validSlug
     ? canAccessReportSlug(validSlug, planFeatures, { shopGstRegistered })
     : false;
+  const gstNotAddedGate =
+    validSlug != null && GST_REPORT_SLUGS.has(validSlug) && !shopGstRegistered;
 
   const defaults = useMemo(() => getDefaultReportDateRange(), []);
   const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
@@ -68,7 +70,7 @@ export function ReportViewerPage() {
   }, [month]);
 
   const load = useCallback(async () => {
-    if (!orgId || !validSlug) return;
+    if (!orgId || !validSlug || !planAllowed) return;
     const range = isMonthReport ? monthRange : { fromDate, toDate };
     setLoading(true);
     setError(null);
@@ -86,7 +88,7 @@ export function ReportViewerPage() {
     } finally {
       setLoading(false);
     }
-  }, [orgId, validSlug, fromDate, toDate, monthRange, isMonthReport, page, isPaginated, t]);
+  }, [orgId, validSlug, planAllowed, fromDate, toDate, monthRange, isMonthReport, page, isPaginated, t]);
 
   useEffect(() => {
     void load();
@@ -113,13 +115,26 @@ export function ReportViewerPage() {
   if (!planAllowed) {
     return (
       <div className="p-6">
-        <p className="text-brand-primary">{t("dashboard.reports.planUpgradeRequired")}</p>
-        <Link
-          href="/dashboard/settings/subscription"
-          className="mt-4 inline-flex rounded-md bg-brand-orange-2 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-orange-1"
-        >
-          {t("dashboard.reports.upgradePlanCta")}
-        </Link>
+        <p className="text-brand-primary">
+          {gstNotAddedGate
+            ? t("dashboard.reports.gstNotRegistered")
+            : t("dashboard.reports.planUpgradeRequired")}
+        </p>
+        {gstNotAddedGate ? (
+          <Link
+            href="/dashboard/settings/business-profile"
+            className="mt-4 inline-flex rounded-md bg-brand-orange-2 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-orange-1"
+          >
+            {t("dashboard.reports.addGstCta")}
+          </Link>
+        ) : (
+          <Link
+            href="/dashboard/settings/subscription"
+            className="mt-4 inline-flex rounded-md bg-brand-orange-2 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-orange-1"
+          >
+            {t("dashboard.reports.upgradePlanCta")}
+          </Link>
+        )}
         <Link
           href="/dashboard/reports"
           className="mt-4 ml-4 inline-block text-sm font-semibold text-brand-orange-2 hover:underline"
