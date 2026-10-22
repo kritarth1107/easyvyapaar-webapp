@@ -57,6 +57,8 @@ export type ProfitLossReport = {
     card: number;
     bank: number;
     cheque: number;
+    /** Unpaid invoices. API E17; not a collected cash-like mode. */
+    credit: number;
     total: number;
   };
   categoryWise: {

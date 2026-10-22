@@ -2190,6 +2190,7 @@ export type MessageTree = {
         margin: string;
         paymentBreakdown: string;
         paymentHint: string;
+        paymentCredit: string;
         statementTitle: string;
         categoryTitle: string;
         momTitle: string;

@@ -520,12 +520,25 @@ function parsePurchaseSummary(row: Record<string, unknown>): ReportData {
 function parseProfitAndLoss(row: Record<string, unknown>): ReportData {
   if (isProfitLossReport(row)) {
     const pl = row as ProfitLossReport;
+    const modes = asRecord(row.paymentModeBreakdown) ?? {};
+    const credit = pickNumber(modes.credit) ?? 0;
     return {
       reportType: "profit-and-loss",
       title: "Profit & Loss",
       fromDate: pl.fromDate,
       toDate: pl.toDate,
-      profitLoss: pl,
+      profitLoss: {
+        ...pl,
+        paymentModeBreakdown: {
+          cash: pickNumber(modes.cash) ?? pl.paymentModeBreakdown.cash,
+          upi: pickNumber(modes.upi) ?? pl.paymentModeBreakdown.upi,
+          card: pickNumber(modes.card) ?? pl.paymentModeBreakdown.card,
+          bank: pickNumber(modes.bank) ?? pl.paymentModeBreakdown.bank,
+          cheque: pickNumber(modes.cheque) ?? pl.paymentModeBreakdown.cheque,
+          credit,
+          total: pickNumber(modes.total) ?? pl.paymentModeBreakdown.total,
+        },
+      },
       sections: [],
       columns: [],
       rows: [],

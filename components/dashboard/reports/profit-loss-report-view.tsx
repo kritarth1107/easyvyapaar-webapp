@@ -125,6 +125,15 @@ function exportProfitLossCsv(report: ProfitLossReport) {
     ["Line item", "Amount"],
     ...report.statement.map((r) => [r.line, String(r.amount)]),
     [],
+    ["Payment mode", "Amount"],
+    ["cash", String(report.paymentModeBreakdown.cash)],
+    ["upi", String(report.paymentModeBreakdown.upi)],
+    ["card", String(report.paymentModeBreakdown.card)],
+    ["bank", String(report.paymentModeBreakdown.bank)],
+    ["cheque", String(report.paymentModeBreakdown.cheque)],
+    ["credit", String(report.paymentModeBreakdown.credit)],
+    ["total", String(report.paymentModeBreakdown.total)],
+    [],
     ["Category", "Net revenue", "COGS", "Gross profit", "Contribution %"],
     ...report.categoryWise.map((c) => [
       c.categoryName,
@@ -216,10 +225,13 @@ export function ProfitLossReportView({ report }: { report: ProfitLossReport }) {
                 ["card", report.paymentModeBreakdown.card],
                 ["bank", report.paymentModeBreakdown.bank],
                 ["cheque", report.paymentModeBreakdown.cheque],
+                ["credit", report.paymentModeBreakdown.credit],
               ] as const
             ).map(([mode, amount]) => (
               <div key={mode} className="flex justify-between text-sm">
-                <span className="uppercase text-brand-primary-muted">{mode}</span>
+                <span className={`${mode === "credit" ? "" : "uppercase"} text-brand-primary-muted`}>
+                  {mode === "credit" ? t("dashboard.reports.profitLoss.paymentCredit") : mode}
+                </span>
                 <span className="font-semibold tabular-nums">{formatInr(amount)}</span>
               </div>
             ))}
