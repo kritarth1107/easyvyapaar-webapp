@@ -81,6 +81,19 @@ export function clampInvoiceLineQty(
   return Math.min(Math.max(1, normalized), maxQty);
 }
 
+/** Cap qty to stock without flooring so typed decimals (e.g. 4.5) survive. 0 means remove the line. */
+export function capInvoiceLineQty(
+  line: InvoiceLineItem,
+  nextQty: number,
+  lineItems: InvoiceLineItem[],
+): number {
+  if (line.serialised) return 1;
+  const maxQty = getMaxQtyForLine(line, lineItems);
+  if (maxQty <= 0) return 0;
+  if (!Number.isFinite(nextQty) || nextQty <= 0) return 0;
+  return Math.min(nextQty, maxQty);
+}
+
 export type AdditionalCharge = {
   id: string;
   label: string;

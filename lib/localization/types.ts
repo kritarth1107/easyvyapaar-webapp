@@ -1066,6 +1066,13 @@ export type MessageTree = {
         stockMaxHint: string;
         decreaseQty: string;
         increaseQty: string;
+        decreaseRate: string;
+        increaseRate: string;
+        colRate: string;
+        taxIncl: string;
+        taxExcl: string;
+        taxToggleHint: string;
+        removeItem: string;
         cashSaleDefault: string;
         invoiceTypeCashMemo: string;
         invoiceTypeGstInvoice: string;

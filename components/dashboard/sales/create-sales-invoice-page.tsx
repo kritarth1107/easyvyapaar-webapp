@@ -26,14 +26,10 @@ import { isValidGstin, normalizeGstin } from "@/lib/validators/gstin";
 import { stateCodeToLabel } from "@/lib/constants/indian-state-codes";
 import { maskBankAccountNumber } from "@/lib/parties/party-detail-utils";
 import type { OrganisationBankAccount } from "@/lib/types/organisation-bank-api";
-import { LineDiscountField } from "@/components/dashboard/shared/line-discount-field";
+import { SalesInvoiceLineCard } from "@/components/dashboard/sales/sales-invoice-line-card";
 import {
   clampLineDiscount,
-  getInvoiceLineDisplay,
-  invoiceLinePriceFromInput,
-  invoiceLinePriceInputValue,
   lineGrossAmount,
-  normalizeSalesTaxMode,
 } from "@/lib/sales/invoice-tax";
 import {
   calcInvoiceTotals,
@@ -43,7 +39,7 @@ import {
   isCounterSale,
   namedPartyCreditPatch,
   type SalesInvoiceDocumentType,
-  clampInvoiceLineQty,
+  capInvoiceLineQty,
   createInitialInvoiceForm,
   formatInr,
   getMaxQtyForLine,
@@ -599,30 +595,28 @@ export function CreateSalesInvoicePage({ editInvoiceId }: { editInvoiceId?: stri
   };
 
   const updateLine = (id: string, partial: Partial<InvoiceLineItem>) => {
-    setForm((prev) => ({
-      ...prev,
-      lineItems: prev.lineItems.map((line) => {
-        if (line.id !== id) return line;
-        const next = { ...line, ...partial };
-        if ("qty" in partial && !line.serialised) {
-          next.qty = clampInvoiceLineQty(line, Number(partial.qty) || 1, prev.lineItems);
+    setForm((prev) => {
+      if ("qty" in partial) {
+        const current = prev.lineItems.find((line) => line.id === id);
+        if (current && !current.serialised) {
+          const qty = capInvoiceLineQty(current, Number(partial.qty), prev.lineItems);
+          if (qty <= 0) {
+            return { ...prev, lineItems: prev.lineItems.filter((line) => line.id !== id) };
+          }
+          partial = { ...partial, qty };
+        } else if (current?.serialised) {
+          const { qty: _ignoredQty, ...rest } = partial;
+          partial = rest;
         }
-        return withClampedLineDiscount(next);
-      }),
-    }));
-  };
-
-  const adjustLineQty = (id: string, delta: number) => {
-    setForm((prev) => ({
-      ...prev,
-      lineItems: prev.lineItems.map((line) => {
-        if (line.id !== id || line.serialised) return line;
-        return withClampedLineDiscount({
-          ...line,
-          qty: clampInvoiceLineQty(line, line.qty + delta, prev.lineItems),
-        });
-      }),
-    }));
+      }
+      return {
+        ...prev,
+        lineItems: prev.lineItems.map((line) => {
+          if (line.id !== id) return line;
+          return withClampedLineDiscount({ ...line, ...partial });
+        }),
+      };
+    });
   };
 
   const removeLine = (id: string) => {
@@ -1221,7 +1215,7 @@ export function CreateSalesInvoicePage({ editInvoiceId }: { editInvoiceId?: stri
           </div>
         </div>
 
-        {/* Items table */}
+        {/* Items */}
         <div className="mt-6 overflow-hidden rounded-md border border-slate-200/90">
           <div className="flex items-center justify-end gap-2 border-b border-slate-100 px-3 py-2">
             <button
@@ -1233,188 +1227,43 @@ export function CreateSalesInvoicePage({ editInvoiceId }: { editInvoiceId?: stri
               +
             </button>
           </div>
-          <div className="overflow-x-auto scrollbar-brand">
-            <table className="w-full min-w-[1080px] text-left text-sm">
-              <thead>
-                <tr className="border-b border-slate-100 bg-brand-surface/50 text-[10px] font-bold uppercase tracking-wide text-brand-primary-muted">
-                  <th className="w-10 px-3 py-2">{t("dashboard.salesInvoices.create.colNo")}</th>
-                  <th className="min-w-[200px] px-3 py-2">{t("dashboard.salesInvoices.create.colItems")}</th>
-                  <th className="w-24 px-3 py-2">{t("dashboard.salesInvoices.create.colHsn")}</th>
-                  <th className="w-28 px-3 py-2">{t("dashboard.salesInvoices.create.colQty")}</th>
-                  <th className="w-28 px-3 py-2">{t("dashboard.salesInvoices.create.colPrice")}</th>
-                  <th className="w-40 px-3 py-2">{t("dashboard.salesInvoices.create.colDiscount")}</th>
-                  {isBillOfSupply ? null : (
-                    <th className="w-20 px-3 py-2">{t("dashboard.salesInvoices.create.colTax")}</th>
-                  )}
-                  <th className="w-28 px-3 py-2 text-right">{t("dashboard.salesInvoices.create.colAmount")}</th>
-                  <th className="w-10 px-2" />
-                </tr>
-              </thead>
-              <tbody>
-                {form.lineItems.length === 0 ? (
-                  <tr>
-                    <td colSpan={isBillOfSupply ? 8 : 9} className="p-0">
-                      <div className="flex min-h-[140px] items-center justify-center gap-4 p-4">
-                        <button
-                          type="button"
-                          onClick={() => setAddItemsOpen(true)}
-                          className="flex flex-1 items-center justify-center rounded-md border border-dashed border-brand-primary/25 py-10 text-sm font-semibold text-brand-primary hover:border-brand-primary/40 hover:bg-brand-primary/[0.03]"
-                        >
-                          + {t("dashboard.salesInvoices.create.addItem")}
-                        </button>
-                        <button
-                          type="button"
-                          className="inline-flex h-10 shrink-0 items-center gap-2 rounded-sm border border-slate-200/90 bg-white px-4 text-sm font-medium text-brand-primary hover:bg-slate-50"
-                        >
-                          <BarcodeIcon />
-                          {t("dashboard.salesInvoices.create.scanBarcode")}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  form.lineItems.map((line, idx) => {
-                    const salesTaxMode = normalizeSalesTaxMode(line.salesTaxMode);
-                    const lineDisplay = getInvoiceLineDisplay({
-                      qty: line.qty,
-                      pricePerItem: line.pricePerItem,
-                      discount: line.discount,
-                      discountType: line.discountType,
-                      gstPercent: line.gstPercent,
-                      salesTaxMode,
-                    });
-                    return (
-                      <tr key={line.id} className="border-b border-slate-50 hover:bg-blue-50/20">
-                        <td className="align-top px-3 py-2 tabular-nums text-brand-primary-muted">{idx + 1}</td>
-                        <td className="align-top px-3 py-2">
-                          <p className="font-medium text-brand-primary">{line.name}</p>
-                          {line.serialised && line.serialNumbers[0] ? (
-                            <p className="mt-0.5 font-mono text-[11px] text-violet-700">
-                              {line.serialNumbers[0]}
-                            </p>
-                          ) : (
-                            <p className="text-[11px] text-brand-primary-muted">{line.unit}</p>
-                          )}
-                        </td>
-                        <td className="align-top px-3 py-2">
-                          <input
-                            value={line.hsn}
-                            onChange={(e) => updateLine(line.id, { hsn: e.target.value })}
-                            className={inputSmClass}
-                          />
-                        </td>
-                        <td className="align-top px-3 py-2">
-                          {line.serialised ? (
-                            <div className={`${inputSmClass} w-10 text-center tabular-nums`}>1</div>
-                          ) : (
-                            (() => {
-                              const maxQty = getMaxQtyForLine(line, form.lineItems);
-                              return (
-                                <div className={inputGroupClass}>
-                                  <button
-                                    type="button"
-                                    disabled={line.qty <= 1}
-                                    onClick={() => adjustLineQty(line.id, -1)}
-                                    className="flex h-9 w-8 shrink-0 items-center justify-center border-r border-slate-200/90 text-base font-medium text-brand-primary hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-                                    aria-label={t("dashboard.salesInvoices.create.decreaseQty")}
-                                  >
-                                    −
-                                  </button>
-                                  <input
-                                    type="number"
-                                    min={1}
-                                    max={maxQty > 0 ? maxQty : 1}
-                                    value={line.qty}
-                                    onChange={(e) =>
-                                      updateLine(line.id, { qty: Number(e.target.value) || 1 })
-                                    }
-                                    className={`${inputGroupInnerClass} w-10 min-w-0 text-center [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`}
-                                  />
-                                  <button
-                                    type="button"
-                                    disabled={maxQty <= 0 || line.qty >= maxQty}
-                                    onClick={() => adjustLineQty(line.id, 1)}
-                                    className="flex h-9 w-8 shrink-0 items-center justify-center border-l border-slate-200/90 text-base font-medium text-brand-primary hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-                                    aria-label={t("dashboard.salesInvoices.create.increaseQty")}
-                                  >
-                                    +
-                                  </button>
-                                </div>
-                              );
-                            })()
-                          )}
-                        </td>
-                        <td className="align-top px-3 py-2">
-                          <input
-                            type="number"
-                            min={0}
-                            step="0.01"
-                            value={invoiceLinePriceInputValue(
-                              line.pricePerItem,
-                              line.gstPercent,
-                              salesTaxMode,
-                            )}
-                            onChange={(e) =>
-                              updateLine(line.id, {
-                                pricePerItem: invoiceLinePriceFromInput(
-                                  Number(e.target.value) || 0,
-                                  line.gstPercent,
-                                  salesTaxMode,
-                                ),
-                              })
-                            }
-                            className={`${inputSmClass} tabular-nums`}
-                          />
-                        </td>
-                        <td className="align-top px-3 py-2">
-                          <LineDiscountField
-                            discount={line.discount}
-                            discountType={line.discountType}
-                            qty={line.qty}
-                            pricePerItem={line.pricePerItem}
-                            ariaLabel={t("dashboard.salesInvoices.create.colDiscount")}
-                            onChange={(next) => updateLine(line.id, next)}
-                          />
-                        </td>
-                        {isBillOfSupply ? null : (
-                          <td className="align-top px-3 py-2 pt-[10px] text-right tabular-nums text-brand-primary-muted">
-                            <p>{formatInr(lineDisplay.tax)}</p>
-                            <p className="text-[10px]">({line.gstPercent}%)</p>
-                          </td>
-                        )}
-                        <td className="align-top px-3 py-2 pt-[10px] text-right font-semibold tabular-nums text-brand-primary">
-                          {formatInr(lineDisplay.amount)}
-                        </td>
-                        <td className="align-top px-2 py-2">
-                          <button
-                            type="button"
-                            onClick={() => removeLine(line.id)}
-                            className="flex h-7 w-7 items-center justify-center rounded-sm text-brand-primary-muted hover:bg-red-50 hover:text-red-600"
-                            aria-label={t("common.close")}
-                          >
-                            ×
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-              <tfoot>
-                <tr className="border-t border-slate-200 bg-slate-50/50">
-                  <td
-                    colSpan={isBillOfSupply ? 6 : 7}
-                    className="px-3 py-2 text-xs font-bold uppercase text-brand-primary-muted"
-                  >
-                    {t("dashboard.salesInvoices.create.subtotal")}
-                  </td>
-                  <td className="px-3 py-2 text-right font-bold tabular-nums text-brand-primary">
-                    {formatInr(totals.subtotal + totals.lineTax)}
-                  </td>
-                  <td />
-                </tr>
-              </tfoot>
-            </table>
+          {form.lineItems.length === 0 ? (
+            <div className="flex min-h-[140px] items-center justify-center gap-4 p-4">
+              <button
+                type="button"
+                onClick={() => setAddItemsOpen(true)}
+                className="flex flex-1 items-center justify-center rounded-md border border-dashed border-brand-primary/25 py-10 text-sm font-semibold text-brand-primary hover:border-brand-primary/40 hover:bg-brand-primary/[0.03]"
+              >
+                + {t("dashboard.salesInvoices.create.addItem")}
+              </button>
+              <button
+                type="button"
+                className="inline-flex h-10 shrink-0 items-center gap-2 rounded-sm border border-slate-200/90 bg-white px-4 text-sm font-medium text-brand-primary hover:bg-slate-50"
+              >
+                <BarcodeIcon />
+                {t("dashboard.salesInvoices.create.scanBarcode")}
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3 p-3">
+              {form.lineItems.map((line) => (
+                <SalesInvoiceLineCard
+                  key={line.id}
+                  line={line}
+                  maxQty={getMaxQtyForLine(line, form.lineItems)}
+                  onChange={(patch) => updateLine(line.id, patch)}
+                  onRemove={() => removeLine(line.id)}
+                />
+              ))}
+            </div>
+          )}
+          <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50/50 px-3 py-2">
+            <p className="text-xs font-bold uppercase text-brand-primary-muted">
+              {t("dashboard.salesInvoices.create.subtotal")}
+            </p>
+            <p className="text-right font-bold tabular-nums text-brand-primary">
+              {formatInr(totals.subtotal + totals.lineTax)}
+            </p>
           </div>
         </div>
 

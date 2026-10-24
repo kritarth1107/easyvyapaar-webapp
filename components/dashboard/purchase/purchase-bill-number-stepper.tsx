@@ -21,7 +21,9 @@ export function PurchaseBillNumberStepper({
   suffix,
   step = 1,
   min = 0,
+  max,
   minusDisabled,
+  plusDisabled,
   onChange,
   onStepToZero,
   minusAria,
@@ -34,7 +36,9 @@ export function PurchaseBillNumberStepper({
   suffix?: string;
   step?: number;
   min?: number;
+  max?: number;
   minusDisabled?: boolean;
+  plusDisabled?: boolean;
   onChange: (next: number) => void;
   onStepToZero?: () => void;
   minusAria: string;
@@ -47,6 +51,9 @@ export function PurchaseBillNumberStepper({
     setDraft(null);
   }, [value]);
 
+  const clampToMax = (next: number) =>
+    max != null && Number.isFinite(max) ? Math.min(max, next) : next;
+
   const commit = (raw: string) => {
     const parsed = Number(raw.trim());
     if (!Number.isFinite(parsed)) {
@@ -57,7 +64,7 @@ export function PurchaseBillNumberStepper({
       onStepToZero();
       return;
     }
-    onChange(Math.max(min, parsed));
+    onChange(clampToMax(Math.max(min, parsed)));
     setDraft(null);
   };
 
@@ -68,6 +75,7 @@ export function PurchaseBillNumberStepper({
       return;
     }
     if (next < min) return;
+    if (max != null && next > max) return;
     onChange(next);
   };
 
@@ -106,6 +114,7 @@ export function PurchaseBillNumberStepper({
         ) : null}
         <button
           type="button"
+          disabled={plusDisabled || (max != null && value >= max)}
           onClick={() => stepBy(step)}
           className={`${btnClass} border-l border-slate-200/90`}
           aria-label={plusAria}

@@ -22,14 +22,17 @@ import {
   organisationProfileToSnapshot,
   type InvoiceOrganisationSnapshot,
 } from "@/lib/sales/invoice-preview-formatters";
+import { SalesInvoiceLineCard } from "@/components/dashboard/sales/sales-invoice-line-card";
 import {
   calcInvoiceTotals,
-  calcLineItem,
+  capInvoiceLineQty,
   clampInvoiceLineQty,
   formatInr,
+  getMaxQtyForLine,
   lineItemFromInventory,
   lineItemFromSerial,
   PAYMENT_MODES,
+  type InvoiceLineItem,
 } from "@/lib/sales/create-invoice-form";
 import { isShopGstRegistered } from "@/lib/dashboard/shop-gst";
 import { mapCreateInvoiceFormToRequest } from "@/lib/sales/map-create-invoice-request";
@@ -134,7 +137,6 @@ export function PosBillingPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [itemSkuById, setItemSkuById] = useState<Record<string, string>>({});
 
   const searchRef = useRef<HTMLInputElement>(null);
   const receivedRef = useRef<HTMLInputElement>(null);
@@ -277,9 +279,6 @@ export function PosBillingPage() {
       updateActiveBill((bill) =>
         updateBillLineItems(bill, nextLines, newLineId ?? bill.selectedLineId),
       );
-      if (item.sku) {
-        setItemSkuById((prev) => ({ ...prev, [item.id]: item.sku }));
-      }
       setSearchQuery("");
       setSearchOpen(false);
       setSearchHighlight(0);
@@ -336,6 +335,43 @@ export function PosBillingPage() {
     const next = activeBill.form.lineItems.filter((l) => l.id !== activeBill.selectedLineId);
     updateActiveBill((bill) => updateBillLineItems(bill, next, next[0]?.id ?? null));
   }, [activeBill, updateActiveBill]);
+
+  const patchActiveLine = useCallback(
+    (id: string, partial: Partial<InvoiceLineItem>) => {
+      updateActiveBill((bill) => {
+        const current = bill.form.lineItems.find((line) => line.id === id);
+        if (!current) return bill;
+        if ("qty" in partial) {
+          if (current.serialised) {
+            const { qty: _ignoredQty, ...rest } = partial;
+            partial = rest;
+          } else {
+            const qty = capInvoiceLineQty(current, Number(partial.qty), bill.form.lineItems);
+            if (qty <= 0) {
+              const next = bill.form.lineItems.filter((line) => line.id !== id);
+              return updateBillLineItems(bill, next, next[0]?.id ?? null);
+            }
+            partial = { ...partial, qty };
+          }
+        }
+        const next = bill.form.lineItems.map((line) =>
+          line.id === id ? { ...line, ...partial } : line,
+        );
+        return updateBillLineItems(bill, next, id);
+      });
+    },
+    [updateActiveBill],
+  );
+
+  const removeActiveLine = useCallback(
+    (id: string) => {
+      updateActiveBill((bill) => {
+        const next = bill.form.lineItems.filter((line) => line.id !== id);
+        return updateBillLineItems(bill, next, next[0]?.id ?? null);
+      });
+    },
+    [updateActiveBill],
+  );
 
   const moveSelection = useCallback(
     (delta: number) => {
@@ -866,82 +902,19 @@ export function PosBillingPage() {
                 <p className="mt-4 max-w-md text-sm text-brand-primary-muted">{t("dashboard.pos.emptyItems")}</p>
               </div>
             ) : (
-              <table className="w-full min-w-[760px] text-left text-sm">
-                <thead className="sticky top-0 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-brand-primary-muted">
-                  <tr className="border-b border-slate-200/90">
-                    <th className="px-3 py-2.5">{t("dashboard.pos.colNo")}</th>
-                    <th className="px-3 py-2.5">{t("dashboard.pos.colItem")}</th>
-                    <th className="px-3 py-2.5">{t("dashboard.pos.colCode")}</th>
-                    {!posSettings.hideMrp ? <th className="px-3 py-2.5">{t("dashboard.pos.colMrp")}</th> : null}
-                    <th className="px-3 py-2.5">{t("dashboard.pos.colSp")}</th>
-                    <th className="px-3 py-2.5">{t("dashboard.pos.colDisc")}</th>
-                    <th className="px-3 py-2.5">{t("dashboard.pos.colQty")}</th>
-                    <th className="px-3 py-2.5">{t("dashboard.pos.colAmount")}</th>
-                    <th className="px-3 py-2.5" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {activeBill.form.lineItems.map((line, index) => {
-                    const calc = calcLineItem(line);
-                    const selected = line.id === activeBill.selectedLineId;
-                    return (
-                      <tr
-                        key={line.id}
-                        onClick={() => updateActiveBill((b) => ({ ...b, selectedLineId: line.id }))}
-                        className={`cursor-pointer border-b border-slate-100 ${selected ? "bg-amber-50" : "hover:bg-slate-50"}`}
-                      >
-                        <td className="px-3 py-2.5 tabular-nums">{index + 1}</td>
-                        <td className="px-3 py-2.5 font-medium">
-                          {line.name}
-                          {line.serialised && line.serialNumbers[0] ? (
-                            <span className="mt-0.5 block font-mono text-xs text-violet-700">
-                              {line.serialNumbers[0]}
-                            </span>
-                          ) : null}
-                        </td>
-                        <td className="px-3 py-2.5 text-brand-primary-muted">
-                          {line.serialised
-                            ? line.serialNumbers[0] ?? itemSkuById[line.itemId] ?? "—"
-                            : itemSkuById[line.itemId] || line.hsn || "—"}
-                        </td>
-                        {!posSettings.hideMrp ? (
-                          <td className="px-3 py-2.5 tabular-nums">{formatInr(line.pricePerItem)}</td>
-                        ) : null}
-                        <td className="px-3 py-2.5 tabular-nums">{formatInr(line.pricePerItem)}</td>
-                        <td className="px-3 py-2.5 tabular-nums">
-                          {line.discountType === "percent" ? `${line.discount}%` : formatInr(line.discount)}
-                        </td>
-                        <td className="px-3 py-2.5 tabular-nums">
-                          {line.qty} {line.unit}
-                        </td>
-                        <td className="px-3 py-2.5 font-semibold tabular-nums">{formatInr(calc.amount)}</td>
-                        <td className="px-3 py-2.5">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const next = activeBill.form.lineItems.filter((l) => l.id !== line.id);
-                              updateActiveBill((b) => updateBillLineItems(b, next, next[0]?.id ?? null));
-                            }}
-                            className="text-brand-primary-muted hover:text-red-600"
-                            aria-label={t("dashboard.pos.deleteItem")}
-                          >
-                            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden>
-                              <path
-                                d="M6 7h12M9 7V5h6v2M10 11v6M14 11v6M8 7l1 12h6l1-12"
-                                stroke="currentColor"
-                                strokeWidth="1.5"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                            </svg>
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+              <div className="space-y-3 p-3">
+                {activeBill.form.lineItems.map((line) => (
+                  <SalesInvoiceLineCard
+                    key={line.id}
+                    line={line}
+                    maxQty={getMaxQtyForLine(line, activeBill.form.lineItems)}
+                    selected={line.id === activeBill.selectedLineId}
+                    onSelect={() => updateActiveBill((bill) => ({ ...bill, selectedLineId: line.id }))}
+                    onChange={(patch) => patchActiveLine(line.id, patch)}
+                    onRemove={() => removeActiveLine(line.id)}
+                  />
+                ))}
+              </div>
             )}
           </div>
 
@@ -1156,15 +1129,14 @@ export function PosBillingPage() {
           onClose={() => setLineEditOpen(false)}
           onSave={(value) => {
             if (!activeBill?.selectedLineId) return;
-            const nextLines = activeBill.form.lineItems.map((line) => {
-              if (line.id !== activeBill.selectedLineId) return line;
-              if (lineEditField === "price") return { ...line, pricePerItem: value };
-              if (lineEditField === "qty") {
-                return { ...line, qty: clampInvoiceLineQty(line, value, activeBill.form.lineItems) };
-              }
-              return { ...line, discount: value, discountType: "percent" as const };
-            });
-            updateActiveBill((bill) => updateBillLineItems(bill, nextLines));
+            const lineId = activeBill.selectedLineId;
+            if (lineEditField === "qty") {
+              patchActiveLine(lineId, { qty: value });
+            } else if (lineEditField === "price") {
+              patchActiveLine(lineId, { pricePerItem: Math.max(0, value) });
+            } else {
+              patchActiveLine(lineId, { discount: value, discountType: "percent" });
+            }
             setLineEditOpen(false);
           }}
         />
