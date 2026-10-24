@@ -17,7 +17,6 @@ import {
   getHeaderTextColor,
   INDUSTRY_TYPES,
   INVOICE_THEME_CARDS,
-  PAYMENT_QR_OPTIONS,
   TERMS_PRESETS,
   THEME_COLOR_SWATCHES,
   type StoredSalesInvoiceSettings,
@@ -26,6 +25,7 @@ import {
   fetchSalesInvoiceSettings,
   updateSalesInvoiceSettings,
 } from "@/lib/sales/sales-invoice-settings-api-client";
+import { paymentQrInputValue } from "@/lib/sales/upi-collect";
 import { useTranslation } from "@/lib/localization";
 
 const inputClass =
@@ -555,11 +555,15 @@ export function InvoiceSettingsPage() {
               <label className="mb-1 block text-xs font-medium text-brand-primary-muted">
                 {t("dashboard.invoiceSettings.paymentQr")}
               </label>
-              <ModernSelect
-                value={settings.paymentQr}
-                onChange={(v) => patch({ paymentQr: v })}
-                options={PAYMENT_QR_OPTIONS}
-                placeholder={t("dashboard.invoiceSettings.selectPaymentQr")}
+              <input
+                type="text"
+                inputMode="email"
+                value={paymentQrInputValue(settings.paymentQr)}
+                onChange={(e) => patch({ paymentQr: e.target.value })}
+                placeholder={t("dashboard.invoiceSettings.paymentQrPlaceholder")}
+                autoComplete="off"
+                spellCheck={false}
+                className="h-10 w-full rounded-sm border border-slate-200/90 bg-white px-3 text-sm text-brand-primary outline-none focus:border-brand-orange-1/50 focus:ring-2 focus:ring-brand-orange-1/15"
               />
 
               <label className="mb-1 mt-4 block text-xs font-medium text-brand-primary-muted">

@@ -1172,6 +1172,11 @@ export type MessageTree = {
         paymentHistory: string;
         invoiceAmount: string;
         recordPayment: string;
+        collectUpi: string;
+        collectUpiScan: string;
+        collectUpiEmpty: string;
+        collectUpiAdd: string;
+        collectUpiRecordHint: string;
         markAsPaid: string;
         paymentAmount: string;
         paymentMode: string;
@@ -2317,7 +2322,7 @@ export type MessageTree = {
       colMfgDate: string;
       addCustomColumn: string;
       paymentQr: string;
-      selectPaymentQr: string;
+      paymentQrPlaceholder: string;
       termsAndConditions: string;
       termsPlaceholder: string;
       signature: string;

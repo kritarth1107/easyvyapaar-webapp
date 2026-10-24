@@ -70,6 +70,7 @@ import type { PartyDetail } from "@/lib/types/parties-api";
 import { useTranslation } from "@/lib/localization";
 import { DocumentHistoryPanel } from "@/components/dashboard/reports/audit-log-list";
 import { SignedQrImage } from "./signed-qr-image";
+import { UpiCollectQrCard } from "@/components/dashboard/sales/upi-collect-qr-card";
 import { CancelInvoiceDialog, formatInvoiceCancelBlockedTitle } from "./cancel-invoice-dialog";
 import { isSalesInvoiceEditable } from "@/lib/sales/map-sales-invoice-detail-to-form";
 
@@ -1085,6 +1086,13 @@ export function SalesInvoiceViewPage({ invoiceId }: { invoiceId: string }) {
           </div>
           )}
 
+
+          <UpiCollectQrCard
+            status={invoice.status}
+            balanceAmount={invoice.balanceAmount}
+            displayNumber={invoice.displayNumber}
+            paymentQr={storedSettings.paymentQr}
+          />
 
           {canRecordPayment ? (
             <div className="rounded-sm border border-slate-200/90 bg-white p-4 shadow-sm">

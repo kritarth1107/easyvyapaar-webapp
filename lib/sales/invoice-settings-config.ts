@@ -52,12 +52,6 @@ const LEGACY_ACCENT_COLOR_MAP: Record<string, ThemeColorId> = {
 
 export const INDUSTRY_TYPES = INDUSTRY_TYPE_OPTIONS;
 
-export const PAYMENT_QR_OPTIONS = [
-  { value: "", label: "Select Payment QR" },
-  { value: "upi-1", label: "7047896266@YBL" },
-  { value: "upi-2", label: "shop@paytm" },
-];
-
 export const TERMS_PRESETS = [
   { value: "sales", label: "Sales Invoices" },
   { value: "quotation", label: "Quotations" },
