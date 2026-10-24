@@ -2,21 +2,22 @@
 
 import { saveErrorMessage } from "@/lib/api/conflict";
 import Link from "next/link";
-import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ApiValidationError, fieldErrorsFor, type ApiFieldError } from "@/lib/api/field-errors";
 import {
   FieldErrorText,
   OtherFieldErrors,
   purchaseFieldLabel,
 } from "@/components/dashboard/purchase/purchase-field-errors";
+import { PurchaseBillLineCard } from "@/components/dashboard/purchase/purchase-bill-line-card";
+import { formatInr2 } from "@/components/dashboard/purchase/purchase-bill-summary";
 import { useRouter } from "next/navigation";
 import { useUserMe } from "@/components/providers/user-me-provider";
-import { LineDiscountField } from "@/components/dashboard/shared/line-discount-field";
 import { AddItemsToBillModal } from "@/components/dashboard/sales/add-items-to-bill-modal";
 import { ModernSelect } from "@/components/ui/modern-select";
 import { clampLineDiscount, lineGrossAmount } from "@/lib/sales/invoice-tax";
 import type { InventoryBillPick } from "@/lib/types/inventory-ui";
-import { inputClass, inputSmClass, formatInr } from "@/lib/dashboard/page-utils";
+import { inputClass } from "@/lib/dashboard/page-utils";
 import {
   createPurchaseBill,
   fetchNextPurchaseBillNumber,
@@ -306,8 +307,8 @@ export function CreatePurchaseBillPage({ purchaseBillId }: { purchaseBillId?: st
                 {t("dashboard.purchases.create.billNumber")}
               </label>
               <div className="flex gap-2">
-                <input value={billPrefix} disabled={isEdit} onChange={(e) => setBillPrefix(e.target.value)} className={`${inputSmClass} w-20`} />
-                <input value={billNumber} disabled={isEdit} onChange={(e) => setBillNumber(e.target.value)} className={inputSmClass} />
+                <input value={billPrefix} disabled={isEdit} onChange={(e) => setBillPrefix(e.target.value)} className={`${inputClass} w-28`} />
+                <input value={billNumber} disabled={isEdit} onChange={(e) => setBillNumber(e.target.value)} className={inputClass} />
               </div>
               <FieldErrorText messages={[...fieldErrorsFor(fieldErrors, "billPrefix"), ...fieldErrorsFor(fieldErrors, "billNumber")]} />
             </div>
@@ -354,129 +355,29 @@ export function CreatePurchaseBillPage({ purchaseBillId }: { purchaseBillId?: st
                 {t("dashboard.purchases.create.noItems")}
               </p>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[640px] text-sm">
-                  <thead>
-                    <tr className="border-b text-[11px] uppercase text-brand-primary-muted">
-                      <th className="py-2 text-left">{t("dashboard.purchases.create.colItem")}</th>
-                      <th className="py-2 text-right">{t("dashboard.purchases.create.colQty")}</th>
-                      <th className="py-2 text-right">{t("dashboard.purchases.create.colRate")}</th>
-                      <th className="py-2 text-left">{t("dashboard.salesInvoices.create.colDiscount")}</th>
-                      <th className="py-2 text-center">{t("dashboard.purchases.create.colTaxMode")}</th>
-                      <th className="py-2 text-right">{t("dashboard.purchases.create.colGst")}</th>
-                      <th className="py-2 text-right">{t("dashboard.purchases.create.colAmount")}</th>
-                      <th className="py-2" />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {lines.map((line, lineIndex) => (
-                      <Fragment key={line.key}>
-                      <tr className="border-b border-slate-50">
-                        <td className="py-2">{line.name}</td>
-                        <td className="py-2 text-right">
-                          <input
-                            type="number"
-                            min={1}
-                            value={line.qty}
-                            onChange={(e) =>
-                              setLines((prev) =>
-                                prev.map((row) =>
-                                  row.key === line.key
-                                    ? withClampedLineDiscount({ ...row, qty: Number(e.target.value) || 0 })
-                                    : row,
-                                ),
-                              )
-                            }
-                            className={`${inputSmClass} w-20 text-right`}
-                          />
-                        </td>
-                        <td className="py-2 text-right">
-                          <input
-                            type="number"
-                            min={0}
-                            value={line.pricePerItem}
-                            onChange={(e) =>
-                              setLines((prev) =>
-                                prev.map((row) =>
-                                  row.key === line.key
-                                    ? withClampedLineDiscount({
-                                        ...row,
-                                        pricePerItem: Number(e.target.value) || 0,
-                                      })
-                                    : row,
-                                ),
-                              )
-                            }
-                            className={`${inputSmClass} w-24 text-right`}
-                          />
-                        </td>
-                        <td className="py-2">
-                          <LineDiscountField
-                            discount={line.discount ?? 0}
-                            discountType={lineDiscountType(line)}
-                            qty={line.qty}
-                            pricePerItem={line.pricePerItem}
-                            ariaLabel={t("dashboard.salesInvoices.create.colDiscount")}
-                            onChange={(next) =>
-                              setLines((prev) =>
-                                prev.map((row) =>
-                                  row.key === line.key ? withClampedLineDiscount({ ...row, ...next }) : row,
-                                ),
-                              )
-                            }
-                          />
-                        </td>
-                        <td className="py-2 text-center">
-                          <button
-                            type="button"
-                            title={t("dashboard.purchases.create.taxToggleHint")}
-                            onClick={() =>
-                              setLines((prev) =>
-                                prev.map((row) =>
-                                  row.key === line.key
-                                    ? {
-                                        ...row,
-                                        purchaseTaxMode:
-                                          row.purchaseTaxMode === "with_tax" ? "without_tax" : "with_tax",
-                                      }
-                                    : row,
-                                ),
-                              )
-                            }
-                            className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
-                              line.purchaseTaxMode === "with_tax"
-                                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                                : "border-slate-200 bg-slate-50 text-brand-primary"
-                            }`}
-                          >
-                            {line.purchaseTaxMode === "with_tax"
-                              ? t("dashboard.purchases.create.taxIncl")
-                              : t("dashboard.purchases.create.taxExcl")}
-                          </button>
-                        </td>
-                        <td className="py-2 text-right tabular-nums">{Number(line.gstPercent) || 0}%</td>
-                        <td className="py-2 text-right tabular-nums">{formatInr(lineGross(line))}</td>
-                        <td className="py-2 text-right">
-                          <button
-                            type="button"
-                            onClick={() => setLines((prev) => prev.filter((row) => row.key !== line.key))}
-                            className="text-brand-primary-muted hover:text-red-600"
-                          >
-                            ×
-                          </button>
-                        </td>
-                      </tr>
-                      {fieldErrorsFor(fieldErrors, `lineItems.${lineIndex}`).length ? (
-                        <tr>
-                          <td colSpan={99} className="pb-2 text-xs text-red-600">
-                            {fieldErrorsFor(fieldErrors, `lineItems.${lineIndex}`).join(" · ")}
-                          </td>
-                        </tr>
-                      ) : null}
-                      </Fragment>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="space-y-3">
+                {lines.map((line, lineIndex) => (
+                  <div key={line.key}>
+                    <PurchaseBillLineCard
+                      line={line}
+                      amount={lineGross(line)}
+                      tax={Math.round((lineGross(line) - lineTaxable(line)) * 100) / 100}
+                      onChange={(patch) =>
+                        setLines((prev) =>
+                          prev.map((row) =>
+                            row.key === line.key ? withClampedLineDiscount({ ...row, ...patch }) : row,
+                          ),
+                        )
+                      }
+                      onRemove={() => setLines((prev) => prev.filter((row) => row.key !== line.key))}
+                    />
+                    {fieldErrorsFor(fieldErrors, `lineItems.${lineIndex}`).length ? (
+                      <p className="mt-1 text-xs text-red-600">
+                        {fieldErrorsFor(fieldErrors, `lineItems.${lineIndex}`).join(" · ")}
+                      </p>
+                    ) : null}
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -530,7 +431,20 @@ export function CreatePurchaseBillPage({ purchaseBillId }: { purchaseBillId?: st
             </div>
             </>
             ) : null}
-            <p className="mt-4 text-lg font-bold text-brand-primary">{formatInr(total)}</p>
+            <dl className="mt-4 space-y-1.5 text-sm">
+              <div className="flex justify-between gap-3">
+                <dt className="text-brand-primary-muted">{t("dashboard.purchaseSummary.subtotal")}</dt>
+                <dd className="tabular-nums">{formatInr2(taxableTotal)}</dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="text-brand-primary-muted">{t("dashboard.purchaseSummary.itemsGst")}</dt>
+                <dd className="tabular-nums">{formatInr2(Math.round((total - taxableTotal) * 100) / 100)}</dd>
+              </div>
+              <div className="flex justify-between gap-3 border-t border-slate-100 pt-1.5 text-lg font-bold text-brand-primary">
+                <dt>{t("dashboard.purchaseSummary.total")}</dt>
+                <dd className="tabular-nums">{formatInr2(total)}</dd>
+              </div>
+            </dl>
             <PurchaseTdsFields value={tdsForm} onChange={setTdsForm} total={total} taxable={taxableTotal} />
             {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
             <OtherFieldErrors

@@ -1747,9 +1747,19 @@ export type MessageTree = {
         editTitle: string;
         updateBill: string;
         loadingBill: string;
+        decreaseQty: string;
+        increaseQty: string;
+        decreaseRate: string;
+        increaseRate: string;
+        removeItem: string;
       };
       view: {
         loadError: string;
+        documentTitle: string;
+        billNo: string;
+        gstin: string;
+        colHsn: string;
+        colTax: string;
         total: string;
         paid: string;
         balance: string;

@@ -5,10 +5,11 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useUserMe } from "@/components/providers/user-me-provider";
+import { PurchaseBillDocument } from "@/components/dashboard/purchase/purchase-bill-document";
 import { PurchaseBillPdfPreviewModal } from "@/components/dashboard/purchase/purchase-bill-pdf-preview-modal";
 import { PurchaseBillSummary } from "@/components/dashboard/purchase/purchase-bill-summary";
 import { ModernSelect } from "@/components/ui/modern-select";
-import { formatDate, formatInr, inputClass, StatCard } from "@/lib/dashboard/page-utils";
+import { formatInr, inputClass, StatCard } from "@/lib/dashboard/page-utils";
 import {
   buildPurchaseBillPdfUrl,
   cancelPurchaseBill,
@@ -25,7 +26,7 @@ export function PurchaseBillViewPage() {
   const { t } = useTranslation();
   const params = useParams<{ purchaseBillId: string }>();
   const router = useRouter();
-  const { activeOrganisationId } = useUserMe();
+  const { activeOrganisationId, activeOrganisation } = useUserMe();
   const orgId = activeOrganisationId?.trim() ?? "";
   const billId = params.purchaseBillId;
 
@@ -167,9 +168,7 @@ export function PurchaseBillViewPage() {
       <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="text-xl font-bold text-brand-primary lg:text-2xl">{bill.displayNumber}</h2>
-          <p className="text-sm text-brand-primary-muted">
-            {bill.partyName} · {formatDate(bill.billDate)}
-          </p>
+          <p className="text-sm text-brand-primary-muted">{bill.partyName}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           {canEdit ? (
@@ -283,36 +282,12 @@ export function PurchaseBillViewPage() {
         <StatCard label={t("dashboard.purchases.view.items")} value={String(bill.lineItems.length)} />
       </div>
 
-      <div className="mt-6 overflow-hidden rounded-sm border border-slate-200/90 bg-white">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b bg-brand-surface/50 text-[11px] uppercase text-brand-primary-muted">
-              <th className="px-4 py-3 text-left">{t("dashboard.purchases.create.colItem")}</th>
-              <th className="px-4 py-3 text-right">{t("dashboard.purchases.create.colQty")}</th>
-              <th className="px-4 py-3 text-right">{t("dashboard.purchases.create.colRate")}</th>
-              <th className="px-4 py-3 text-right">{t("dashboard.purchases.view.colGst")}</th>
-              <th className="px-4 py-3 text-right">{t("dashboard.purchases.create.colAmount")}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {bill.lineItems.map((line) => (
-              <tr key={line.lineId} className="border-b border-slate-50">
-                <td className="px-4 py-3">{line.name}</td>
-                <td className="px-4 py-3 text-right tabular-nums">{line.qty}</td>
-                <td className="px-4 py-3 text-right tabular-nums">{formatInr(line.pricePerItem)}</td>
-                <td className="px-4 py-3 text-right tabular-nums">
-                  {line.gstPercent}%{" "}
-                  <span className="text-[11px] text-brand-primary-muted">
-                    ({line.purchaseTaxMode === "with_tax"
-                      ? t("dashboard.purchases.create.taxIncl")
-                      : t("dashboard.purchases.create.taxExcl")})
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-right tabular-nums">{formatInr(line.amount)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="mt-6">
+        <PurchaseBillDocument
+          bill={bill}
+          shopName={activeOrganisation?.name ?? ""}
+          gstin={activeOrganisation?.gstNumber}
+        />
       </div>
 
       <div className="mt-4">
