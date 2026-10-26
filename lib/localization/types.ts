@@ -2364,6 +2364,8 @@ export type MessageTree = {
       businessName: string;
       businessNamePlaceholder: string;
       companyPhone: string;
+      alternateContact: string;
+      alternateContactPlaceholder: string;
       companyEmail: string;
       companyEmailPlaceholder: string;
       billingAddress: string;

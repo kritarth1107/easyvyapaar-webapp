@@ -67,6 +67,7 @@ export type BusinessProfileForm = {
   name: string;
   logoDataUrl: string | null;
   phone: string;
+  alternateContact: string;
   email: string;
   billingAddress: string;
   state: string;
@@ -92,6 +93,7 @@ export const DEFAULT_BUSINESS_PROFILE: BusinessProfileForm = {
   name: "",
   logoDataUrl: null,
   phone: "",
+  alternateContact: "",
   email: "",
   billingAddress: "",
   state: "",

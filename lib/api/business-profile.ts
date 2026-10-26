@@ -63,6 +63,7 @@ export type UpdateOrganisationPayload = {
     country?: string;
   };
   contactNumber?: string;
+  alternateContact?: string;
   email?: string;
   website?: string;
 };
@@ -210,6 +211,7 @@ export function mapProfileToForm(profile: OrganisationProfile): BusinessProfileF
     name: profile.name,
     logoDataUrl: profile.logoUrl ?? null,
     phone: profile.contactNumber,
+    alternateContact: profile.alternateContact ?? "",
     email: profile.email ?? "",
     billingAddress: formatBillingAddress(profile.address),
     state: stateCodeToLabel(profile.address.stateCode),
@@ -268,6 +270,7 @@ export function mapFormToUpdatePayload(form: BusinessProfileForm): UpdateOrganis
     enableEInvoicing: form.enableEInvoicing,
     enableEWayBill: form.enableEWayBill,
     contactNumber: form.phone.trim(),
+    alternateContact: form.alternateContact.trim(),
     email: form.email.trim() || undefined,
     businessType: form.businessTypes
       .map((type) => FORM_BUSINESS_TYPE_TO_BACKEND[type])

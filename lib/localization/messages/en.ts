@@ -2377,6 +2377,8 @@ export const enMessages: MessageTree = {
       businessName: "Business Name",
       businessNamePlaceholder: "Enter business name",
       companyPhone: "Company Phone Number",
+      alternateContact: "Alternate number",
+      alternateContactPlaceholder: "Optional second phone for invoices",
       companyEmail: "Company E-Mail",
       companyEmailPlaceholder: "Enter company e-mail",
       billingAddress: "Billing Address",

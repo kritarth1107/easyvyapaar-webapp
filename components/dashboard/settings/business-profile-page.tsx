@@ -530,6 +530,18 @@ export function BusinessProfilePage() {
                   />
                 </div>
                 <div>
+                  <FieldLabel>{t("dashboard.businessProfile.alternateContact")}</FieldLabel>
+                  <input
+                    value={form.alternateContact}
+                    onChange={(e) => patch({ alternateContact: e.target.value })}
+                    className={inputClass}
+                    placeholder={t("dashboard.businessProfile.alternateContactPlaceholder")}
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
                   <FieldLabel>{t("dashboard.businessProfile.companyEmail")}</FieldLabel>
                   <input
                     type="email"
