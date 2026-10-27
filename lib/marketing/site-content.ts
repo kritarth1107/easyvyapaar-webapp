@@ -1,12 +1,16 @@
 export const CONTACT_EMAIL = "hello@mahajaan.com";
 
 export const HERO = {
-  titleLines: ["GST bills, stock, and khata", "for Indian shops"],
+  eyebrow: "AI assistant · WhatsApp-ready · Built for Indian shops",
+  title: "Manage your entire shop by chat",
   subtitle:
-    "Mahajaan is a web dashboard and Android app for kirana, electronics, and wholesale shops. Bill at the counter with GST invoices or POS, track stock down to the IMEI, and keep every party's khata and your payroll in one place.",
-  cta: "Create free account",
-  proof: "No credit card during early access",
-  visualNote: "Point of sale on the desktop dashboard. Sample bill.",
+    "Ask in Hindi or English — get sales, stock, GST bills, party dues, and daily summaries instantly. Mahajaan AI understands how you actually run your counter.",
+  bullets: [
+    "“Aaj kitna sale hua?” — instant answers",
+    "Bill, stock & khata via chat",
+    "Smart search — dhaniya, coriander, same thing",
+    "Full ERP when you need the big screen",
+  ],
 };
 
 export const SHOP_TYPES = [

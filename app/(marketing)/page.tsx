@@ -5,10 +5,11 @@ import { FeaturesShowcase } from "@/components/marketing/features-showcase";
 import { FinalCtaSection } from "@/components/marketing/final-cta-section";
 import { OnboardingStatsSection } from "@/components/marketing/onboarding-stats-section";
 import { ShopTypesStrip } from "@/components/marketing/shop-types-strip";
-import { HeroSection } from "@/components/marketing/hero-section";
+import { HeroAiChatDemo } from "@/components/marketing/hero-ai-chat-demo";
 import { ProductPreviewVisual } from "@/components/marketing/product-preview-visual";
 import { SectionHeading } from "@/components/marketing/section-heading";
-import { FAQ_ITEMS } from "@/lib/marketing/site-content";
+import { SignupCta } from "@/components/marketing/signup-cta";
+import { FAQ_ITEMS, HERO } from "@/lib/marketing/site-content";
 import { HOME_KEYWORDS } from "@/lib/seo/marketing-keywords";
 import { buildMarketingMetadata, getSiteUrl, SITE_NAME } from "@/lib/seo/site-metadata";
 
@@ -44,7 +45,36 @@ export default function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      <HeroSection />
+      <section className="relative overflow-hidden bg-brand-surface">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(253,83,26,0.08),transparent_45%)]" />
+        <div className="mx-auto grid max-w-6xl gap-12 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:items-center lg:py-20">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-orange-2">{HERO.eyebrow}</p>
+            <h1 className="mt-4 text-4xl font-bold tracking-tight text-brand-primary sm:text-5xl lg:text-[3.25rem] lg:leading-[1.1]">
+              {HERO.title}
+            </h1>
+            <p className="mt-5 max-w-xl text-base leading-7 text-brand-primary-muted sm:text-lg">{HERO.subtitle}</p>
+            <ul className="mt-6 grid gap-2 sm:grid-cols-2">
+              {HERO.bullets.map((item) => (
+                <li key={item} className="flex items-center gap-2 text-sm font-medium text-brand-primary">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-orange-1/15 text-xs text-brand-orange-2">
+                    ✓
+                  </span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+            <div className="mt-8">
+              <SignupCta />
+            </div>
+            <p className="mt-3 text-xs text-brand-primary-muted">No credit card required during early access.</p>
+          </div>
+
+          <div className="lg:pt-4">
+            <HeroAiChatDemo />
+          </div>
+        </div>
+      </section>
 
       <ShopTypesStrip />
 
