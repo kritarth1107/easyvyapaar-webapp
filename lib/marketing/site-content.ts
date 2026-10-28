@@ -1,17 +1,19 @@
 export const CONTACT_EMAIL = "hello@mahajaan.com";
 
 export const HERO = {
-  eyebrow: "AI assistant · WhatsApp-ready · Built for Indian shops",
-  title: "Manage your entire shop by chat",
+  eyebrow: "Retail ERP + AI · Built for Indian shops",
+  title: "GST billing, stock & khata —",
+  titleAccent: "one dashboard, one AI",
   subtitle:
-    "Ask in Hindi or English — get sales, stock, GST bills, party dues, and daily summaries instantly. Mahajaan AI understands how you actually run your counter.",
-  bullets: [
-    "“Aaj kitna sale hua?” — instant answers",
-    "Bill, stock & khata via chat",
-    "Smart search — dhaniya, coriander, same thing",
-    "Full ERP when you need the big screen",
+    "The retail ERP for kirana, electronics, and wholesale shops. Bill at the counter with GST invoices and POS, track stock down to the IMEI, and keep every party's khata — then ask Mahajaan AI in Hindi or English for sales, dues, and daily summaries.",
+  capabilities: [
+    { icon: "receipt", label: "GST billing & POS", hint: "CGST, SGST & IGST split automatically at the counter" },
+    { icon: "box", label: "Inventory & stock", hint: "Low-stock alerts with serial & IMEI tracking" },
+    { icon: "wallet", label: "Party khata", hint: "To-collect and to-pay on a running ledger" },
+    { icon: "ai", label: "Mahajaan AI", hint: "Ask in Hindi or English, get live answers" },
   ],
-};
+  proof: "No credit card during early access",
+} as const;
 
 export const SHOP_TYPES = [
   {
